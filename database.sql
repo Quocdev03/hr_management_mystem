@@ -33,59 +33,44 @@ GO
 -- ============================================================
 -- 2. BẢNG permissions
 -- Lưu danh sách quyền trong hệ thống
--- Ví dụ:
--- employee:read
--- employee:create
+-- Ví dụ: employee:read, employee:create
 -- ============================================================
 
 CREATE TABLE permissions (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    name NVARCHAR(100) NOT NULL UNIQUE,
-
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    name        NVARCHAR(100) NOT NULL UNIQUE,
     description NVARCHAR(255),
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    updated_at  DATETIME2 DEFAULT GETDATE(),
+    deleted_at  DATETIME2 NULL
 );
 GO
 
 
 -- ============================================================
 -- 3. BẢNG roles
--- Vai trò:
--- admin
--- hr
--- employee
+-- Vai trò: admin | hr | employee
 -- ============================================================
 
 CREATE TABLE roles (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    name NVARCHAR(50) NOT NULL UNIQUE,
-
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    name        NVARCHAR(50) NOT NULL UNIQUE,
     description NVARCHAR(255),
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    updated_at  DATETIME2 DEFAULT GETDATE(),
+    deleted_at  DATETIME2 NULL
 );
 GO
 
 
 -- ============================================================
 -- 4. BẢNG role_permissions
--- Quan hệ nhiều-nhiều giữa roles và permissions
+-- Junction table - quan hệ nhiều-nhiều giữa roles và permissions
+-- Không cần model Go riêng, GORM tự quản lý qua tag many2many
 -- ============================================================
 
 CREATE TABLE role_permissions (
-    role_id INT NOT NULL,
-
+    role_id       INT NOT NULL,
     permission_id INT NOT NULL,
 
     PRIMARY KEY (role_id, permission_id),
@@ -106,22 +91,18 @@ GO
 -- ============================================================
 -- 5. BẢNG departments
 -- Thông tin phòng ban
+-- manager_id FK tới employees, thêm sau khi tạo xong bảng employees
 -- ============================================================
 
 CREATE TABLE departments (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    name NVARCHAR(100) NOT NULL UNIQUE,
-
-    code NVARCHAR(20) NOT NULL UNIQUE,
-
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    name        NVARCHAR(100) NOT NULL UNIQUE,
+    code        NVARCHAR(20)  NOT NULL UNIQUE,
     description NVARCHAR(255),
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL
+    manager_id  INT NULL,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    updated_at  DATETIME2 DEFAULT GETDATE(),
+    deleted_at  DATETIME2 NULL
 );
 GO
 
@@ -129,27 +110,19 @@ GO
 -- ============================================================
 -- 6. BẢNG users
 -- Tài khoản đăng nhập hệ thống
--- Password lưu dạng bcrypt hash
+-- Password lưu dạng bcrypt hash, KHÔNG lưu plaintext
 -- ============================================================
 
 CREATE TABLE users (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    username NVARCHAR(100) NOT NULL UNIQUE,
-
-    email NVARCHAR(150) NOT NULL UNIQUE,
-
-    password NVARCHAR(255) NOT NULL,
-
-    role_id INT NOT NULL,
-
-    is_active BIT DEFAULT 1,
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL,
+    id          INT IDENTITY(1,1) PRIMARY KEY,
+    username    NVARCHAR(100) NOT NULL UNIQUE,
+    email       NVARCHAR(150) NOT NULL UNIQUE,
+    password    NVARCHAR(255) NOT NULL,
+    role_id     INT NOT NULL,
+    is_active   BIT DEFAULT 1,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    updated_at  DATETIME2 DEFAULT GETDATE(),
+    deleted_at  DATETIME2 NULL,
 
     CONSTRAINT FK_users_role
         FOREIGN KEY (role_id)
@@ -160,38 +133,24 @@ GO
 
 -- ============================================================
 -- 7. BẢNG employees
--- Thông tin nhân viên
+-- Thông tin chi tiết nhân viên
 -- ============================================================
 
 CREATE TABLE employees (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    user_id INT NULL,
-
+    id            INT IDENTITY(1,1) PRIMARY KEY,
+    user_id       INT NULL,       -- NULL nếu chưa có tài khoản hệ thống
     department_id INT NOT NULL,
-
-    first_name NVARCHAR(100) NOT NULL,
-
-    last_name NVARCHAR(100) NOT NULL,
-
-    email NVARCHAR(150) NOT NULL UNIQUE,
-
-    phone NVARCHAR(20),
-
-    position NVARCHAR(100),
-
-    salary DECIMAL(15,2) DEFAULT 0,
-
-    join_date DATE DEFAULT GETDATE(),
-
-    -- active | inactive | resigned
-    status NVARCHAR(20) DEFAULT 'active',
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL,
+    first_name    NVARCHAR(100) NOT NULL,
+    last_name     NVARCHAR(100) NOT NULL,
+    email         NVARCHAR(150) NOT NULL UNIQUE,
+    phone         NVARCHAR(20),
+    position      NVARCHAR(100),
+    salary        DECIMAL(15,2) DEFAULT 0,
+    join_date     DATE          DEFAULT CAST(GETDATE() AS DATE),
+    status        NVARCHAR(20)  DEFAULT 'active',  -- active | inactive | resigned
+    created_at    DATETIME2     DEFAULT GETDATE(),
+    updated_at    DATETIME2     DEFAULT GETDATE(),
+    deleted_at    DATETIME2     NULL,
 
     -- Chỉ cho phép status hợp lệ
     CONSTRAINT CK_employees_status
@@ -201,11 +160,13 @@ CREATE TABLE employees (
     CONSTRAINT CK_employees_salary
         CHECK (salary >= 0),
 
+    -- Xoá user → set user_id = NULL, không xoá employee
     CONSTRAINT FK_employees_user
         FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE SET NULL,
 
+    -- Không cho xoá department khi còn nhân viên
     CONSTRAINT FK_employees_department
         FOREIGN KEY (department_id)
         REFERENCES departments(id)
@@ -214,93 +175,47 @@ GO
 
 
 -- ============================================================
--- 8. BẢNG leave_requests
--- Đơn xin nghỉ phép
+-- 8. FK: departments.manager_id → employees.id
+-- Thêm sau khi bảng employees đã tồn tại
+-- (tránh circular dependency khi CREATE TABLE)
 -- ============================================================
 
-CREATE TABLE leave_requests (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-
-    employee_id INT NOT NULL,
-
-    leave_type NVARCHAR(50) NOT NULL,
-
-    start_date DATE NOT NULL,
-
-    end_date DATE NOT NULL,
-
-    reason NVARCHAR(500),
-
-    -- pending | approved | rejected
-    status NVARCHAR(20) DEFAULT 'pending',
-
-    approved_by INT NULL,
-
-    created_at DATETIME2 DEFAULT GETDATE(),
-
-    updated_at DATETIME2 DEFAULT GETDATE(),
-
-    deleted_at DATETIME2 NULL,
-
-    -- Validate loại nghỉ phép
-    CONSTRAINT CK_leave_requests_type
-        CHECK (
-            leave_type IN (
-                'annual',
-                'sick',
-                'unpaid'
-            )
-        ),
-
-    -- Validate trạng thái
-    CONSTRAINT CK_leave_requests_status
-        CHECK (
-            status IN (
-                'pending',
-                'approved',
-                'rejected'
-            )
-        ),
-
-    -- end_date phải >= start_date
-    CONSTRAINT CK_leave_requests_dates
-        CHECK (end_date >= start_date),
-
-    CONSTRAINT FK_leave_requests_employee
-        FOREIGN KEY (employee_id)
-        REFERENCES employees(id),
-
-    CONSTRAINT FK_leave_requests_approver
-        FOREIGN KEY (approved_by)
+ALTER TABLE departments
+    ADD CONSTRAINT FK_departments_manager
+        FOREIGN KEY (manager_id)
         REFERENCES employees(id)
-);
+        ON DELETE SET NULL;  -- xoá employee → manager_id = NULL, không xoá dept
 GO
 
 
 -- ============================================================
 -- 9. INDEX CƠ BẢN
--- Chỉ giữ index thường dùng
 -- ============================================================
 
--- Query employee theo department
-CREATE INDEX IX_employees_department_id
-ON employees(department_id);
+-- Hay JOIN employees theo department
+CREATE INDEX IX_employees_department_id ON employees (department_id);
 GO
 
--- Query user theo role
-CREATE INDEX IX_users_role_id
-ON users(role_id);
+-- Hay JOIN users theo role
+CREATE INDEX IX_users_role_id ON users (role_id);
 GO
 
--- Query leave request theo employee
-CREATE INDEX IX_leave_requests_employee_id
-ON leave_requests(employee_id);
+-- Soft delete: hầu hết query đều lọc WHERE deleted_at IS NULL
+CREATE INDEX IX_employees_deleted_at   ON employees   (deleted_at);
+CREATE INDEX IX_departments_deleted_at ON departments (deleted_at);
+CREATE INDEX IX_users_deleted_at       ON users       (deleted_at);
 GO
 
 
 -- ============================================================
 -- 10. KIỂM TRA KẾT QUẢ
 -- ============================================================
+
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE'
+ORDER BY TABLE_NAME;
+GO
 
 PRINT N'';
 PRINT N'✅ HRM Database schema created successfully!';

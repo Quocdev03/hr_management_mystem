@@ -1,6 +1,6 @@
 # 🏢 HRM API - Human Resource Management
 
-RESTful API bằng Golang cho hệ thống quản lý nhân sự. Project này được thiết kế để ôn tập và chuẩn bị phỏng vấn **Fresher Backend Developer**.
+RESTful API bằng Golang cho hệ thống quản lý nhân sự. **Fresher Backend Developer**.
 
 ---
 
@@ -37,11 +37,8 @@ hrm-api/
 │   └── logger/
 │       └── logger.go            # Logger wrapper
 ├── configs/                     # File cấu hình bổ sung (nếu cần)
-├── docker/                      # Docker related files
-├── scripts/                     # Migration scripts, helper scripts
-├── .env.example                 # Template biến môi trường
+├── .env                         # Biến môi trường
 ├── .gitignore
-├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
 └── README.md
@@ -160,7 +157,8 @@ Response:
   "success": true,
   "message": "Login successful",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "refesh_token": "eyJhbGciOiJIUzI1NiIs...",
     "user": { ... }
   }
 }

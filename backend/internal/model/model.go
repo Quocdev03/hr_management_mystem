@@ -1,4 +1,4 @@
-package modelgo
+package model
 
 import (
 	"time"
@@ -95,8 +95,9 @@ type LoginRequest struct {
 
 // LoginReponse  - dữ liệu trả về sau khi đăng nhập thành công
 type LoginReponse struct {
-	Token string `json:"token"`
-	User  User   `json:"user"`
+	AccessToken string `json:"access_token"`
+	RefeshToken string `json:"refesh_token"`
+	User        User   `json:"user"`
 }
 
 // CreateEmployeeRequest - tạo nv mới

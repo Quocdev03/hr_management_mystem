@@ -1,3 +1,9 @@
+/*
+Mục tiêu file này:
+- Quản lý toàn bộ cấu hình ứng dụng
+- Đọc biến môi trường (.env)
+- Cung cấp config cho Database, JWT, App
+*/
 package config
 
 import (
@@ -9,12 +15,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config chứa toàn bộ cấu hình ứng dụng
 type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
-	Redis    RedisConfig
 }
 
 type AppConfig struct {
@@ -28,18 +32,12 @@ type DatabaseConfig struct {
 	User     string
 	Password string
 	DBName   string
+	Env      string
 }
 
 type JWTConfig struct {
 	SecretKey  string
 	ExpireHour int
-}
-
-type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-	DB       int
 }
 
 func Load() *Config {
@@ -49,7 +47,6 @@ func Load() *Config {
 	}
 	// Chuyển string -> int vì env chỉ chứa string
 	expireHour, _ := strconv.Atoi(getEnv("JWT_EXPIRE_HOUR", "24"))
-	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
 	return &Config{
 		App: AppConfig{
@@ -62,16 +59,11 @@ func Load() *Config {
 			User:     getEnv("DB_USER", "root"),
 			Password: getEnv("DB_PASSWORD", "password123"),
 			DBName:   getEnv("DB_NAME", "hrm_db"),
+			Env:      getEnv("APP_ENV", "development"),
 		},
 		JWT: JWTConfig{
 			SecretKey:  getEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production"),
 			ExpireHour: expireHour,
-		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnv("REDIS_PORT", "6379"),
-			Password: getEnv("REDIS_PASSWORD", "password"),
-			DB:       redisDB,
 		},
 	}
 }
@@ -80,11 +72,6 @@ func Load() *Config {
 func (d *DatabaseConfig) DSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		d.User, d.Password, d.Host, d.Port, d.DBName)
-}
-
-// RedisAddr trả về địa chỉ Redis
-func (r *RedisConfig) RedisAddr() string {
-	return fmt.Sprintf("%s:%s", r.Host, r.Port)
 }
 
 // Hàm đọc biến môi trường, trả ra value mặc định nếu không tìm thấy

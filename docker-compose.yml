@@ -1,7 +1,7 @@
 version: "3.8"
 
 # Docker Compose cho HRM API
-# Services: app, mysql, redis
+# Services: app, mysql
 
 services:
     # MySQL Database
@@ -36,28 +36,10 @@ services:
             timeout: 5s
             retries: 5
 
-    # Redis Cache
-    redis:
-        image: redis:7-alpine
-        container_name: hrm_redis
-        restart: unless-stopped
-        ports:
-            - "6379:6379"
-        volumes:
-            - redis_data:/data
-        networks:
-            - hrm_network
-        healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
 
 # Volumes
 volumes:
     mysql_data:
-        driver: local
-    redis_data:
         driver: local
 
 # Networks

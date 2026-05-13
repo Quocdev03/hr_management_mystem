@@ -12,15 +12,24 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	glogger "gorm.io/gorm/logger"
 )
 
 func InitiDB(cfg *DatabaseConfig) *gorm.DB {
-	// Chọn log phù hợp cho môi trường
-	logLevel := logger.Info
+	// 1. Set log level theo môi trường
+	var logLevel glogger.LogLevel
+
+	switch cfg.Env {
+	case "development":
+		logLevel = glogger.Info
+	case "production":
+		logLevel = glogger.Silent
+	default:
+		logLevel = glogger.Warn
+	}
 
 	db, err := gorm.Open(mysql.Open(cfg.DSN()), &gorm.Config{
-		Logger: logger.Default.LogMode(logLevel),
+		Logger: glogger.Default.LogMode(logLevel),
 	})
 	if err != nil {
 		log.Fatal("Kết nối cơ sở dữ liệu bị lỗi!")
@@ -32,15 +41,13 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 		log.Fatalf("Không thể lấy sql.DB: %v", err)
 	}
 
-	// Tối đa 10 kết nối cùng lúc
+	// Tối đa 10 kết nối cùng lúc, giữ 5 kết nối, không hết hạn
 	sqlDB.SetMaxOpenConns(10)
-	// giữ 10 kết nối idle
 	sqlDB.SetMaxIdleConns(5)
-	// kết nối không hết hạn
 	sqlDB.SetConnMaxLifetime(0)
 
 	// Auto migrate: tự động tạo/cập nhật bảng dựa trên struct
-	// runMigrations(db)
+	runMigrations(db)
 
 	log.Println("Kết nối database và tạo các bảng thành công!")
 	return db

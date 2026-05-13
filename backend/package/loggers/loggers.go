@@ -8,12 +8,12 @@ import (
 // Logger wrapper đơn giản
 
 var (
-	inforLogger = log.New(os.Stdout, "[INFO]  ", log.Ldate|log.Ltime)
-	errorLogger = log.New(os.Stderr, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile)
-	warnLogger  = log.New(os.Stdout, "[WARN]  ", log.Ldate|log.Ltime)
+	inforLogger = log.New(os.Stdout, "[APP-INFO]  ", log.Ldate|log.Ltime)
+	errorLogger = log.New(os.Stdout, "[APP-WARN] ", log.Ldate|log.Ltime|log.Lshortfile)
+	warnLogger  = log.New(os.Stderr, "[APP-ERROR]  ", log.Ldate|log.Ltime)
 )
 
-func Infor(format string, v ...interface{}) {
+func Info(format string, v ...interface{}) {
 	inforLogger.Printf(format, v...)
 }
 

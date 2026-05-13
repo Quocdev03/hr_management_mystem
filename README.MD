@@ -15,7 +15,6 @@ hrm-api/
 │   ├── config/
 │   │   ├── config.go            # Đọc biến môi trường
 │   │   ├── database.go          # Kết nối MySQL + Auto Migration
-│   │   ├── redis.go             # Kết nối Redis
 │   │   └── seed.go              # Dữ liệu mẫu (seed data)
 │   ├── model/
 │   │   └── model.go             # Tất cả structs: Entity + DTO + Request/Response
@@ -58,7 +57,7 @@ cd hrm-api
 # 2. Copy env file
 cp .env.example .env
 
-# 3. Chạy tất cả services (MySQL + Redis + App)
+# 3. Chạy tất cả services (MySQL + App)
 make docker-up
 # hoặc: docker-compose up -d --build
 
@@ -72,7 +71,7 @@ make docker-logs
 ### Cách 2: Chạy Local
 
 ```bash
-# Yêu cầu: Go 1.21+, MySQL 8.0+, Redis 7+
+# Yêu cầu: Go 1.21+, MySQL 8.0+
 
 # 1. Cài dependencies
 go mod tidy
@@ -331,14 +330,6 @@ type userRepository struct { db *gorm.DB }
 authSvc := service.NewAuthService(userRepo, roleRepo, &cfg.JWT)
 ```
 
-### 5. Redis Cache
-
-```go
-// Cache hit
-cached, err := s.redis.Get(ctx, cacheKey).Result()
-// Cache miss -> query DB -> set cache
-s.redis.Set(ctx, cacheKey, jsonData, 5*time.Minute)
-```
 
 ---
 
@@ -363,7 +354,6 @@ s.redis.Set(ctx, cacheKey, jsonData, 5*time.Minute)
 | Framework  | Gin                     |
 | ORM        | GORM                    |
 | Database   | MySQL 8.0               |
-| Cache      | Redis 7                 |
 | Auth       | JWT (golang-jwt/jwt v5) |
 | Container  | Docker + Docker Compose |
 
@@ -378,4 +368,3 @@ s.redis.Set(ctx, cacheKey, jsonData, 5*time.Minute)
 3. **Interface trong Go?** - Implicit implementation, giúp decouple + testable
 4. **Soft Delete là gì?** - Set deleted_at thay vì xóa thật, GORM hỗ trợ qua `gorm.DeletedAt`
 5. **JWT hoạt động thế nào?** - Header.Payload.Signature, server verify bằng secret key
-6. **Redis cache giải quyết vấn đề gì?** - Giảm tải DB, tăng tốc response cho read-heavy APIs

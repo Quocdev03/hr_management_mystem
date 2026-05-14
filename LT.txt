@@ -1,0 +1,49 @@
+1. Goroutine, Channel 
+Goroutine là luồng nhẹ dùng để xử lý nhiều tác vụ cùng 1 lúc.
+Goroutine có thể có hàng nghìn hoặc trăm nghìn goroutine trong khi thread chỉ có từ trăm đến vài nghìn
+Goroutine có thể linh động tăng giảm bộ nhớ sử dụng trong khi OS thread cố định
+Goroutine có time khởi động nhanh hơn Thread
+Channel Giao tiếp an toàn thông qua các kênh, và cơ chế an toàn thông qua mutex lock tránh lỗi khi cùng đọc và ghi lên vùng dữ liệu chia sẽ
+hoạt động và ánh xạ trên nhiều os thread thay vì 1:1
+Select chờ nhiều channel cùng lúc, cái nào sẵn thì chạy cái đó
+Don't communicate by sharing memory; share memory by communicating
+Unbuffered channel: Đồng bộ cần gửi và nhận
+Buffered channel: Không lock nếu buffered còn chổ
+select statement: Chờ nhiều chổ, nào mở trước thì vào trước
+2. Interface, struct embedding, composition,Pointer
+Pointer là kiểu dl đặc biệt để lưu trữ bộ nhớ của 1 biến khác, nó trỏ về nơi dữ liệu được lưu trong bộ nhớ
+- Vấn đề bộ nhớ, nó sẽ coppy giá trị -> vùng nhớ nên cần dùng pointer
+Interface là tập hợp các method. Struct nào implement đủ method thì tự động thuộc interface đó
+Struct “object đơn giản” chứa dữ liệu
+Receiver : kèm func vào struct -> func này là 1 phần của struct và dùng được toàn bộ thuộc tính của struct
+composition Go KHÔNG có inheritance (không có kế thừa như Java). Ghép nhiều object/struct lại để tạo chức năng.
+Struct Embedding: Cho struct chứa struct khác trực tiếp
+3. Context,  defer, panic
+context là một cơ chế được sử dụng để quản lý các tác vụ đồng thời và chuyển tiếp giữa các hàm, goroutine và tác vụ con. Context cung cấp một cách tiêu chuẩn để hủy bỏ các tác vụ, xử lý timeouts và truyền thông tin giữa các hàm
+defer trì hoãn thực thi function cho tới khi function hiện tại kết thúc.
+panic dừng chương trình ngay lập tức khi lỗi nghiêm trọng Dù panic xảy ra, defer vẫn chạy.
+recover để bắt panic phải dùng trong defer
+4. sync.Mutex, RWMutex, WaitGroup
+sync.Mutex dùng để khoá tài nguyên chỉ 1 goroutine được truy cập cùng 1 lúc tránh việc race condition và ghi đè dữ liệu
+WaitGroup theo dõi bao nhiêu goroutine đang chạy, chờ tất cả goroutine hoàn thành
+RWMutex nhiều ng cùng đọc đọc được, ghi thì chỉ đươc 1
+5. net/http, Handler, middleware chain
+net/http package để build 1 web server
+Handler tiếp nhận, xử lý yêu cầu,và gửi lại phản hồi cho sự kiện http cụ thể
+Middleware là 1 function chạy trước hoặc sau handler
+6. REST design, status codes, versioning
+thiết kế API theo resource.
+
+7. gRPC, Protobuf, streaming
+Framework RPC hiệu năng cao của Google.
+HTTP/2, Protobuf, Binary. Nhanh hơn REST JSON.
+Server trả nhiều data liên tục.
+8. Auth: JWT, OAuth2, middleware
+9. database/sql, connection pool
+Prepared Statement là cách biên dịch trước câu lệnh SQL, giúp tăng hiệu suất khi thực thi nhiều lần và ngăn chặn tuyệt đối SQL Injection
+10. GORM / sqlx, migration
+11. Transaction, ACID, isolation levels
+12. Redis: cache, pub/sub, rate limiting
+dùng tăng tốc đọc dữ liệu
+realtime -message
+giới hạn request các api

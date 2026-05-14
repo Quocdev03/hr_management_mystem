@@ -276,37 +276,7 @@ Authorization: Bearer <token>
 
 ## 🧠 Các kỹ thuật Golang được minh họa
 
-### 1. Goroutine + Channel
-
-```go
-// service/service.go - GetDepartments dùng goroutine + channel
-resultCh := make(chan fetchResult, 1)
-go func() {
-    depts, total, err := s.deptRepo.FindAll(query)
-    resultCh <- fetchResult{...}
-}()
-res := <-resultCh
-```
-
-### 2. WaitGroup + Mutex
-
-```go
-// service/service.go - ProcessBatchJobs
-var wg sync.WaitGroup
-var mu sync.Mutex
-for _, job := range jobs {
-    wg.Add(1)
-    go func(j string) {
-        defer wg.Done()
-        mu.Lock()
-        results = append(results, ...)
-        mu.Unlock()
-    }(job)
-}
-wg.Wait()
-```
-
-### 3. Context (Graceful Shutdown)
+### 1. Context (Graceful Shutdown)
 
 ```go
 // cmd/server/main.go
@@ -315,7 +285,7 @@ defer cancel()
 srv.Shutdown(ctx)
 ```
 
-### 4. Interface + Dependency Injection
+### 2. Interface + Dependency Injection
 
 ```go
 // Định nghĩa interface
@@ -329,7 +299,6 @@ type userRepository struct { db *gorm.DB }
 // Inject vào service
 authSvc := service.NewAuthService(userRepo, roleRepo, &cfg.JWT)
 ```
-
 
 ---
 

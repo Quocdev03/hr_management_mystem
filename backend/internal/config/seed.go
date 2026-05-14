@@ -101,7 +101,7 @@ func seedRoles(ctx *gorm.DB) error {
 		if ctx.Where("name = ?", r.role.Name).First(&existing).Error == nil {
 			continue
 		}
-		r.role.Permission = r.permissions
+		r.role.Permissions = r.permissions
 		if err := ctx.Create(&r.role).Error; err != nil {
 			return err
 		}

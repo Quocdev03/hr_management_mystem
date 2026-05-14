@@ -24,6 +24,7 @@ type Config struct {
 type AppConfig struct {
 	Port string
 	Env  string
+	Seed bool
 }
 
 type DatabaseConfig struct {
@@ -52,6 +53,7 @@ func Load() *Config {
 		App: AppConfig{
 			Port: getEnv("APP_PORT", "8080"),
 			Env:  getEnv("APP_ENV", "development"),
+			Seed: getEnv("APP_SEED", "false") == "true",
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),

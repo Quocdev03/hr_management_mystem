@@ -140,7 +140,7 @@ func seedUsers(ctx *gorm.DB) error {
 	}
 
 	for _, u := range users {
-		ctx.Where("username = ?", u.UserName).FirstOrCreate(&u)
+		ctx.Where("user_name = ?", u.UserName).FirstOrCreate(&u)
 	}
 
 	return nil

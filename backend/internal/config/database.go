@@ -16,15 +16,12 @@ import (
 )
 
 func InitiDB(cfg *DatabaseConfig) *gorm.DB {
-	// 1. Set log level theo môi trường
+	// 1. Set log level theo môi trường cho GORM
 	var logLevel glogger.LogLevel
 
-	switch cfg.Env {
-	case "development":
+	if cfg.Env == "development" {
 		logLevel = glogger.Info
-	case "production":
-		logLevel = glogger.Silent
-	default:
+	} else {
 		logLevel = glogger.Warn
 	}
 
@@ -47,7 +44,8 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 	sqlDB.SetConnMaxLifetime(0)
 
 	// Auto migrate: tự động tạo/cập nhật bảng dựa trên struct
-	runMigrations(db)
+	// An toàn để chạy mỗi lần khởi động - chỉ thêm bảng/cột mới, không xóa dữ liệu cũ
+	// runMigrations(db)
 
 	log.Println("Kết nối database và tạo các bảng thành công!")
 	return db

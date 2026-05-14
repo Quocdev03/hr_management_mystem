@@ -144,7 +144,7 @@ POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
+  "email": "admin3212@hrm.com",
   "password": "password123"
 }
 ```

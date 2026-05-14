@@ -70,7 +70,7 @@ func (r *userRepository) FindByUsername(username string) (*model.User, error) {
 	var user model.User
 	err := r.db.
 		Preload("Role").
-		Where("username = ?", username).
+		Where("user_name = ?", username).
 		First(&user).Error
 	if err != nil {
 		return nil, err

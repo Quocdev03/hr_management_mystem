@@ -2,7 +2,10 @@ package main
 
 import (
 	"chiquoc_hocgolang/internal/config"
+	"chiquoc_hocgolang/internal/handler"
+	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/router"
+	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/package/loggers"
 	"context"
 	"fmt"
@@ -21,18 +24,28 @@ func main() {
 	// Khởi tạo Database
 	db := config.InitiDB(&cfg.Database)
 
-	// Seed data mẫu khi khởi động
-	config.SeedData(db)
+	// Seed data mẫu - chỉ chạy khi APP_SEED=true trong .env
+	// Đặt APP_SEED=true để chèn data mẫu, APP_SEED=false (hoặc bỏ trống) để bỏ qua
+	// config.SeedData(db)
 
 	// Kết nối các layer của
 	// Handler -> Service -> Repository
 
-	// Handler
-	// Service
-	// Repository
+	// Repositories - tương tác trực tiếp với DB
+	userRepo := repository.NewUserRepository(db)
+	// empRepo := repository.NewEmployeeRepository(db)
+	// deptRepo := repository.NewDepartmentRepository(db)
+
+	// Services - chứa business logic
+	authScv := service.NewAuthService(userRepo, &cfg.JWT)
+	// empScv := service.NewEmployeeService(empRepo, deptRepo)
+	// deptScv := service.NewDepartmentRepository(deptRepo, empRepo)
+
+	// Handlers - nhận HTTP request, gọi service, trả response
+	authHandler := handler.NewAuthHandler(authScv)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg)
+	r := router.SetupRouter(cfg, authHandler)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server

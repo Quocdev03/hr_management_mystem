@@ -36,7 +36,7 @@ type Permission struct {
 // Tài khoản đăng nhập
 type User struct {
 	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserName string `gorm:"size:100;uniqueIndex;not null" json:"username"`
+	UserName string `gorm:"size:100;uniqueIndex;not null" json:"user_name"`
 	Email    string `gorm:"size:150;uniqueIndex;not null" json:"email"`
 	Password string `gorm:"size:255;not null" json:"-"`
 	RoleID   uint   `gorm:"not null" json:"role_id"`
@@ -133,7 +133,7 @@ type PaginatedResult struct {
 
 // RegisterRequest - dữ liệu đăng ký tài khoản
 type RegisterRequest struct {
-	UserName string `json:"username" binding:"required,min=4,max=50"`
+	UserName string `json:"user_name" binding:"required,min=4,max=50"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
 }

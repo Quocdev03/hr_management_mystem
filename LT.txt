@@ -47,3 +47,19 @@ Prepared Statement là cách biên dịch trước câu lệnh SQL, giúp tăng 
 dùng tăng tốc đọc dữ liệu
 realtime -message
 giới hạn request các api
+10. Tư duy chuẩn trong Go backend
+errors.New
+
+👉 business error / validation error
+
+fmt.Errorf(... %w ...)
+
+👉 wrap internal/system error
+
+errors.Is
+
+👉 check loại lỗi
+
+return err
+
+👉 pass-through

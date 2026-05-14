@@ -15,11 +15,25 @@ import (
 )
 
 // Định nghĩa contract
-type AuthService interface{}
+type AuthService interface {
+	Login(req model.LoginRequest) (*model.LoginResponse, error)
+}
 
-type EmployeeService interface{}
+type EmployeeService interface {
+	Create(req model.CreateEmployeeRequest) (*model.Employee, error)
+	GetEmployees(query model.PaginationQuery) (*model.PaginatedResult, error)
+	GetEmployeeByID(id uint) (*model.Employee, error)
+	UpdateEmployee(id uint, req model.UpdateEmployeeRequest) (*model.Employee, error)
+	DeleteEmployee(id uint) error
+}
 
-type DepartmentService interface{}
+type DepartmentService interface {
+	CreateDepartment(req model.CreateDepartmentRequest) (*model.Department, error)
+	GetDepartments(query model.PaginationQuery) (*model.PaginatedResult, error)
+	GetDepartmentByID(id uint) (*model.Department, error)
+	UpdateDepartment(id uint, req model.UpdateDepartmentRequest) (*model.Department, error)
+	DeleteDepartment(id uint) error
+}
 
 // Định nghĩa các Implementations
 // --- Auth Service Implementation ---
@@ -28,8 +42,15 @@ type authServive struct {
 	jwtCfg  *config.JWTConfig
 }
 
+func NewAuthService(userRepo repository.UserRepository, jwtCfg *config.JWTConfig) AuthService {
+	return &authServive{
+		useRepo: userRepo,
+		jwtCfg:  jwtCfg,
+	}
+}
+
 // Login và trả về JWT Token
-func (au *authServive) Login(req *model.LoginRequest) (*model.LoginResponse, error) {
+func (au *authServive) Login(req model.LoginRequest) (*model.LoginResponse, error) {
 	// Tìm user theo email
 	user, err := au.useRepo.FindByEmail(req.Email)
 	if err != nil {
@@ -79,7 +100,7 @@ func NewEmployeeService(empRepo repository.EmployeeRepository, deptRepo reposito
 	}
 }
 
-func (es *employeeService) Create(req *model.CreateEmployeeRequest) (*model.Employee, error) {
+func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Employee, error) {
 	// Kiểm tra phòng ban tồn tại
 	if _, err := es.deptRepo.FindByID(req.DepartmentID); err != nil {
 		return nil, errors.New("Không tìm thấy phòng ban này")
@@ -87,7 +108,9 @@ func (es *employeeService) Create(req *model.CreateEmployeeRequest) (*model.Empl
 
 	// Kiểm tra email tồn tại
 	if _, err := es.empRepo.FindByEmail(req.Email); err == nil {
-		return nil, errors.New("Email này đã tồn tại")
+		return nil, errors.New("Email đã tồn tại")
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("Lỗi kiểm tra email: %w", err)
 	}
 
 	// Parse ngày vào làm, mặc định là vừa tạo

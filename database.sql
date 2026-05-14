@@ -115,7 +115,7 @@ GO
 
 CREATE TABLE users (
     id          INT IDENTITY(1,1) PRIMARY KEY,
-    username    NVARCHAR(100) NOT NULL UNIQUE,
+    user_name    NVARCHAR(100) NOT NULL UNIQUE,
     email       NVARCHAR(150) NOT NULL UNIQUE,
     password    NVARCHAR(255) NOT NULL,
     role_id     INT NOT NULL,

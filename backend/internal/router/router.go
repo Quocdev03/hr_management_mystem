@@ -12,7 +12,7 @@ import (
 // SetupRouter khởi tạo và cấu hình tất cả routes
 // Nơi kết nối middleware -> handler -> service -> repository
 
-func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler) *gin.Engine {
 	// Tắt debug log trong production
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -20,6 +20,11 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler) *gin.Engi
 
 	// Dùng gin.New() thay vì gin.Default() để tự cấu hình middleware
 	r := gin.New()
+
+	// Áp dụng middleware chung toàn bộ routes
+	r.Use(middleware.Recovery())
+	r.Use(middleware.Logger())
+	r.Use(middleware.CORS())
 
 	// Public endpoint kiểm tra server
 	r.GET("/api/v1/health", func(ctx *gin.Context) {
@@ -33,13 +38,42 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler) *gin.Engi
 	// Prefix: /api/v1
 	v1 := r.Group("/api/v1")
 
-	// Auth - (không cần token)
 	auth := v1.Group("/auth")
 	{
+		// Auth không cần token
 		auth.POST("/login", authHandler.Login)
 
-		// Protected: cần JWT token
+		// Profile Cần JWT token
 		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT), authHandler.GetProfile)
+	}
+
+	// Tất cả routes bên dưới đều cần JWT token
+	protected := v1.Group("")
+	protected.Use(middleware.AuthJWT(&cfg.JWT))
+
+	// Employees
+	employees := protected.Group("/employees")
+	{
+		// Xem danh sách: tất cả roles đăng nhập đều xem được
+		employees.GET("", empHandler.GetEmployees)
+		employees.GET("/:id", empHandler.GetEmployee)
+
+		// / Tạo/Sửa/Xóa: chỉ admin và hr mới được
+		employees.POST("", middleware.RequireRole("admin", "hr"), empHandler.CreateEmployee)
+		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), empHandler.UpdateEmployee)
+		// chỉ admin xóa
+		employees.DELETE("/:id", middleware.RequireRole("admin"), empHandler.DeleteEmployee)
+
+	}
+	// Departments
+	departments := protected.Group("departments")
+	{
+		departments.GET("", deptHandler.GetDepartments)
+		departments.GET("/:id", deptHandler.GetDepartment)
+		departments.POST("", middleware.RequireRole("admin"), deptHandler.CreateDepartment)
+		departments.PUT("/:id", middleware.RequireRole("admin"), deptHandler.UpdateDepartment)
+		departments.DELETE("/:id", middleware.RequireRole("admin"), deptHandler.DeleteDepartment)
+
 	}
 
 	return r

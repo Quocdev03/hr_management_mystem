@@ -7,40 +7,60 @@ RESTful API bằng Golang cho hệ thống quản lý nhân sự. **Fresher Back
 ## 📁 Cấu trúc Project
 
 ```
-hrm-api/
+backend/
 ├── cmd/
 │   └── server/
-│       └── main.go              # Entry point, khởi tạo và chạy server
+│       └── main.go                    # Entry point, khởi tạo và chạy server
 ├── internal/
 │   ├── config/
-│   │   ├── config.go            # Đọc biến môi trường
-│   │   ├── database.go          # Kết nối MySQL + Auto Migration
-│   │   └── seed.go              # Dữ liệu mẫu (seed data)
+│   │   ├── config.go                  # Đọc biến môi trường
+│   │   ├── database.go                # Kết nối MySQL + Auto Migration
+│   │   └── seed.go                    # Dữ liệu mẫu (seed data)
+│   ├── common/
+│   │   └── common.go                  # Hàm dùng chung: parse ID, phân trang...
 │   ├── model/
-│   │   └── model.go             # Tất cả structs: Entity + DTO + Request/Response
+│   │   ├── base.go                    # TimestampModel, PaginationQuery, PaginatedResult
+│   │   ├── user.go                    # User, Role, Permission
+│   │   ├── employee.go                # Employee + Request DTOs
+│   │   ├── department.go              # Department + Request DTOs
+│   │   └── auth.go                    # Login/Register Request, LoginResponse, JWT Claims
 │   ├── repository/
-│   │   └── repository.go        # Interface + Implementation tầng DB
+│   │   ├── user_repository.go         # Interface + Implementation cho User
+│   │   ├── employee_repository.go     # Interface + Implementation cho Employee
+│   │   └── department_repository.go   # Interface + Implementation cho Department
 │   ├── service/
-│   │   └── service.go           # Business logic + Goroutine + WaitGroup
+│   │   ├── auth_service.go            # Interface + Implementation xác thực
+│   │   ├── employee_service.go        # Interface + Implementation nhân viên
+│   │   └── department_service.go      # Interface + Implementation phòng ban
 │   ├── handler/
-│   │   └── handler.go           # HTTP handlers (controllers)
+│   │   ├── auth_handler.go            # HTTP handler: Login, GetProfile
+│   │   ├── employee_handler.go        # HTTP handler: CRUD nhân viên
+│   │   └── department_handler.go      # HTTP handler: CRUD phòng ban
 │   ├── middleware/
-│   │   └── middleware.go        # Logger, Recovery, JWT Auth, RBAC
+│   │   └── middleware.go              # Logger, Recovery, JWT Auth, RBAC
 │   └── router/
-│       └── router.go            # Định nghĩa tất cả routes
-├── pkg/
+│       └── router.go                  # Định nghĩa tất cả routes
+├── package/
 │   ├── response/
-│   │   └── response.go          # Unified JSON response format
+│   │   └── response.go                # Unified JSON response format
 │   ├── utils/
-│   │   └── jwt.go               # Generate + Validate JWT token
-│   └── logger/
-│       └── logger.go            # Logger wrapper
-├── configs/                     # File cấu hình bổ sung (nếu cần)
-├── .env                         # Biến môi trường
-├── .gitignore
-├── docker-compose.yml
-├── Makefile
-└── README.md
+│   │   └── jwt.go                     # Generate + Validate JWT token
+│   ├── validation/
+│   │   └── validation.go              # Input validation: email, phone, date...
+│   └── loggers/
+│       └── logger.go                  # Logger wrapper
+├── .env                               # Biến môi trường
+├── go.mod
+└── go.sum
+```
+
+### Kiến trúc phân lớp
+
+```
+Request → Router → Middleware → Handler → Service → Repository → Database
+                                  ↓            ↓
+                              Validation    Validation
+                             (handler)    (defense-in-depth)
 ```
 
 ---
@@ -71,7 +91,7 @@ make docker-logs
 ### Cách 2: Chạy Local
 
 ```bash
-# Yêu cầu: Go 1.21+, MySQL 8.0+
+# Yêu cầu: Go 1.26+, MySQL 8.0+
 
 # 1. Cài dependencies
 go mod tidy
@@ -111,31 +131,41 @@ http://localhost:8080/api/v1
 
 ### Response Format (thống nhất)
 
+**Thành công:**
+
 ```json
 {
-	"success": true,
-	"message": "Success message",
-	"data": {}
+  "success": true,
+  "message": "Thao tác thành công",
+  "data": {}
+}
+```
+
+**Lỗi validation (422):**
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "error": [
+    { "field": "email", "message": "Email không đúng định dạng" },
+    { "field": "phone", "message": "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số" }
+  ]
+}
+```
+
+**Lỗi thông thường (400/401/404/500):**
+
+```json
+{
+  "success": false,
+  "message": "Mô tả lỗi"
 }
 ```
 
 ---
 
 ### 🔐 Auth APIs
-
-#### Đăng ký tài khoản
-
-```http
-POST /api/v1/auth/register
-Content-Type: application/json
-
-{
-  "username": "newuser",
-  "email": "newuser@example.com",
-  "password": "password123",
-  "role_id": 3
-}
-```
 
 #### Đăng nhập
 
@@ -144,7 +174,7 @@ POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin3212@hrm.com",
+  "email": "admin@hrm.com",
   "password": "password123"
 }
 ```
@@ -154,10 +184,9 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Login successful",
+  "message": "Đăng nhập thành công",
   "data": {
     "access_token": "eyJhbGciOiJIUzI1NiIs...",
-    "refesh_token": "eyJhbGciOiJIUzI1NiIs...",
     "user": { ... }
   }
 }
@@ -180,6 +209,8 @@ Authorization: Bearer <token>
 GET /api/v1/employees?page=1&limit=10&search=nguyen
 Authorization: Bearer <token>
 ```
+
+> Phân trang tự động chuẩn hoá: page < 1 → 1, limit < 1 → 10, limit > 100 → 100
 
 #### Lấy thông tin 1 nhân viên
 
@@ -207,6 +238,19 @@ Content-Type: application/json
 }
 ```
 
+**Validation rules:**
+
+| Field           | Rule                                                   |
+| --------------- | ------------------------------------------------------ |
+| `department_id` | Bắt buộc, phải tồn tại trong DB                       |
+| `first_name`    | Bắt buộc, 2-100 ký tự, chỉ chữ cái + dấu cách        |
+| `last_name`     | Bắt buộc, 2-100 ký tự, chỉ chữ cái + dấu cách        |
+| `email`         | Bắt buộc, đúng format email, không trùng               |
+| `phone`         | Bắt buộc, bắt đầu bằng 0, đúng 10 số                  |
+| `position`      | Tùy chọn, nếu có: 2-100 ký tự                         |
+| `salary`        | Không được âm                                          |
+| `join_date`     | Tùy chọn, format YYYY-MM-DD, không được ở tương lai   |
+
 #### Cập nhật nhân viên (role: admin, hr)
 
 ```http
@@ -216,9 +260,12 @@ Content-Type: application/json
 
 {
   "position": "Senior Developer",
-  "salary": 20000000
+  "salary": 20000000,
+  "status": "active"
 }
 ```
+
+> `status` chỉ chấp nhận: `active` hoặc `inactive`
 
 #### Xóa nhân viên (role: admin only)
 
@@ -238,6 +285,13 @@ GET /api/v1/departments?page=1&limit=10&search=IT
 Authorization: Bearer <token>
 ```
 
+#### Lấy thông tin 1 phòng ban
+
+```http
+GET /api/v1/departments/1
+Authorization: Bearer <token>
+```
+
 #### Tạo phòng ban mới (role: admin)
 
 ```http
@@ -252,6 +306,14 @@ Content-Type: application/json
 }
 ```
 
+**Validation rules:**
+
+| Field         | Rule                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| `name`        | Bắt buộc, 1-100 ký tự, không trùng                               |
+| `code`        | Bắt buộc, 1-20 ký tự, chỉ chữ/số/gạch, tự động uppercase        |
+| `description` | Tùy chọn, tối đa 500 ký tự                                       |
+
 #### Cập nhật phòng ban (role: admin)
 
 ```http
@@ -261,9 +323,12 @@ Content-Type: application/json
 
 {
   "name": "IT Department",
-  "description": "Updated description"
+  "description": "Updated description",
+  "manager_id": 5
 }
 ```
+
+> `manager_id` phải là nhân viên thuộc phòng ban đó
 
 #### Xóa phòng ban (role: admin)
 
@@ -271,6 +336,19 @@ Content-Type: application/json
 DELETE /api/v1/departments/1
 Authorization: Bearer <token>
 ```
+
+> Không thể xóa phòng ban còn nhân viên
+
+---
+
+## 🛡️ Input Validation
+
+Validation được thực hiện **2 lớp** (defense-in-depth):
+
+1. **Handler Layer** — Trim whitespace, normalize (email lowercase, code uppercase), validate format bằng `package/validation`, trả lỗi 422 chi tiết theo field
+2. **Service Layer** — Re-validate, kiểm tra business logic (email trùng, phòng ban tồn tại, ngày không ở tương lai...)
+
+Tất cả input string được tự động **trim whitespace** trước khi xử lý.
 
 ---
 
@@ -288,16 +366,26 @@ srv.Shutdown(ctx)
 ### 2. Interface + Dependency Injection
 
 ```go
-// Định nghĩa interface
+// Định nghĩa interface (repository/user_repository.go)
 type UserRepository interface {
     Create(user *model.User) error
     FindByID(id uint) (*model.User, error)
-    ...
 }
 // Implement interface
 type userRepository struct { db *gorm.DB }
 // Inject vào service
-authSvc := service.NewAuthService(userRepo, roleRepo, &cfg.JWT)
+authSvc := service.NewAuthService(userRepo, &cfg.JWT)
+```
+
+### 3. Tách file theo Domain
+
+```go
+// Tất cả file trong cùng folder = cùng package
+// → Không cần thay đổi import khi tách file
+handler/
+├── auth_handler.go          // package handler
+├── employee_handler.go      // package handler
+└── department_handler.go    // package handler
 ```
 
 ---
@@ -319,7 +407,7 @@ authSvc := service.NewAuthService(userRepo, roleRepo, &cfg.JWT)
 
 | Thành phần | Công nghệ               |
 | ---------- | ----------------------- |
-| Language   | Go 1.21                 |
+| Language   | Go 1.26                 |
 | Framework  | Gin                     |
 | ORM        | GORM                    |
 | Database   | MySQL 8.0               |
@@ -337,3 +425,4 @@ authSvc := service.NewAuthService(userRepo, roleRepo, &cfg.JWT)
 3. **Interface trong Go?** - Implicit implementation, giúp decouple + testable
 4. **Soft Delete là gì?** - Set deleted_at thay vì xóa thật, GORM hỗ trợ qua `gorm.DeletedAt`
 5. **JWT hoạt động thế nào?** - Header.Payload.Signature, server verify bằng secret key
+6. **Defense-in-depth validation?** - Validate ở cả handler (format) lẫn service (business logic) để bảo vệ 2 lớp

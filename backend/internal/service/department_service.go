@@ -3,7 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/package/validation"
+	"chiquoc_hocgolang/internal/utils"
 	"errors"
 	"fmt"
 	"math"
@@ -42,7 +42,7 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := validation.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
+	if verrs := utils.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
 		return nil, errors.New(verrs.Error())
 	}
 
@@ -124,7 +124,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := validation.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
+	if verrs := utils.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
 		return nil, errors.New(verrs.Error())
 	}
 

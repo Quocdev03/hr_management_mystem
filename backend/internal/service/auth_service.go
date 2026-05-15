@@ -4,7 +4,7 @@ import (
 	"chiquoc_hocgolang/internal/config"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/package/utils"
+	"chiquoc_hocgolang/internal/utils"
 	"errors"
 	"fmt"
 	"strings"

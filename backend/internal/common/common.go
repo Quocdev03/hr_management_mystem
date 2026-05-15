@@ -2,7 +2,7 @@ package common
 
 import (
 	"chiquoc_hocgolang/internal/model"
-	"chiquoc_hocgolang/package/response"
+	"chiquoc_hocgolang/internal/utils"
 	"strconv"
 	"strings"
 
@@ -26,11 +26,11 @@ func ParseUintParam(c *gin.Context, param string) (uint, error) {
 func ParseAndValidateID(ctx *gin.Context, entityName string) (uint, bool) {
 	id, err := ParseUintParam(ctx, "id")
 	if err != nil {
-		response.BadRequest(ctx, "ID "+entityName+" không hợp lệ, phải là số nguyên dương!")
+		utils.BadRequest(ctx, "ID "+entityName+" không hợp lệ, phải là số nguyên dương!")
 		return 0, false
 	}
 	if id == 0 {
-		response.BadRequest(ctx, "ID "+entityName+" phải lớn hơn 0!")
+		utils.BadRequest(ctx, "ID "+entityName+" phải lớn hơn 0!")
 		return 0, false
 	}
 	return id, true

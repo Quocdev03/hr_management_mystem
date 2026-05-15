@@ -4,8 +4,7 @@ import (
 	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
-	"chiquoc_hocgolang/package/response"
-	"chiquoc_hocgolang/package/validation"
+	"chiquoc_hocgolang/internal/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +26,7 @@ func (h *EmployeeHandler) GetEmployees(ctx *gin.Context) {
 	var query model.PaginationQuery
 
 	if err := ctx.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(ctx, "Tham số truy vấn không hợp lệ")
+		utils.BadRequest(ctx, "Tham số truy vấn không hợp lệ")
 		return
 	}
 
@@ -35,10 +34,10 @@ func (h *EmployeeHandler) GetEmployees(ctx *gin.Context) {
 
 	result, err := h.empSvc.GetEmployees(query)
 	if err != nil {
-		response.InternalServerError(ctx, err.Error())
+		utils.InternalServerError(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Lấy danh sách nhân viên thành công!", result)
+	utils.Success(ctx, "Lấy danh sách nhân viên thành công!", result)
 }
 
 // GetEmployee godoc
@@ -51,10 +50,10 @@ func (h *EmployeeHandler) GetEmployee(ctx *gin.Context) {
 
 	emp, err := h.empSvc.GetEmployeeByID(id)
 	if err != nil {
-		response.NotFound(ctx, err.Error())
+		utils.NotFound(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Lấy thông tin nhân viên thành công", emp)
+	utils.Success(ctx, "Lấy thông tin nhân viên thành công", emp)
 }
 
 // CreateEmployee godoc
@@ -63,7 +62,7 @@ func (h *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var req model.CreateEmployeeRequest
 
 	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
-		response.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
+		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}
 
@@ -76,21 +75,21 @@ func (h *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	req.JoinDate = strings.TrimSpace(req.JoinDate)
 
 	// Validate đầu vào chi tiết
-	if verrs := validation.ValidateCreateEmployee(
+	if verrs := utils.ValidateCreateEmployee(
 		req.DepartmentID, req.FirstName, req.LastName,
 		req.Email, req.Phone, req.Position, req.JoinDate, req.Salary,
 	); verrs != nil {
-		response.ValidationError(ctx, "Dữ liệu tạo nhân viên không hợp lệ", verrs.Errors)
+		utils.ValidationError(ctx, "Dữ liệu tạo nhân viên không hợp lệ", verrs.Errors)
 		return
 	}
 
 	emp, err := h.empSvc.Create(req)
 	if err != nil {
-		response.BadRequest(ctx, err.Error())
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
 
-	response.Created(ctx, "Tạo nhân viên thành công!", emp)
+	utils.Created(ctx, "Tạo nhân viên thành công!", emp)
 }
 
 // UpdateEmployee godoc
@@ -103,7 +102,7 @@ func (h *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 
 	var req model.UpdateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
+		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}
 
@@ -115,20 +114,20 @@ func (h *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	req.Status = strings.TrimSpace(strings.ToLower(req.Status))
 
 	// Validate đầu vào
-	if verrs := validation.ValidateUpdateEmployee(
+	if verrs := utils.ValidateUpdateEmployee(
 		req.DepartmentID, req.FirstName, req.LastName,
 		req.Phone, req.Position, req.Status, req.Salary,
 	); verrs != nil {
-		response.ValidationError(ctx, "Dữ liệu cập nhật nhân viên không hợp lệ", verrs.Errors)
+		utils.ValidationError(ctx, "Dữ liệu cập nhật nhân viên không hợp lệ", verrs.Errors)
 		return
 	}
 
 	emp, err := h.empSvc.UpdateEmployee(id, req)
 	if err != nil {
-		response.BadRequest(ctx, err.Error())
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Cập nhật thông tin nhân viên thành công", emp)
+	utils.Success(ctx, "Cập nhật thông tin nhân viên thành công", emp)
 }
 
 // DeleteEmployee godoc
@@ -140,8 +139,8 @@ func (h *EmployeeHandler) DeleteEmployee(ctx *gin.Context) {
 	}
 
 	if err := h.empSvc.DeleteEmployee(id); err != nil {
-		response.BadRequest(ctx, err.Error())
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Xoá nhân viên thành công!", nil)
+	utils.Success(ctx, "Xoá nhân viên thành công!", nil)
 }

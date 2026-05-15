@@ -2,9 +2,7 @@ package middleware
 
 import (
 	"chiquoc_hocgolang/internal/config"
-	"chiquoc_hocgolang/package/loggers"
-	"chiquoc_hocgolang/package/response"
-	"chiquoc_hocgolang/package/utils"
+	"chiquoc_hocgolang/internal/utils"
 	"fmt"
 	"net/http"
 	"strings"
@@ -37,7 +35,7 @@ func Logger() gin.HandlerFunc {
 		duration := time.Since(start)
 		statusCode := ctx.Writer.Status()
 
-		loggers.Info("%s %s | %d | %v | %s", method, path, statusCode, duration, ctx.ClientIP())
+		utils.Info("%s %s | %d | %v | %s", method, path, statusCode, duration, ctx.ClientIP())
 
 	}
 }
@@ -49,10 +47,10 @@ func Recovery() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				// Log lỗi
-				loggers.Error("Panic recovered: %v", err)
+				utils.Error("Panic recovered: %v", err)
 
 				// Trả về 500 thay vì crash server
-				ctx.JSON(http.StatusInternalServerError, response.Response{
+				ctx.JSON(http.StatusInternalServerError, utils.Response{
 					Success: false,
 					Message: fmt.Sprintf("Internal server error: %v", err),
 				})
@@ -69,14 +67,14 @@ func AuthJWT(cfg *config.JWTConfig) gin.HandlerFunc {
 		// Lấy token từ header trước
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Unauthorized(ctx, "Authorization header cần phải có")
+			utils.Unauthorized(ctx, "Authorization header cần phải có")
 			ctx.Abort()
 			return
 		}
 		// Tách "Bearer " prefix
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			response.Unauthorized(ctx, "Định dạng Authorization không hợp lệ! Cần phải có Bearer <token>")
+			utils.Unauthorized(ctx, "Định dạng Authorization không hợp lệ! Cần phải có Bearer <token>")
 			ctx.Abort()
 			return
 		}
@@ -85,7 +83,7 @@ func AuthJWT(cfg *config.JWTConfig) gin.HandlerFunc {
 		// Validate và parse token
 		claims, err := utils.ValidateToken(tokenString, cfg.SecretKey)
 		if err != nil {
-			response.Unauthorized(ctx, "Invalid or expired token: "+err.Error())
+			utils.Unauthorized(ctx, "Invalid or expired token: "+err.Error())
 			ctx.Abort()
 			return
 		}
@@ -109,7 +107,7 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 		// Lấy role từ context (đã được set bởi AuthJWT)
 		roleName, exists := ctx.Get(ContextKeyRoleName)
 		if !exists {
-			response.Unauthorized(ctx, "User role not found in context")
+			utils.Unauthorized(ctx, "User role not found in context")
 			ctx.Abort()
 			return
 		}
@@ -124,7 +122,7 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 			}
 		}
 
-		response.Forbidden(ctx, fmt.Sprintf("Role '%s' is not allowed to access this resource", userRole))
+		utils.Forbidden(ctx, fmt.Sprintf("Role '%s' is not allowed to access this resource", userRole))
 		ctx.Abort()
 	}
 }

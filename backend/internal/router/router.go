@@ -12,7 +12,7 @@ import (
 // SetupRouter khởi tạo và cấu hình tất cả routes
 // Nơi kết nối middleware -> handler -> service -> repository
 
-func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder) *gin.Engine {
 	// Tắt debug log trong production
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -50,6 +50,11 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandle
 	// Tất cả routes bên dưới đều cần JWT token
 	protected := v1.Group("")
 	protected.Use(middleware.AuthJWT(&cfg.JWT))
+
+	dashboard := protected.Group("/dashboard")
+	{
+		dashboard.GET("/stats", dashB.GetStats)
+	}
 
 	// Employees
 	employees := protected.Group("/employees")

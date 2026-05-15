@@ -3,7 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/package/validation"
+	"chiquoc_hocgolang/internal/utils"
 	"errors"
 	"fmt"
 	"math"
@@ -46,7 +46,7 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	req.JoinDate = strings.TrimSpace(req.JoinDate)
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := validation.ValidateCreateEmployee(
+	if verrs := utils.ValidateCreateEmployee(
 		req.DepartmentID, req.FirstName, req.LastName,
 		req.Email, req.Phone, req.Position, req.JoinDate, req.Salary,
 	); verrs != nil {
@@ -162,7 +162,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 	req.Status = strings.TrimSpace(strings.ToLower(req.Status))
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := validation.ValidateUpdateEmployee(
+	if verrs := utils.ValidateUpdateEmployee(
 		req.DepartmentID, req.FirstName, req.LastName,
 		req.Phone, req.Position, req.Status, req.Salary,
 	); verrs != nil {

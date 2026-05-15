@@ -1,4 +1,4 @@
-package loggers
+package utils
 
 import (
 	"log"

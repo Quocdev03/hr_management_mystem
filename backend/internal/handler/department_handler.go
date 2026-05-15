@@ -4,8 +4,7 @@ import (
 	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
-	"chiquoc_hocgolang/package/response"
-	"chiquoc_hocgolang/package/validation"
+	"chiquoc_hocgolang/internal/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +25,7 @@ func NewDepartmentHandler(deptSvc service.DepartmentService) *DepartmentHandler 
 func (h *DepartmentHandler) GetDepartments(ctx *gin.Context) {
 	var query model.PaginationQuery
 	if err := ctx.ShouldBindQuery(&query); err != nil {
-		response.BadRequest(ctx, "Tham số truy vấn không hợp lệ")
+		utils.BadRequest(ctx, "Tham số truy vấn không hợp lệ")
 		return
 	}
 
@@ -34,11 +33,11 @@ func (h *DepartmentHandler) GetDepartments(ctx *gin.Context) {
 
 	result, err := h.deptSvc.GetDepartments(query)
 	if err != nil {
-		response.InternalServerError(ctx, err.Error())
+		utils.InternalServerError(ctx, err.Error())
 		return
 	}
 
-	response.Success(ctx, "Lấy danh sách phòng ban thành công!", result)
+	utils.Success(ctx, "Lấy danh sách phòng ban thành công!", result)
 }
 
 // GetDepartment godoc
@@ -51,10 +50,10 @@ func (h *DepartmentHandler) GetDepartment(ctx *gin.Context) {
 
 	dept, err := h.deptSvc.GetDepartmentByID(id)
 	if err != nil {
-		response.NotFound(ctx, err.Error())
+		utils.NotFound(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Lấy thông tin phòng ban thành công!", dept)
+	utils.Success(ctx, "Lấy thông tin phòng ban thành công!", dept)
 }
 
 // CreateDepartment godoc
@@ -62,7 +61,7 @@ func (h *DepartmentHandler) GetDepartment(ctx *gin.Context) {
 func (h *DepartmentHandler) CreateDepartment(ctx *gin.Context) {
 	var req model.CreateDepartmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
+		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}
 
@@ -72,17 +71,17 @@ func (h *DepartmentHandler) CreateDepartment(ctx *gin.Context) {
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào
-	if verrs := validation.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
-		response.ValidationError(ctx, "Dữ liệu tạo phòng ban không hợp lệ", verrs.Errors)
+	if verrs := utils.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
+		utils.ValidationError(ctx, "Dữ liệu tạo phòng ban không hợp lệ", verrs.Errors)
 		return
 	}
 
 	dept, err := h.deptSvc.CreateDepartment(req)
 	if err != nil {
-		response.Conflict(ctx, err.Error())
+		utils.Conflict(ctx, err.Error())
 		return
 	}
-	response.Created(ctx, "Tạo phòng ban thành công!", dept)
+	utils.Created(ctx, "Tạo phòng ban thành công!", dept)
 }
 
 // UpdateDepartment godoc
@@ -95,7 +94,7 @@ func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 
 	var req model.UpdateDepartmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
+		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}
 
@@ -104,17 +103,17 @@ func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào
-	if verrs := validation.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
-		response.ValidationError(ctx, "Dữ liệu cập nhật phòng ban không hợp lệ", verrs.Errors)
+	if verrs := utils.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
+		utils.ValidationError(ctx, "Dữ liệu cập nhật phòng ban không hợp lệ", verrs.Errors)
 		return
 	}
 
 	dept, err := h.deptSvc.UpdateDepartment(id, req)
 	if err != nil {
-		response.BadRequest(ctx, err.Error())
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Cập nhật phòng ban thành công!", dept)
+	utils.Success(ctx, "Cập nhật phòng ban thành công!", dept)
 }
 
 // DeleteDepartment godoc
@@ -126,8 +125,8 @@ func (h *DepartmentHandler) DeleteDepartment(ctx *gin.Context) {
 	}
 
 	if err := h.deptSvc.DeleteDepartment(id); err != nil {
-		response.BadRequest(ctx, err.Error())
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
-	response.Success(ctx, "Xoá phòng ban thành công!", nil)
+	utils.Success(ctx, "Xoá phòng ban thành công!", nil)
 }

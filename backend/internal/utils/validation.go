@@ -63,7 +63,7 @@ func IsValidPhone(phone string) bool {
 	if phone == "" {
 		return true // phone có thể không bắt buộc
 	}
-	re := regexp.MustCompile(`^0\d{9}$`)
+	re := regexp.MustCompile(`^0\d{10}$`)
 	return re.MatchString(phone)
 }
 

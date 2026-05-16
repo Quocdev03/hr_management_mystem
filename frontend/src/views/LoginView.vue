@@ -60,8 +60,8 @@
 				</div>
 
 				<!-- Nút Gửi -->
-				<button type="submit" class="submit-btn" :disabled="isLoading">
-					<span v-if="!isLoading">Đăng Nhập</span>
+				<button type="submit" class="submit-btn" :disabled="loading">
+					<span v-if="!loading">Đăng Nhập</span>
 					<span v-else class="loader"></span>
 				</button>
 			</form>
@@ -69,45 +69,37 @@
 	</main>
 </template>
 <script setup>
-// --- Tài nguyên và Biểu tượng ---
-import usersIcon from "@/assets/svg/users.svg";
-import mailIcon from "@/assets/svg/mail.svg";
-import lockIcon from "@/assets/svg/lock.svg";
-import eyeIcon from "@/assets/svg/eye.svg";
-import eyeOffIcon from "@/assets/svg/eye-off.svg";
-
 import { reactive, ref } from "vue";
 import { useAuthStore } from "@/store/auth";
 import { useToast } from "vue-toastification";
+import { storeToRefs } from "pinia";
 
 const toast = useToast();
+
 const authStore = useAuthStore();
 
-const isLoading = ref(false);
+const { loading } = storeToRefs(authStore);
+
 const isPasswordVisible = ref(false);
+
 const credentials = reactive({
 	email: "",
 	password: "",
 });
 
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 async function loginHandler() {
-	if (isLoading.value === true) return;
-	isLoading.value = true;
+	const res = await authStore.login(credentials.email, credentials.password);
 
-	try {
-		await wait(800);
-
-		await authStore.login(credentials.email, credentials.password);
-		toast.success("Đăng nhập thành công!");
-	} catch (err) {
-		toast.error(err.response?.data?.message);
-	} finally {
-		isLoading.value = false;
+	if (!res.success) {
+		toast.error(res.message || "Đăng nhập thất bại");
+		return;
 	}
+
+	toast.success("Đăng nhập thành công!");
+
+	window.location.href = "/";
 }
-// Chuyển đổi trạng thái hiển thị mật khẩu
+
 function togglePasswordVisibility() {
 	isPasswordVisible.value = !isPasswordVisible.value;
 }

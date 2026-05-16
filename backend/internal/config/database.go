@@ -44,7 +44,6 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 	sqlDB.SetConnMaxLifetime(0)
 
 	// Auto migrate: tự động tạo/cập nhật bảng dựa trên struct
-	// An toàn để chạy mỗi lần khởi động - chỉ thêm bảng/cột mới, không xóa dữ liệu cũ
 	// runMigrations(db)
 
 	log.Println("Kết nối database và tạo các bảng thành công!")

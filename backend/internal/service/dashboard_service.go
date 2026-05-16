@@ -20,11 +20,13 @@ func NewDashboardService(dashRepo repository.DashboardsRepository) DashboardServ
 }
 
 func (s *dashboardService) GetStats() (*model.Dashboards, error) {
-	// Gọi repository để lấy các con số
+
 	stats := &model.Dashboards{
-		TotalUsers:       s.dashRepo.CountUser(),
-		TotalEmployees:   s.dashRepo.CountEmployees(),
-		TotalDepartments: s.dashRepo.CountDepartments(),
+		TotalUsers:           s.dashRepo.CountUser(),
+		TotalEmployees:       s.dashRepo.CountEmployees(),
+		TotalDepartments:     s.dashRepo.CountDepartments(),
+		TotalEmployeesActive: s.dashRepo.GetEmployeeActive(),
+		DepartmentStats:      s.dashRepo.GetEmployeeCountByDepartment(),
 	}
 
 	return stats, nil

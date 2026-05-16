@@ -1,28 +1,72 @@
 import api from "@/api";
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 
 export const useAuthStore = defineStore("auth", () => {
+	// ===== State =====
 	const accessToken = ref(localStorage.getItem("access_token") || null);
-	const user = ref(null);
+	const user = ref(JSON.parse(localStorage.getItem("user")) || null);
+	const loading = ref(false);
 
+	// ===== Getter =====
+	const isAuthenticated = computed(() => !!accessToken.value);
+
+	// ===== Login =====
 	async function login(email, password) {
-		const res = await api.post("/auth/login", { email, password });
-		if (res.success) {
-			const token = res.data.access_token;
-			accessToken.value = token;
-			user.value = res.data.user;
-			localStorage.setItem("access_token", token);
+		loading.value = true;
+
+		try {
+			const res = await api.post("/auth/login", {
+				email,
+				password,
+			});
+
+			if (res.success) {
+				const data = res.data;
+
+				accessToken.value = data.access_token;
+				user.value = data.user;
+
+				localStorage.setItem("access_token", data.access_token);
+
+				localStorage.setItem("user", JSON.stringify(data.user));
+			}
+
+			return res;
+		} catch (error) {
+			console.error("Login error:", error);
+
+			return {
+				success: false,
+				message: "Đăng nhập thất bại",
+			};
+		} finally {
+			loading.value = false;
 		}
-		return res;
 	}
 
+	// ===== Logout =====
 	function logout() {
 		accessToken.value = null;
 		user.value = null;
+
 		localStorage.removeItem("access_token");
+		localStorage.removeItem("user");
+
 		window.location.href = "/login";
 	}
 
-	return { accessToken, user, login, logout };
+	return {
+		// state
+		accessToken,
+		user,
+		loading,
+
+		// getter
+		isAuthenticated,
+
+		// actions
+		login,
+		logout,
+	};
 });

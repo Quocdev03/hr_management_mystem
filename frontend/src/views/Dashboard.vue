@@ -3,17 +3,34 @@ import usersIcon from "@/assets/svg/users.svg";
 import checkIcon from "@/assets/svg/check-circle.svg";
 import buildingIcon from "@/assets/svg/building.svg";
 import keyIcon from "@/assets/svg/key.svg";
+import { useDashboardStore } from "@/store/dashboard";
+import { computed, onMounted } from "vue";
+
+const dashboardStore = useDashboardStore();
+
+const dashboardStats = computed(() => dashboardStore.stats);
+
+async function loadDashboard() {
+	try {
+		await dashboardStore.fetchDashboard();
+	} catch (err) {
+		console.log(err);
+	}
+}
+
+onMounted(loadDashboard);
 </script>
 <template>
 	<div class="dashboard-container">
-		<!-- ===== Thống kê tổng quan ===== -->
 		<div class="stats-grid">
 			<div class="stat-card stat-card--blue">
 				<div class="stat-icon-wrapper">
 					<img :src="usersIcon" class="stat-icon" alt="users" />
 				</div>
 				<div class="stat-info">
-					<div class="stat-value">76</div>
+					<div class="stat-value">
+						{{ dashboardStats.total_employees }}
+					</div>
 					<div class="stat-label">Tổng nhân viên</div>
 				</div>
 			</div>
@@ -23,7 +40,9 @@ import keyIcon from "@/assets/svg/key.svg";
 					<img :src="checkIcon" class="stat-icon" alt="active" />
 				</div>
 				<div class="stat-info">
-					<div class="stat-value">6</div>
+					<div class="stat-value">
+						{{ dashboardStats.total_employees_active }}
+					</div>
 					<div class="stat-label">Đang làm việc</div>
 				</div>
 			</div>
@@ -33,18 +52,10 @@ import keyIcon from "@/assets/svg/key.svg";
 					<img :src="buildingIcon" class="stat-icon" alt="dept" />
 				</div>
 				<div class="stat-info">
-					<div class="stat-value">5</div>
+					<div class="stat-value">
+						{{ dashboardStats.total_departments }}
+					</div>
 					<div class="stat-label">Phòng ban</div>
-				</div>
-			</div>
-
-			<div class="stat-card stat-card--purple">
-				<div class="stat-icon-wrapper">
-					<img :src="keyIcon" class="stat-icon" alt="users" />
-				</div>
-				<div class="stat-info">
-					<div class="stat-value">222</div>
-					<div class="stat-label">Tổng quản trị viên</div>
 				</div>
 			</div>
 		</div>
@@ -53,13 +64,31 @@ import keyIcon from "@/assets/svg/key.svg";
 		<section class="dept-section">
 			<h2 class="section-title">Nhân viên theo phòng ban</h2>
 			<div class="dept-grid">
-				<div class="dept-card">
+				<div
+					v-for="dept in dashboardStats.department_stats"
+					:key="dept.name"
+					class="dept-card"
+				>
 					<div class="dept-header">
-						<span class="dept-name">NAME</span>
-						<span class="dept-count">5 người</span>
+						<span class="dept-name">{{
+							dept.department_name
+						}}</span>
+						<span class="dept-count">{{
+							dept.employee_count
+						}}</span>
 					</div>
 					<div class="progress-container">
-						<div class="progress-bar" style=""></div>
+						<div
+							class="progress-bar"
+							:style="{
+								width:
+									(dept.employee_count /
+										(dashboardStats.total_employees || 1)) *
+										100 +
+									'%',
+							}"
+						></div>
+						div>
 					</div>
 				</div>
 			</div>

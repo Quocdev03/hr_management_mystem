@@ -80,7 +80,7 @@
 	--container-max-lg: 1024px;
 	--container-max-xl: 1280px;
 	--container-max-2xl: 1536px;
-	--container-padding: var(--space-4);
+	--container-padding: var(--size-sm);
 
 	/* App chrome sizes */
 	--sidebar-width: 256px;

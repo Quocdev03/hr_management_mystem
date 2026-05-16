@@ -30,9 +30,7 @@ api.interceptors.response.use(
 
 			switch (status) {
 				case 401:
-					// Lỗi chưa đăng nhập hoặc token hết hạn
 					localStorage.removeItem("access_token");
-					// Chuyển hướng về login nếu không phải đang ở trang login
 					if (window.location.pathname !== "/login") {
 						window.location.href = "/login";
 					}

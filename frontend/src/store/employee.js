@@ -26,9 +26,6 @@ export const useEmployeeStore = defineStore("employee", () => {
 				params,
 			});
 
-			// DEBUG
-			console.log("EMPLOYEE API:", res.data);
-
 			if (res.success) {
 				const data = res.data;
 

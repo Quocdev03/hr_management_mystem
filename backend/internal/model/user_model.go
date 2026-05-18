@@ -31,3 +31,19 @@ type User struct {
 	IsActive bool   `gorm:"default:true" json:"is_active"`
 	TimestampModel
 }
+
+type CreateUserRequest struct {
+	UserName string `json:"user_name" binding:"required,min=4,max=50"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	RoleID   uint   `json:"role_id" binding:"required"`
+	IsActive bool   `json:"is_active"`
+}
+
+type UpdateUserRequest struct {
+	UserName *string `json:"user_name"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
+	RoleID   *uint   `json:"role_id"`
+	IsActive *bool   `json:"is_active"`
+}

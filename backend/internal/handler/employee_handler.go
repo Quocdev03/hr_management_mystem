@@ -5,7 +5,6 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -66,23 +65,6 @@ func (h *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	// Trim whitespace cho tất cả các trường string
-	req.FirstName = strings.TrimSpace(req.FirstName)
-	req.LastName = strings.TrimSpace(req.LastName)
-	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
-	req.Phone = strings.TrimSpace(req.Phone)
-	req.Position = strings.TrimSpace(req.Position)
-	req.JoinDate = strings.TrimSpace(req.JoinDate)
-
-	// Validate đầu vào chi tiết
-	if verrs := utils.ValidateCreateEmployee(
-		req.DepartmentID, req.FirstName, req.LastName,
-		req.Email, req.Phone, req.Position, req.JoinDate, req.Salary,
-	); verrs != nil {
-		utils.ValidationError(ctx, "Dữ liệu tạo nhân viên không hợp lệ", verrs.Errors)
-		return
-	}
-
 	emp, err := h.empSvc.Create(req)
 	if err != nil {
 		utils.BadRequest(ctx, err.Error())
@@ -103,22 +85,6 @@ func (h *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	var req model.UpdateEmployeeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
-		return
-	}
-
-	// Trim whitespace
-	req.FirstName = strings.TrimSpace(req.FirstName)
-	req.LastName = strings.TrimSpace(req.LastName)
-	req.Phone = strings.TrimSpace(req.Phone)
-	req.Position = strings.TrimSpace(req.Position)
-	req.Status = strings.TrimSpace(strings.ToLower(req.Status))
-
-	// Validate đầu vào
-	if verrs := utils.ValidateUpdateEmployee(
-		req.DepartmentID, req.FirstName, req.LastName,
-		req.Phone, req.Position, req.Status, req.Salary,
-	); verrs != nil {
-		utils.ValidationError(ctx, "Dữ liệu cập nhật nhân viên không hợp lệ", verrs.Errors)
 		return
 	}
 

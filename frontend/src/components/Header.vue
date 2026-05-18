@@ -38,11 +38,10 @@ import userIcon from "@/assets/svg/user.svg";
 import logoutIcon from "@/assets/svg/log-out.svg";
 
 const authStore = useAuthStore();
-
-const userEmail = computed(
-	() => authStore.data?.user?.email || "admin@company.com",
-);
-const userName = computed(() => authStore.user?.name || "Administrator");
+const userData = localStorage.getItem("user");
+const userDataParse = JSON.parse(userData);
+const userEmail = userDataParse.email;
+const userName = userDataParse.user_name;
 
 const handleLogout = () => {
 	authStore.logout();

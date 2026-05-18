@@ -58,7 +58,7 @@ func IsValidEmail(email string) bool {
 	return err == nil
 }
 
-// IsValidPhone kiểm tra số điện thoại Việt Nam (bắt đầu bằng 0, đúng 10 số)
+// IsValidPhone kiểm tra số điện thoại Việt Nam (bắt đầu bằng 0, đúng 11 số)
 func IsValidPhone(phone string) bool {
 	if phone == "" {
 		return true // phone có thể không bắt buộc
@@ -229,46 +229,46 @@ func ValidateCreateEmployee(departmentID uint, firstName, lastName, email, phone
 }
 
 // ValidateUpdateEmployee validate UpdateEmployeeRequest
-func ValidateUpdateEmployee(departmentID uint, firstName, lastName, phone, position, status string, salary float64) *ValidationErrors {
+func ValidateUpdateEmployee(departmentID *uint, firstName, lastName, phone, position, status *string, salary *float64) *ValidationErrors {
 	ve := &ValidationErrors{}
 
 	// first_name: nếu có thì phải 2-100 ký tự
-	if firstName != "" {
-		if !IsValidLength(firstName, 2, 100) {
+	if firstName != nil {
+		if !IsValidLength(*firstName, 2, 100) {
 			ve.Add("first_name", "Họ phải từ 2 đến 100 ký tự")
 		}
-		if !IsValidName(firstName) {
+		if !IsValidName(*firstName) {
 			ve.Add("first_name", "Họ chỉ được chứa chữ cái và dấu cách")
 		}
 	}
 
 	// last_name: nếu có thì phải 2-100 ký tự
-	if lastName != "" {
-		if !IsValidLength(lastName, 2, 100) {
+	if lastName != nil {
+		if !IsValidLength(*lastName, 2, 100) {
 			ve.Add("last_name", "Tên phải từ 2 đến 100 ký tự")
 		}
-		if !IsValidName(lastName) {
+		if !IsValidName(*lastName) {
 			ve.Add("last_name", "Tên chỉ được chứa chữ cái và dấu cách")
 		}
 	}
 
 	// phone: nếu có, phải đúng format
-	if phone != "" && !IsValidPhone(phone) {
+	if phone != nil && !IsValidPhone(*phone) {
 		ve.Add("phone", "Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số")
 	}
 
 	// position: nếu có, phải 2-100 ký tự
-	if position != "" && !IsValidLength(position, 2, 100) {
+	if position != nil && !IsValidLength(*position, 2, 100) {
 		ve.Add("position", "Vị trí phải từ 2 đến 100 ký tự")
 	}
 
-	// salary: nếu != 0, không được âm
-	if salary != 0 && !IsNonNegative(salary) {
+	// salary: nếu đã truyền, không được âm
+	if salary != nil && !IsNonNegative(*salary) {
 		ve.Add("salary", "Mức lương không được nhỏ hơn 0")
 	}
 
 	// status: nếu có, phải là active hoặc inactive
-	if status != "" && !IsValidStatus(status, []string{"active", "inactive"}) {
+	if status != nil && !IsValidStatus(*status, []string{"active", "inactive"}) {
 		ve.Add("status", "Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
 	}
 
@@ -389,6 +389,53 @@ func ValidateRegister(username, email, password string) *ValidationErrors {
 		if !IsValidPassword(password) {
 			ve.Add("password", "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số")
 		}
+	}
+
+	if ve.HasErrors() {
+		return ve
+	}
+	return nil
+}
+
+func ValidateUpdateUser(username, email, password *string, roleID *uint, isActive *bool) *ValidationErrors {
+	ve := &ValidationErrors{}
+
+	if username != nil {
+		if !IsNotEmpty(*username) {
+			ve.Add("user_name", "Tên đăng nhập là bắt buộc")
+		} else {
+			if !IsValidLength(*username, 4, 50) {
+				ve.Add("user_name", "Tên đăng nhập phải từ 4 đến 50 ký tự")
+			}
+			if !IsValidUsername(*username) {
+				ve.Add("user_name", "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới")
+			}
+		}
+	}
+
+	if email != nil {
+		if !IsNotEmpty(*email) {
+			ve.Add("email", "Email là bắt buộc")
+		} else if !IsValidEmail(*email) {
+			ve.Add("email", "Email không đúng định dạng")
+		}
+	}
+
+	if password != nil {
+		if !IsNotEmpty(*password) {
+			ve.Add("password", "Mật khẩu là bắt buộc")
+		} else {
+			if len(*password) < 8 {
+				ve.Add("password", "Mật khẩu phải có ít nhất 8 ký tự")
+			}
+			if !IsValidPassword(*password) {
+				ve.Add("password", "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số")
+			}
+		}
+	}
+
+	if roleID != nil && *roleID == 0 {
+		ve.Add("role_id", "RoleID phải lớn hơn 0")
 	}
 
 	if ve.HasErrors() {

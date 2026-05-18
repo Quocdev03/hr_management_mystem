@@ -36,11 +36,11 @@ type CreateEmployeeRequest struct {
 
 // UpdateEmployeeRequest - cập nhật thông tin nv
 type UpdateEmployeeRequest struct {
-	DepartmentID uint    `json:"department_id"`
-	FirstName    string  `json:"first_name"`
-	LastName     string  `json:"last_name"`
-	Position     string  `json:"position"`
-	Phone        string  `json:"phone"`
-	Salary       float64 `json:"salary"`
-	Status       string  `json:"status"`
+	DepartmentID *uint    `json:"department_id"`
+	FirstName    *string  `json:"first_name"`
+	LastName     *string  `json:"last_name"`
+	Position     *string  `json:"position"`
+	Phone        *string  `json:"phone"`
+	Salary       *float64 `json:"salary"`
+	Status       *string  `json:"status"`
 }

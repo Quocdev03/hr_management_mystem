@@ -98,7 +98,6 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		Status:       "active",
 	}
 
-	// *sql.DB (GORM) đã thread-safe, không cần mutex
 	if err := es.empRepo.Create(emp); err != nil {
 		return nil, fmt.Errorf("Tạo nhân viên không thành công: %w", err)
 	}
@@ -154,12 +153,27 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, errors.New("ID nhân viên phải lớn hơn 0")
 	}
 
-	// Chuẩn hoá dữ liệu
-	req.FirstName = strings.TrimSpace(req.FirstName)
-	req.LastName = strings.TrimSpace(req.LastName)
-	req.Phone = strings.TrimSpace(req.Phone)
-	req.Position = strings.TrimSpace(req.Position)
-	req.Status = strings.TrimSpace(strings.ToLower(req.Status))
+	// Chuẩn hoá dữ liệu cho các field được truyền vào
+	if req.FirstName != nil {
+		tmp := strings.TrimSpace(*req.FirstName)
+		req.FirstName = &tmp
+	}
+	if req.LastName != nil {
+		tmp := strings.TrimSpace(*req.LastName)
+		req.LastName = &tmp
+	}
+	if req.Phone != nil {
+		tmp := strings.TrimSpace(*req.Phone)
+		req.Phone = &tmp
+	}
+	if req.Position != nil {
+		tmp := strings.TrimSpace(*req.Position)
+		req.Position = &tmp
+	}
+	if req.Status != nil {
+		tmp := strings.TrimSpace(strings.ToLower(*req.Status))
+		req.Status = &tmp
+	}
 
 	// Validate đầu vào (defense-in-depth)
 	if verrs := utils.ValidateUpdateEmployee(
@@ -177,42 +191,47 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
 	}
 
-	// Chỉ update các field được truyền vào
-	if req.DepartmentID != 0 {
-		if _, err := es.deptRepo.FindByID(req.DepartmentID); err != nil {
+	updateData := make(map[string]interface{})
+
+	if req.DepartmentID != nil {
+		if _, err := es.deptRepo.FindByID(*req.DepartmentID); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, errors.New("Không tìm thấy phòng ban mới")
 			}
 			return nil, fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
 		}
-		emp.DepartmentID = req.DepartmentID
+		updateData["department_id"] = *req.DepartmentID
 	}
-	if req.FirstName != "" {
-		emp.FirstName = req.FirstName
+	if req.FirstName != nil {
+		updateData["first_name"] = *req.FirstName
 	}
-	if req.LastName != "" {
-		emp.LastName = req.LastName
+	if req.LastName != nil {
+		updateData["last_name"] = *req.LastName
 	}
-	if req.Phone != "" {
-		emp.Phone = req.Phone
+	if req.Phone != nil {
+		updateData["phone"] = *req.Phone
 	}
-	if req.Position != "" {
-		emp.Position = req.Position
+	if req.Position != nil {
+		updateData["position"] = *req.Position
 	}
-	if req.Salary != 0 {
-		if req.Salary < 0 {
+	if req.Salary != nil {
+		if *req.Salary < 0 {
 			return nil, errors.New("Mức lương không được nhỏ hơn 0")
 		}
-		emp.Salary = req.Salary
+		updateData["salary"] = *req.Salary
 	}
-	if req.Status != "" {
-		if req.Status != "active" && req.Status != "inactive" {
+	if req.Status != nil {
+		if *req.Status != "active" && *req.Status != "inactive" {
 			return nil, errors.New("Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
 		}
-		emp.Status = req.Status
+		updateData["status"] = *req.Status
 	}
 
-	if err := es.empRepo.Update(emp); err != nil {
+	if len(updateData) == 0 {
+		return emp, nil
+	}
+
+	if err := es.empRepo.UpdateFields(id, updateData); err != nil {
 		return nil, fmt.Errorf("Cập nhật thông tin nhân viên bị lỗi: %w", err)
 	}
 

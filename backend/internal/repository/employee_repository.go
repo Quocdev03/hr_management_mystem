@@ -14,6 +14,7 @@ type EmployeeRepository interface {
 	FindByID(id uint) (*model.Employee, error)
 	FindByEmail(email string) (*model.Employee, error)
 	Update(emp *model.Employee) error
+	UpdateFields(id uint, fields map[string]interface{}) error
 	Delete(id uint) error
 	CountByDepartment(deptID uint) (int64, error)
 }
@@ -80,6 +81,13 @@ func (r *employeeRepository) FindByEmail(email string) (*model.Employee, error) 
 
 func (r *employeeRepository) Update(emp *model.Employee) error {
 	return r.db.Save(emp).Error
+}
+
+func (r *employeeRepository) UpdateFields(id uint, fields map[string]interface{}) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	return r.db.Model(&model.Employee{}).Where("id = ?", id).Updates(fields).Error
 }
 
 func (r *employeeRepository) Delete(id uint) error {

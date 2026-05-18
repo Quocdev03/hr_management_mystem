@@ -39,18 +39,20 @@ func main() {
 
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, &cfg.JWT)
+	userScv := service.NewUserService(userRepo)
 	empScv := service.NewEmployeeService(empRepo, deptRepo)
 	deptScv := service.NewDepartmentService(deptRepo, empRepo)
 	dashScv := service.NewDashboardService(dashRepo)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
 	authHandler := handler.NewAuthHandler(authScv)
+	userHandler := handler.NewUserHandler(userScv)
 	empHandler := handler.NewEmployeeHandler(empScv)
 	deptHandler := handler.NewDepartmentHandler(deptScv)
 	dashHandler := handler.NewDashboardHanlder(dashScv)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg, authHandler, empHandler, deptHandler, dashHandler)
+	r := router.SetupRouter(cfg, authHandler, empHandler, deptHandler, dashHandler, userHandler)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server

@@ -12,7 +12,7 @@ import (
 // SetupRouter khởi tạo và cấu hình tất cả routes
 // Nơi kết nối middleware -> handler -> service -> repository
 
-func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder) *gin.Engine {
+func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder, userHandler *handler.UserHandler) *gin.Engine {
 	// Tắt debug log trong production
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -70,6 +70,16 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandle
 		employees.DELETE("/:id", middleware.RequireRole("admin"), empHandler.DeleteEmployee)
 
 	}
+	// Users
+	users := protected.Group("/users")
+	{
+		users.GET("", middleware.RequireRole("admin"), userHandler.GetUsers)
+		users.GET("/:id", middleware.RequireRole("admin"), userHandler.GetUser)
+		users.POST("", middleware.RequireRole("admin"), userHandler.CreateUser)
+		users.PUT("/:id", middleware.RequireRole("admin"), userHandler.UpdateUser)
+		users.DELETE("/:id", middleware.RequireRole("admin"), userHandler.DeleteUser)
+	}
+
 	// Departments
 	departments := protected.Group("departments")
 	{

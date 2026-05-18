@@ -41,14 +41,14 @@ func (r *departmentRepository) FindAll(query model.PaginationQuery) ([]model.Dep
 
 	// Tìm kiếm theo tên hoặc mã phòng ban
 	if query.Search != "" {
-		db.Where(
+		db = db.Where(
 			"name LIKE ? OR code LIKE ?",
 			"%"+query.Search+"%",
 			"%"+query.Search+"%",
 		)
 	}
 
-	// Lấy tổng trang
+	// Lấy tổng số record sau khi filter
 	db.Count(&total)
 
 	// Phân trang: offset = (page-1)  * limit

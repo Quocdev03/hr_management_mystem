@@ -72,7 +72,7 @@ func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 }
 func (r *employeeRepository) FindByEmail(email string) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Where("email = ?", email).First(&employee).Error
+	err := r.db.Preload("Department").Where("email = ?", email).First(&employee).Error
 	if err != nil {
 		return nil, err
 	}

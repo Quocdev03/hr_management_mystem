@@ -24,8 +24,7 @@ func main() {
 	// Khởi tạo Database
 	db := config.InitiDB(&cfg.Database)
 
-	// Seed data mẫu - chỉ chạy khi APP_SEED=true trong .env
-	// Đặt APP_SEED=true để chèn data mẫu, APP_SEED=false (hoặc bỏ trống) để bỏ qua
+	// Seed data mẫu
 	// config.SeedData(db)
 
 	// Kết nối các layer của
@@ -38,7 +37,7 @@ func main() {
 	dashRepo := repository.NewDashboardsRepository(db)
 
 	// Services - chứa business logic
-	authScv := service.NewAuthService(userRepo, &cfg.JWT)
+	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT)
 	userScv := service.NewUserService(userRepo)
 	empScv := service.NewEmployeeService(empRepo, deptRepo)
 	deptScv := service.NewDepartmentService(deptRepo, empRepo)

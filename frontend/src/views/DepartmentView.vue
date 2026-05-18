@@ -34,12 +34,12 @@ const departmentCountMap = computed(function () {
 	if (!departmentStats) {
 		departmentStats = [];
 	}
-	
+
 	for (let i = 0; i < departmentStats.length; i++) {
 		let item = departmentStats[i];
 		map.set(item.department_name, item.employee_count);
 	}
-	
+
 	return map;
 });
 
@@ -61,12 +61,9 @@ const openEditModal = modalState.openEditModal;
 const closeModal = modalState.closeModal;
 
 // Search & pagination
-const paginatedSearch = usePaginatedSearch(
-	function (params) {
-		return departmentStore.fetchDepartments(params);
-	},
-	pagination
-);
+const paginatedSearch = usePaginatedSearch(function (params) {
+	return departmentStore.fetchDepartments(params);
+}, pagination);
 
 const searchQuery = paginatedSearch.searchQuery;
 const loadDepartments = paginatedSearch.load;
@@ -95,7 +92,8 @@ function handleEdit(department) {
 
 function handleDelete(department) {
 	deletingDepartment.value = department;
-	deleteMessage.value = "Bạn có chắc chắn muốn xoá phòng ban " + department.name + "?";
+	deleteMessage.value =
+		"Bạn có chắc chắn muốn xoá phòng ban " + department.name + "?";
 	isDeleteModalVisible.value = true;
 }
 
@@ -131,7 +129,7 @@ async function onFormSubmit(payload) {
 	if (isEditMode.value === true) {
 		res = await departmentStore.updateDepartment(
 			editingDepartment.value.id,
-			payload
+			payload,
 		);
 	} else {
 		res = await departmentStore.createDepartment(payload);

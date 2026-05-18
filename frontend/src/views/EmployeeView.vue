@@ -37,12 +37,9 @@ const openEditModal = modalState.openEditModal;
 const closeModal = modalState.closeModal;
 
 // Search & pagination
-const paginatedSearch = usePaginatedSearch(
-	function (params) {
-		return employeeStore.fetchEmployees(params);
-	},
-	pagination
-);
+const paginatedSearch = usePaginatedSearch(function (params) {
+	return employeeStore.fetchEmployees(params);
+}, pagination);
 
 const searchQuery = paginatedSearch.searchQuery;
 const loadEmployees = paginatedSearch.load;
@@ -68,14 +65,14 @@ function handleAdd() {
 
 function handleEdit(emp) {
 	let empCopy = Object.assign({}, emp);
-	
+
 	if (empCopy.join_date) {
 		let dateParts = empCopy.join_date.split("T");
 		empCopy.join_date = dateParts[0];
 	} else {
 		empCopy.join_date = "";
 	}
-	
+
 	editingEmployee.value = empCopy;
 	modalKey.value++;
 	openEditModal();
@@ -83,7 +80,12 @@ function handleEdit(emp) {
 
 function handleDelete(emp) {
 	deletingEmployee.value = emp;
-	deleteMessage.value = "Bạn có chắc chắn muốn xoá " + emp.first_name + " " + emp.last_name + "?";
+	deleteMessage.value =
+		"Bạn có chắc chắn muốn xoá " +
+		emp.first_name +
+		" " +
+		emp.last_name +
+		"?";
 	isDeleteModalVisible.value = true;
 }
 
@@ -117,7 +119,10 @@ async function onFormSubmit(formData) {
 
 	let res;
 	if (isEditMode.value === true) {
-		res = await employeeStore.updateEmployee(editingEmployee.value.id, formData);
+		res = await employeeStore.updateEmployee(
+			editingEmployee.value.id,
+			formData,
+		);
 	} else {
 		res = await employeeStore.createEmployee(formData);
 	}
@@ -138,7 +143,7 @@ async function onFormSubmit(formData) {
 	} else {
 		toast.success("Thêm nhân viên thành công");
 	}
-	
+
 	closeModal();
 	await loadEmployees(pagination.value.page);
 }

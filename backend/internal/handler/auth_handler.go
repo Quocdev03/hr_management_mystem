@@ -35,8 +35,11 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	req.Password = strings.TrimSpace(req.Password)
 
 	// Validate đầu vào
-	if verrs := utils.ValidateLogin(req.Email, req.Password); verrs != nil {
-		utils.ValidationError(ctx, "Dữ liệu đăng nhập không hợp lệ", verrs.Errors)
+	ve := &utils.ValidationErrors{}
+	utils.CheckEmail(ve, req.Email)
+	utils.CheckPassword(ve, req.Password)
+	if ve.HasErrors() {
+		utils.ValidationError(ctx, "Dữ liệu đăng nhập không hợp lệ", ve.Errors)
 		return
 	}
 
@@ -56,9 +59,22 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 	email, _ := ctx.Get(middleware.ContextKeyEmail)
 	roleNam, _ := ctx.Get(middleware.ContextKeyRoleName)
 
+	emailStr, ok := email.(string)
+	if !ok {
+		utils.Unauthorized(ctx, "Email không hợp lệ trong token")
+		return
+	}
+
+	emp, err := h.authSvc.GetProfile(emailStr)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
 	utils.Success(ctx, "Lấy thông tin hồ sơ thành công!", gin.H{
 		"user_id":   userID,
 		"email":     email,
 		"role_name": roleNam,
+		"employee":  emp,
 	})
 }

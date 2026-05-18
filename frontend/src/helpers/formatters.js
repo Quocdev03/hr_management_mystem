@@ -5,17 +5,17 @@
  * @returns {string}
  */
 export function getInitials(firstName, lastName) {
-  let first = "";
-  if (firstName) {
-    first = firstName.charAt(0);
-  }
-  
-  let last = "";
-  if (lastName) {
-    last = lastName.charAt(0);
-  }
-  
-  return (first + last).toUpperCase();
+	let first = "";
+	if (firstName) {
+		first = firstName.charAt(0);
+	}
+
+	let last = "";
+	if (lastName) {
+		last = lastName.charAt(0);
+	}
+
+	return (first + last).toUpperCase();
 }
 
 /**
@@ -24,11 +24,11 @@ export function getInitials(firstName, lastName) {
  * @returns {string}
  */
 export function formatDate(dateString) {
-  if (!dateString) {
-    return "—";
-  }
-  let date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN");
+	if (!dateString) {
+		return "—";
+	}
+	let date = new Date(dateString);
+	return date.toLocaleDateString("vi-VN");
 }
 
 /**
@@ -37,11 +37,18 @@ export function formatDate(dateString) {
  * @returns {string}
  */
 export function formatStatus(status) {
-  if (status === "active") {
-    return "Đang làm việc";
-  }
-  if (status === "inactive") {
-    return "Đã nghỉ việc";
-  }
-  return status;
+	if (status === "active") {
+		return "Đang làm việc";
+	}
+	if (status === "inactive") {
+		return "Đã nghỉ việc";
+	}
+	return status;
+}
+export function formatCurrency(amount) {
+	if (!amount) return "N/A";
+	return new Intl.NumberFormat("vi-VN", {
+		style: "currency",
+		currency: "VND",
+	}).format(amount);
 }

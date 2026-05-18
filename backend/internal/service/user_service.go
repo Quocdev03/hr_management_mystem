@@ -39,8 +39,12 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	req.Password = strings.TrimSpace(req.Password)
 
-	if verrs := utils.ValidateRegister(req.UserName, req.Email, req.Password); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	utils.CheckUsername(ve, req.UserName)
+	utils.CheckEmail(ve, req.Email)
+	utils.CheckPassword(ve, req.Password)
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	if req.RoleID == 0 {
@@ -140,8 +144,21 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.
 		req.Password = &tmp
 	}
 
-	if verrs := utils.ValidateUpdateUser(req.UserName, req.Email, req.Password, req.RoleID, req.IsActive); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	if req.UserName != nil {
+		utils.CheckUsernameOptional(ve, *req.UserName)
+	}
+	if req.Email != nil {
+		utils.CheckEmailOptional(ve, *req.Email)
+	}
+	if req.Password != nil {
+		utils.CheckPasswordOptional(ve, *req.Password)
+	}
+	if req.RoleID != nil && *req.RoleID == 0 {
+		ve.Add(utils.FieldRoleID, "RoleID phải lớn hơn 0")
+	}
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	user, err := us.userRepo.FindByID(id)

@@ -15,17 +15,20 @@ import (
 // AuthService interface - contract cho authentication
 type AuthService interface {
 	Login(req model.LoginRequest) (*model.LoginResponse, error)
+	GetProfile(email string) (*model.Employee, error)
 }
 
 // --- Auth Service Implementation ---
 type authServive struct {
 	useRepo repository.UserRepository
+	empRepo repository.EmployeeRepository
 	jwtCfg  *config.JWTConfig
 }
 
-func NewAuthService(userRepo repository.UserRepository, jwtCfg *config.JWTConfig) AuthService {
+func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, jwtCfg *config.JWTConfig) AuthService {
 	return &authServive{
 		useRepo: userRepo,
+		empRepo: empRepo,
 		jwtCfg:  jwtCfg,
 	}
 }
@@ -74,4 +77,17 @@ func (au *authServive) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		AccessToken: token,
 		User:        *user,
 	}, nil
+}
+
+func (au *authServive) GetProfile(email string) (*model.Employee, error) {
+	if email == "" {
+		return nil, errors.New("Email không hợp lệ")
+	}
+
+	emp, err := au.empRepo.FindByEmail(email)
+	if err != nil {
+		return nil, errors.New("Không thể lấy thông tin hồ sơ nhân viên")
+	}
+
+	return emp, nil
 }

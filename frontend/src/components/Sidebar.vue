@@ -17,6 +17,10 @@
 				<img :src="departmentIcon" alt="departments" class="nav-icon" />
 				<span>Phòng ban</span>
 			</router-link>
+			<router-link to="/profile" class="nav-item" active-class="active">
+				<img :src="profileIcon" alt="profile" class="nav-icon" />
+				<span>Hồ Sơ</span>
+			</router-link>
 		</nav>
 	</aside>
 </template>
@@ -24,6 +28,7 @@
 <script setup>
 import gridIcon from "@/assets/svg/grid.svg";
 import usersIcon from "@/assets/svg/users.svg";
+import profileIcon from "@/assets/svg/user.svg";
 import departmentIcon from "@/assets/svg/department.svg";
 
 defineProps({

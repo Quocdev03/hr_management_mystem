@@ -71,8 +71,16 @@ func (h *DepartmentHandler) CreateDepartment(ctx *gin.Context) {
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào
-	if verrs := utils.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
-		utils.ValidationError(ctx, "Dữ liệu tạo phòng ban không hợp lệ", verrs.Errors)
+	ve := &utils.ValidationErrors{}
+	utils.CheckName(ve, utils.FieldName, "Tên phòng ban", req.Name, 1, 100)
+	utils.CheckCode(ve, utils.FieldCode, "Mã phòng ban", req.Code, 1, 20)
+	if req.Description != "" {
+		if len([]rune(req.Description)) > 500 {
+			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
+		}
+	}
+	if ve.HasErrors() {
+		utils.ValidationError(ctx, "Dữ liệu tạo phòng ban không hợp lệ", ve.Errors)
 		return
 	}
 
@@ -103,8 +111,22 @@ func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Validate đầu vào
-	if verrs := utils.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
-		utils.ValidationError(ctx, "Dữ liệu cập nhật phòng ban không hợp lệ", verrs.Errors)
+	ve := &utils.ValidationErrors{}
+	if req.Name != "" {
+		if len([]rune(req.Name)) > 100 {
+			ve.Add(utils.FieldName, "Tên phòng ban phải từ 1 đến 100 ký tự")
+		}
+	}
+	if req.Description != "" {
+		if len([]rune(req.Description)) > 500 {
+			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
+		}
+	}
+	if req.ManagerID != nil && *req.ManagerID == 0 {
+		ve.Add(utils.FieldManagerID, "ID quản lý phải lớn hơn 0")
+	}
+	if ve.HasErrors() {
+		utils.ValidationError(ctx, "Dữ liệu cập nhật phòng ban không hợp lệ", ve.Errors)
 		return
 	}
 

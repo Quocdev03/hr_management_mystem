@@ -6,6 +6,7 @@ export const useAuthStore = defineStore("auth", () => {
 	// ===== State =====
 	const accessToken = ref(localStorage.getItem("access_token") || null);
 	const user = ref(JSON.parse(localStorage.getItem("user")) || null);
+	const userProfile = ref(null);
 	const loading = ref(false);
 
 	// ===== Getter =====
@@ -45,6 +46,25 @@ export const useAuthStore = defineStore("auth", () => {
 		}
 	}
 
+	// ===== Profile =====
+	async function profile() {
+		loading.value = true;
+		try {
+			const res = await api.get("/auth/profile");
+			if (res.success) {
+				const data = res.data;
+				if (res.success) {
+					userProfile.value = data;
+				}
+				return res;
+			}
+		} catch (error) {
+			console.log(error);
+		} finally {
+			loading.value = false;
+		}
+	}
+
 	// ===== Logout =====
 	function logout() {
 		accessToken.value = null;
@@ -60,6 +80,7 @@ export const useAuthStore = defineStore("auth", () => {
 		// state
 		accessToken,
 		user,
+		userProfile,
 		loading,
 
 		// getter
@@ -67,6 +88,7 @@ export const useAuthStore = defineStore("auth", () => {
 
 		// actions
 		login,
+		profile,
 		logout,
 	};
 });

@@ -18,6 +18,8 @@ type Employee struct {
 	Position     string     `gorm:"size:100" json:"position"`
 	Salary       float64    `gorm:"type:decimal(15,2)" json:"salary"`
 	JoinDate     time.Time  `json:"join_date"`
+	BirthDate    *time.Time `json:"birth_date"`
+	Gender       string     `gorm:"size:10;default:'male'" json:"gender"`
 	Status       string     `gorm:"size:20;default:'active'" json:"status"`
 	TimestampModel
 }
@@ -32,6 +34,8 @@ type CreateEmployeeRequest struct {
 	Phone        string  `json:"phone" binding:"required,startswith=0,len=10,numeric"`
 	Salary       float64 `json:"salary" binding:"min=0"`
 	JoinDate     string  `json:"join_date"` // "2006-01-02"
+	BirthDate    string  `json:"birth_date"` // "2006-01-02"
+	Gender       string  `json:"gender"`     // "male" | "female" | "other"
 }
 
 // UpdateEmployeeRequest - cập nhật thông tin nv
@@ -43,4 +47,6 @@ type UpdateEmployeeRequest struct {
 	Phone        *string  `json:"phone"`
 	Salary       *float64 `json:"salary"`
 	Status       *string  `json:"status"`
+	BirthDate    *string  `json:"birth_date"`
+	Gender       *string  `json:"gender"`
 }

@@ -44,13 +44,46 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	req.Phone = strings.TrimSpace(req.Phone)
 	req.Position = strings.TrimSpace(req.Position)
 	req.JoinDate = strings.TrimSpace(req.JoinDate)
+	req.BirthDate = strings.TrimSpace(req.BirthDate)
+	req.Gender = strings.TrimSpace(strings.ToLower(req.Gender))
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := utils.ValidateCreateEmployee(
-		req.DepartmentID, req.FirstName, req.LastName,
-		req.Email, req.Phone, req.Position, req.JoinDate, req.Salary,
-	); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	if req.DepartmentID == 0 {
+		ve.Add(utils.FieldDepartmentID, "Phòng ban là bắt buộc")
+	}
+	utils.CheckName(ve, utils.FieldFirstName, "Họ", req.FirstName, 2, 100)
+	utils.CheckName(ve, utils.FieldLastName, "Tên", req.LastName, 2, 100)
+	utils.CheckEmail(ve, req.Email)
+	utils.CheckPhone(ve, req.Phone)
+	if req.Position != "" {
+		l := len([]rune(req.Position))
+		if l < 2 || l > 100 {
+			ve.Add(utils.FieldPosition, "Vị trí phải từ 2 đến 100 ký tự")
+		}
+	}
+	if req.Salary < 0 {
+		ve.Add(utils.FieldSalary, "Mức lương không được nhỏ hơn 0")
+	}
+	if req.JoinDate != "" {
+		if parsed, err := time.Parse("2006-01-02", req.JoinDate); err != nil {
+			ve.Add(utils.FieldJoinDate, "Ngày vào làm phải đúng định dạng YYYY-MM-DD")
+		} else if parsed.After(time.Now()) {
+			ve.Add(utils.FieldJoinDate, "Ngày vào làm không được là ngày trong tương lai")
+		}
+	}
+	if req.BirthDate != "" {
+		if parsed, err := time.Parse("2006-01-02", req.BirthDate); err != nil {
+			ve.Add(utils.FieldBirthDate, "Ngày sinh phải đúng định dạng YYYY-MM-DD")
+		} else if parsed.After(time.Now()) {
+			ve.Add(utils.FieldBirthDate, "Ngày sinh không được là ngày trong tương lai")
+		}
+	}
+	if req.Gender != "" && req.Gender != "male" && req.Gender != "female" && req.Gender != "other" {
+		ve.Add(utils.FieldGender, "Giới tính không hợp lệ, chỉ nhận 'male', 'female' hoặc 'other'")
+	}
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	// Kiểm tra phòng ban tồn tại
@@ -82,10 +115,21 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		joinDate = parsed
 	}
 
-	if req.Salary < 0 {
-		return nil, errors.New("Mức lương không được nhỏ hơn 0")
+	// Parse ngày sinh
+	var birthDate *time.Time
+	if req.BirthDate != "" {
+		parsed, err := time.Parse("2006-01-02", req.BirthDate)
+		if err != nil {
+			return nil, errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
+		}
+		birthDate = &parsed
 	}
 
+	if req.Gender == "" {
+		req.Gender = "male"
+	}
+
+	// Tạo đối tượng employee lưu vào db
 	emp := &model.Employee{
 		DepartmentID: req.DepartmentID,
 		FirstName:    req.FirstName,
@@ -95,6 +139,8 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		Position:     req.Position,
 		Salary:       req.Salary,
 		JoinDate:     joinDate,
+		BirthDate:    birthDate,
+		Gender:       req.Gender,
 		Status:       "active",
 	}
 
@@ -174,13 +220,50 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		tmp := strings.TrimSpace(strings.ToLower(*req.Status))
 		req.Status = &tmp
 	}
+	if req.BirthDate != nil {
+		tmp := strings.TrimSpace(*req.BirthDate)
+		req.BirthDate = &tmp
+	}
+	if req.Gender != nil {
+		tmp := strings.TrimSpace(strings.ToLower(*req.Gender))
+		req.Gender = &tmp
+	}
 
 	// Validate đầu vào (defense-in-depth)
-	if verrs := utils.ValidateUpdateEmployee(
-		req.DepartmentID, req.FirstName, req.LastName,
-		req.Phone, req.Position, req.Status, req.Salary,
-	); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	if req.FirstName != nil {
+		utils.CheckNameOptional(ve, utils.FieldFirstName, "Họ", *req.FirstName, 2, 100)
+	}
+	if req.LastName != nil {
+		utils.CheckNameOptional(ve, utils.FieldLastName, "Tên", *req.LastName, 2, 100)
+	}
+	if req.Phone != nil {
+		utils.CheckPhoneOptional(ve, *req.Phone)
+	}
+	if req.Position != nil && *req.Position != "" {
+		l := len([]rune(*req.Position))
+		if l < 2 || l > 100 {
+			ve.Add(utils.FieldPosition, "Vị trí phải từ 2 đến 100 ký tự")
+		}
+	}
+	if req.Salary != nil && *req.Salary < 0 {
+		ve.Add(utils.FieldSalary, "Mức lương không được nhỏ hơn 0")
+	}
+	if req.Status != nil && *req.Status != "" && *req.Status != "active" && *req.Status != "inactive" {
+		ve.Add(utils.FieldStatus, "Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
+	}
+	if req.BirthDate != nil && *req.BirthDate != "" {
+		if parsed, err := time.Parse("2006-01-02", *req.BirthDate); err != nil {
+			ve.Add(utils.FieldBirthDate, "Ngày sinh phải đúng định dạng YYYY-MM-DD")
+		} else if parsed.After(time.Now()) {
+			ve.Add(utils.FieldBirthDate, "Ngày sinh không được là ngày trong tương lai")
+		}
+	}
+	if req.Gender != nil && *req.Gender != "" && *req.Gender != "male" && *req.Gender != "female" && *req.Gender != "other" {
+		ve.Add(utils.FieldGender, "Giới tính không hợp lệ, chỉ nhận 'male', 'female' hoặc 'other'")
+	}
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	emp, err := es.empRepo.FindByID(id)
@@ -225,6 +308,24 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			return nil, errors.New("Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
 		}
 		updateData["status"] = *req.Status
+	}
+	if req.BirthDate != nil {
+		if *req.BirthDate == "" {
+			updateData["birth_date"] = nil
+		} else {
+			parsed, err := time.Parse("2006-01-02", *req.BirthDate)
+			if err != nil {
+				return nil, errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
+			}
+			updateData["birth_date"] = parsed
+		}
+	}
+	if req.Gender != nil {
+		if *req.Gender == "" {
+			updateData["gender"] = "male"
+		} else {
+			updateData["gender"] = *req.Gender
+		}
 	}
 
 	if len(updateData) == 0 {

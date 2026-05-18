@@ -41,9 +41,16 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	req.Code = strings.TrimSpace(strings.ToUpper(req.Code))
 	req.Description = strings.TrimSpace(req.Description)
 
-	// Validate đầu vào (defense-in-depth)
-	if verrs := utils.ValidateCreateDepartment(req.Name, req.Code, req.Description); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	utils.CheckName(ve, utils.FieldName, "Tên phòng ban", req.Name, 1, 100)
+	utils.CheckCode(ve, utils.FieldCode, "Mã phòng ban", req.Code, 1, 20)
+	if req.Description != "" {
+		if len([]rune(req.Description)) > 500 {
+			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
+		}
+	}
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	// Kiểm tra tên phòng ban đã tồn tại chưa
@@ -123,9 +130,22 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 	req.Name = strings.TrimSpace(req.Name)
 	req.Description = strings.TrimSpace(req.Description)
 
-	// Validate đầu vào (defense-in-depth)
-	if verrs := utils.ValidateUpdateDepartment(req.Name, req.Description, req.ManagerID); verrs != nil {
-		return nil, errors.New(verrs.Error())
+	ve := &utils.ValidationErrors{}
+	if req.Name != "" {
+		if len([]rune(req.Name)) > 100 {
+			ve.Add(utils.FieldName, "Tên phòng ban phải từ 1 đến 100 ký tự")
+		}
+	}
+	if req.Description != "" {
+		if len([]rune(req.Description)) > 500 {
+			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
+		}
+	}
+	if req.ManagerID != nil && *req.ManagerID == 0 {
+		ve.Add(utils.FieldManagerID, "ID quản lý phải lớn hơn 0")
+	}
+	if ve.HasErrors() {
+		return nil, errors.New(ve.Error())
 	}
 
 	dept, err := ds.deptRepo.FindByID(id)

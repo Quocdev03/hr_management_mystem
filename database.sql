@@ -147,6 +147,8 @@ CREATE TABLE employees (
     position      NVARCHAR(100),
     salary        DECIMAL(15,2) DEFAULT 0,
     join_date     DATE          DEFAULT CAST(GETDATE() AS DATE),
+    birth_date    DATE          NULL,
+    gender        NVARCHAR(10)  DEFAULT 'male',
     status        NVARCHAR(20)  DEFAULT 'active',  -- active | inactive | resigned
     created_at    DATETIME2     DEFAULT GETDATE(),
     updated_at    DATETIME2     DEFAULT GETDATE(),

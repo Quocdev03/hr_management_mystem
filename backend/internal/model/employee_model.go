@@ -6,8 +6,7 @@ import "time"
 // Nhân viên
 type Employee struct {
 	ID uint `gorm:"primaryKey;autoIncrement" json:"id"`
-	// Có thể null nếu chưa có account
-	UserID       *uint      `json:"user_id"`
+	UserID       *uint      `gorm:"uniqueIndex" json:"user_id"`
 	User         *User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	DepartmentID uint       `gorm:"not null" json:"department_id"`
 	Department   Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
@@ -33,9 +32,12 @@ type CreateEmployeeRequest struct {
 	Position     string  `json:"position"`
 	Phone        string  `json:"phone" binding:"required,startswith=0,len=10,numeric"`
 	Salary       float64 `json:"salary" binding:"min=0"`
-	JoinDate     string  `json:"join_date"` // "2006-01-02"
+	JoinDate     string  `json:"join_date"`  // "2006-01-02"
 	BirthDate    string  `json:"birth_date"` // "2006-01-02"
 	Gender       string  `json:"gender"`     // "male" | "female" | "other"
+	Status       string  `json:"status"`
+	UserID       *uint   `json:"user_id"`
+	IsManager   bool    `json:"is_manager"`
 }
 
 // UpdateEmployeeRequest - cập nhật thông tin nv
@@ -49,4 +51,11 @@ type UpdateEmployeeRequest struct {
 	Status       *string  `json:"status"`
 	BirthDate    *string  `json:"birth_date"`
 	Gender       *string  `json:"gender"`
+	UserID       *uint    `json:"user_id"`
+	IsManager   *bool    `json:"is_manager"`
+}
+
+// AssignUserRequest - gắn tài khoản user cho nhân viên
+type AssignUserRequest struct {
+	UserID uint `json:"user_id" binding:"required"`
 }

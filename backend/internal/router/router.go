@@ -66,6 +66,9 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandle
 		// / Tạo/Sửa/Xóa: chỉ admin và hr mới được
 		employees.POST("", middleware.RequireRole("admin", "hr"), empHandler.CreateEmployee)
 		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), empHandler.UpdateEmployee)
+		
+		
+
 		// chỉ admin xóa
 		employees.DELETE("/:id", middleware.RequireRole("admin"), empHandler.DeleteEmployee)
 

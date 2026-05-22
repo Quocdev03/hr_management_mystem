@@ -3,7 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/internal/utils"
+
 	"errors"
 	"fmt"
 	"math"
@@ -41,17 +41,7 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	req.Code = strings.TrimSpace(strings.ToUpper(req.Code))
 	req.Description = strings.TrimSpace(req.Description)
 
-	ve := &utils.ValidationErrors{}
-	utils.CheckName(ve, utils.FieldName, "Tên phòng ban", req.Name, 1, 100)
-	utils.CheckCode(ve, utils.FieldCode, "Mã phòng ban", req.Code, 1, 20)
-	if req.Description != "" {
-		if len([]rune(req.Description)) > 500 {
-			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
-		}
-	}
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
+
 
 	// Kiểm tra tên phòng ban đã tồn tại chưa
 	if existingDepts, _, err := ds.deptRepo.FindAll(model.PaginationQuery{Page: 1, Limit: 1, Search: req.Name}); err == nil {
@@ -130,23 +120,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 	req.Name = strings.TrimSpace(req.Name)
 	req.Description = strings.TrimSpace(req.Description)
 
-	ve := &utils.ValidationErrors{}
-	if req.Name != "" {
-		if len([]rune(req.Name)) > 100 {
-			ve.Add(utils.FieldName, "Tên phòng ban phải từ 1 đến 100 ký tự")
-		}
-	}
-	if req.Description != "" {
-		if len([]rune(req.Description)) > 500 {
-			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
-		}
-	}
-	if req.ManagerID != nil && *req.ManagerID == 0 {
-		ve.Add(utils.FieldManagerID, "ID quản lý phải lớn hơn 0")
-	}
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
+
 
 	dept, err := ds.deptRepo.FindByID(id)
 	if err != nil {

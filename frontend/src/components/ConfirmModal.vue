@@ -9,9 +9,7 @@
 				<div class="confirm-container">
 					<div class="confirm-body">
 						<div class="warning-icon">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-							</svg>
+							<img :src="warningIcon" alt="warning" />
 						</div>
 						<h3 class="confirm-title">{{ title }}</h3>
 						<p class="confirm-message">{{ message }}</p>
@@ -21,7 +19,7 @@
 						<button class="btn btn-cancel" @click="$emit('cancel')">Hủy bỏ</button>
 						<button class="btn btn-delete" @click="$emit('confirm')" :disabled="loading">
 							<span v-if="loading" class="spinner"></span>
-							<span>Xác nhận xoá</span>
+							<span>{{ confirmText }}</span>
 						</button>
 					</div>
 				</div>
@@ -31,6 +29,8 @@
 </template>
 
 <script setup>
+import warningIcon from "@/assets/svg/warning.svg";
+
 const props = defineProps({
 	visible: Boolean,
 	title: {
@@ -40,6 +40,10 @@ const props = defineProps({
 	message: {
 		type: String,
 		default: "Bạn có chắc chắn muốn thực hiện hành động này?",
+	},
+	confirmText: {
+		type: String,
+		default: "Xác nhận xoá",
 	},
 	loading: Boolean,
 });

@@ -61,8 +61,8 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(0)
 
-	// Auto migrate: tự động tạo/cập nhật bảng dựa trên struct
-	runMigrations(db)
+	// // // Auto migrate: tự động tạo/cập nhật bảng dựa trên struct
+	// runMigrations(db)
 
 	log.Println("Kết nối database và tạo các bảng thành công!")
 	return db
@@ -70,7 +70,6 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 func runMigrations(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&model.Role{},
-		&model.Permission{},
 		&model.User{},
 		&model.Department{},
 		&model.Employee{},

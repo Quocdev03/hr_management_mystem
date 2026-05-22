@@ -5,7 +5,6 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,25 +64,6 @@ func (h *DepartmentHandler) CreateDepartment(ctx *gin.Context) {
 		return
 	}
 
-	// Trim whitespace và chuẩn hoá code thành uppercase
-	req.Name = strings.TrimSpace(req.Name)
-	req.Code = strings.TrimSpace(strings.ToUpper(req.Code))
-	req.Description = strings.TrimSpace(req.Description)
-
-	// Validate đầu vào
-	ve := &utils.ValidationErrors{}
-	utils.CheckName(ve, utils.FieldName, "Tên phòng ban", req.Name, 1, 100)
-	utils.CheckCode(ve, utils.FieldCode, "Mã phòng ban", req.Code, 1, 20)
-	if req.Description != "" {
-		if len([]rune(req.Description)) > 500 {
-			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
-		}
-	}
-	if ve.HasErrors() {
-		utils.ValidationError(ctx, "Dữ liệu tạo phòng ban không hợp lệ", ve.Errors)
-		return
-	}
-
 	dept, err := h.deptSvc.CreateDepartment(req)
 	if err != nil {
 		utils.Conflict(ctx, err.Error())
@@ -99,34 +79,9 @@ func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 	if !ok {
 		return
 	}
-
 	var req model.UpdateDepartmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
-		return
-	}
-
-	// Trim whitespace
-	req.Name = strings.TrimSpace(req.Name)
-	req.Description = strings.TrimSpace(req.Description)
-
-	// Validate đầu vào
-	ve := &utils.ValidationErrors{}
-	if req.Name != "" {
-		if len([]rune(req.Name)) > 100 {
-			ve.Add(utils.FieldName, "Tên phòng ban phải từ 1 đến 100 ký tự")
-		}
-	}
-	if req.Description != "" {
-		if len([]rune(req.Description)) > 500 {
-			ve.Add(utils.FieldDescription, "Mô tả phòng ban không được vượt quá 500 ký tự")
-		}
-	}
-	if req.ManagerID != nil && *req.ManagerID == 0 {
-		ve.Add(utils.FieldManagerID, "ID quản lý phải lớn hơn 0")
-	}
-	if ve.HasErrors() {
-		utils.ValidationError(ctx, "Dữ liệu cập nhật phòng ban không hợp lệ", ve.Errors)
 		return
 	}
 

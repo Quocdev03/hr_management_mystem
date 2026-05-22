@@ -20,16 +20,7 @@
 							</p>
 						</div>
 						<button class="close-btn" @click="$emit('close')">
-							<svg
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
+							<img :src="closeIcon" alt="close" width="24" height="24" />
 						</button>
 					</div>
 
@@ -50,6 +41,7 @@
 
 <script setup>
 import { computed } from "vue";
+import closeIcon from "@/assets/svg/close.svg";
 
 const props = defineProps({
 	visible: Boolean,

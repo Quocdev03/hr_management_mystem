@@ -3,7 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/internal/utils"
+
 	"errors"
 	"fmt"
 	"math"
@@ -39,13 +39,7 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	req.Password = strings.TrimSpace(req.Password)
 
-	ve := &utils.ValidationErrors{}
-	utils.CheckUsername(ve, req.UserName)
-	utils.CheckEmail(ve, req.Email)
-	utils.CheckPassword(ve, req.Password)
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
+
 
 	if req.RoleID == 0 {
 		return nil, errors.New("RoleID là bắt buộc")
@@ -144,22 +138,7 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.
 		req.Password = &tmp
 	}
 
-	ve := &utils.ValidationErrors{}
-	if req.UserName != nil {
-		utils.CheckUsernameOptional(ve, *req.UserName)
-	}
-	if req.Email != nil {
-		utils.CheckEmailOptional(ve, *req.Email)
-	}
-	if req.Password != nil {
-		utils.CheckPasswordOptional(ve, *req.Password)
-	}
-	if req.RoleID != nil && *req.RoleID == 0 {
-		ve.Add(utils.FieldRoleID, "RoleID phải lớn hơn 0")
-	}
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
+
 
 	user, err := us.userRepo.FindByID(id)
 	if err != nil {

@@ -3,7 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
-	"chiquoc_hocgolang/internal/utils"
+
 	"errors"
 	"fmt"
 	"math"
@@ -27,12 +27,14 @@ type EmployeeService interface {
 type employeeService struct {
 	empRepo  repository.EmployeeRepository
 	deptRepo repository.DepartmentRepository
+	userRepo repository.UserRepository
 }
 
-func NewEmployeeService(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository) EmployeeService {
+func NewEmployeeService(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository) EmployeeService {
 	return &employeeService{
 		empRepo:  empRepo,
 		deptRepo: deptRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -47,45 +49,23 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	req.BirthDate = strings.TrimSpace(req.BirthDate)
 	req.Gender = strings.TrimSpace(strings.ToLower(req.Gender))
 
-	// Validate đầu vào (defense-in-depth)
-	ve := &utils.ValidationErrors{}
-	if req.DepartmentID == 0 {
-		ve.Add(utils.FieldDepartmentID, "Phòng ban là bắt buộc")
-	}
-	utils.CheckName(ve, utils.FieldFirstName, "Họ", req.FirstName, 2, 100)
-	utils.CheckName(ve, utils.FieldLastName, "Tên", req.LastName, 2, 100)
-	utils.CheckEmail(ve, req.Email)
-	utils.CheckPhone(ve, req.Phone)
-	if req.Position != "" {
-		l := len([]rune(req.Position))
-		if l < 2 || l > 100 {
-			ve.Add(utils.FieldPosition, "Vị trí phải từ 2 đến 100 ký tự")
+	// Validate UserID nếu có
+	if req.UserID != nil && *req.UserID > 0 {
+		user, err := es.userRepo.FindByID(*req.UserID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errors.New("Không tìm thấy tài khoản người dùng này")
+			}
+			return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
 		}
-	}
-	if req.Salary < 0 {
-		ve.Add(utils.FieldSalary, "Mức lương không được nhỏ hơn 0")
-	}
-	if req.JoinDate != "" {
-		if parsed, err := time.Parse("2006-01-02", req.JoinDate); err != nil {
-			ve.Add(utils.FieldJoinDate, "Ngày vào làm phải đúng định dạng YYYY-MM-DD")
-		} else if parsed.After(time.Now()) {
-			ve.Add(utils.FieldJoinDate, "Ngày vào làm không được là ngày trong tương lai")
-		}
-	}
-	if req.BirthDate != "" {
-		if parsed, err := time.Parse("2006-01-02", req.BirthDate); err != nil {
-			ve.Add(utils.FieldBirthDate, "Ngày sinh phải đúng định dạng YYYY-MM-DD")
-		} else if parsed.After(time.Now()) {
-			ve.Add(utils.FieldBirthDate, "Ngày sinh không được là ngày trong tương lai")
-		}
-	}
-	if req.Gender != "" && req.Gender != "male" && req.Gender != "female" && req.Gender != "other" {
-		ve.Add(utils.FieldGender, "Giới tính không hợp lệ, chỉ nhận 'male', 'female' hoặc 'other'")
-	}
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
 
+		existingEmp, err := es.empRepo.FindByUserID(user.ID)
+		if err == nil && existingEmp != nil {
+			return nil, errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
+		}
+	}
 	// Kiểm tra phòng ban tồn tại
 	if _, err := es.deptRepo.FindByID(req.DepartmentID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -129,6 +109,14 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		req.Gender = "male"
 	}
 
+	if req.Status == "" {
+		req.Status = "active"
+	}
+	var userID *uint
+	if req.UserID != nil && *req.UserID > 0 {
+		userID = req.UserID
+	}
+
 	// Tạo đối tượng employee lưu vào db
 	emp := &model.Employee{
 		DepartmentID: req.DepartmentID,
@@ -141,14 +129,36 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		JoinDate:     joinDate,
 		BirthDate:    birthDate,
 		Gender:       req.Gender,
-		Status:       "active",
+		Status:       req.Status,
+		UserID:       userID,
 	}
 
 	if err := es.empRepo.Create(emp); err != nil {
 		return nil, fmt.Errorf("Tạo nhân viên không thành công: %w", err)
 	}
 
+	if req.IsManager {
+		if err := es.setDepartmentManager(emp.DepartmentID, &emp.ID); err != nil {
+			return nil, err
+		}
+	}
+
 	return es.empRepo.FindByID(emp.ID)
+}
+
+func (es *employeeService) setDepartmentManager(departmentID uint, managerID *uint) error {
+	dept, err := es.deptRepo.FindByID(departmentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("Không tìm thấy phòng ban để cập nhật trưởng phòng")
+		}
+		return fmt.Errorf("Lỗi khi tìm phòng ban: %w", err)
+	}
+	dept.ManagerID = managerID
+	if err := es.deptRepo.Update(dept); err != nil {
+		return fmt.Errorf("Lỗi khi cập nhật trưởng phòng: %w", err)
+	}
+	return nil
 }
 
 // Danh sách nhân viên có phân trang và tìm kiếm
@@ -229,49 +239,24 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		req.Gender = &tmp
 	}
 
-	// Validate đầu vào (defense-in-depth)
-	ve := &utils.ValidationErrors{}
-	if req.FirstName != nil {
-		utils.CheckNameOptional(ve, utils.FieldFirstName, "Họ", *req.FirstName, 2, 100)
-	}
-	if req.LastName != nil {
-		utils.CheckNameOptional(ve, utils.FieldLastName, "Tên", *req.LastName, 2, 100)
-	}
-	if req.Phone != nil {
-		utils.CheckPhoneOptional(ve, *req.Phone)
-	}
-	if req.Position != nil && *req.Position != "" {
-		l := len([]rune(*req.Position))
-		if l < 2 || l > 100 {
-			ve.Add(utils.FieldPosition, "Vị trí phải từ 2 đến 100 ký tự")
-		}
-	}
-	if req.Salary != nil && *req.Salary < 0 {
-		ve.Add(utils.FieldSalary, "Mức lương không được nhỏ hơn 0")
-	}
-	if req.Status != nil && *req.Status != "" && *req.Status != "active" && *req.Status != "inactive" {
-		ve.Add(utils.FieldStatus, "Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
-	}
-	if req.BirthDate != nil && *req.BirthDate != "" {
-		if parsed, err := time.Parse("2006-01-02", *req.BirthDate); err != nil {
-			ve.Add(utils.FieldBirthDate, "Ngày sinh phải đúng định dạng YYYY-MM-DD")
-		} else if parsed.After(time.Now()) {
-			ve.Add(utils.FieldBirthDate, "Ngày sinh không được là ngày trong tương lai")
-		}
-	}
-	if req.Gender != nil && *req.Gender != "" && *req.Gender != "male" && *req.Gender != "female" && *req.Gender != "other" {
-		ve.Add(utils.FieldGender, "Giới tính không hợp lệ, chỉ nhận 'male', 'female' hoặc 'other'")
-	}
-	if ve.HasErrors() {
-		return nil, errors.New(ve.Error())
-	}
-
 	emp, err := es.empRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("Không tìm thấy nhân viên")
 		}
 		return nil, fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
+	}
+
+	oldDepartmentID := emp.DepartmentID
+	oldManagerID := (*uint)(nil)
+	if emp.Department.ManagerID != nil {
+		oldManagerID = emp.Department.ManagerID
+	}
+	newDepartmentID := emp.DepartmentID
+	departmentChanged := false
+	if req.DepartmentID != nil && *req.DepartmentID != emp.DepartmentID {
+		newDepartmentID = *req.DepartmentID
+		departmentChanged = true
 	}
 
 	updateData := make(map[string]interface{})
@@ -328,12 +313,75 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		}
 	}
 
+	if req.UserID != nil {
+		if *req.UserID == 0 {
+			updateData["user_id"] = nil
+		} else {
+			user, err := es.userRepo.FindByID(*req.UserID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, errors.New("Không tìm thấy tài khoản người dùng này")
+				}
+				return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
+			}
+
+			existingEmp, err := es.empRepo.FindByUserID(user.ID)
+			if err == nil && existingEmp != nil && existingEmp.ID != emp.ID {
+				return nil, errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
+			} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
+			}
+			updateData["user_id"] = *req.UserID
+		}
+	}
+
 	if len(updateData) == 0 {
-		return emp, nil
+		if req.IsManager != nil {
+			if *req.IsManager {
+				if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID && oldDepartmentID != newDepartmentID {
+					if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
+						return nil, err
+					}
+				}
+				if err := es.setDepartmentManager(newDepartmentID, &emp.ID); err != nil {
+					return nil, err
+				}
+			} else {
+				if oldManagerID != nil && *oldManagerID == emp.ID {
+					if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
+		return es.empRepo.FindByID(id)
 	}
 
 	if err := es.empRepo.UpdateFields(id, updateData); err != nil {
 		return nil, fmt.Errorf("Cập nhật thông tin nhân viên bị lỗi: %w", err)
+	}
+
+	if req.IsManager != nil {
+		if *req.IsManager {
+			if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID && oldDepartmentID != newDepartmentID {
+				if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
+					return nil, err
+				}
+			}
+			if err := es.setDepartmentManager(newDepartmentID, &emp.ID); err != nil {
+				return nil, err
+			}
+		} else {
+			if oldManagerID != nil && *oldManagerID == emp.ID {
+				if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
+					return nil, err
+				}
+			}
+		}
+	} else if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID {
+		if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
+			return nil, err
+		}
 	}
 
 	return es.empRepo.FindByID(id)

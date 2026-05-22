@@ -39,7 +39,7 @@ func main() {
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT)
 	userScv := service.NewUserService(userRepo)
-	empScv := service.NewEmployeeService(empRepo, deptRepo)
+	empScv := service.NewEmployeeService(empRepo, deptRepo, userRepo)
 	deptScv := service.NewDepartmentService(deptRepo, empRepo)
 	dashScv := service.NewDashboardService(dashRepo)
 

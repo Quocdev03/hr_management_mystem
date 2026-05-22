@@ -13,28 +13,28 @@ import { ref } from "vue";
  * }}
  */
 export function useModalState() {
-  const isModalVisible = ref(false);
-  const isEditMode = ref(false);
+	const isModalVisible = ref(false);
+	const isEditMode = ref(false);
 
-  function openAddModal() {
-    isEditMode.value = false;
-    isModalVisible.value = true;
-  }
+	function openAddModal() {
+		isEditMode.value = false;
+		isModalVisible.value = true;
+	}
 
-  function openEditModal() {
-    isEditMode.value = true;
-    isModalVisible.value = true;
-  }
+	function openEditModal() {
+		isEditMode.value = true;
+		isModalVisible.value = true;
+	}
 
-  function closeModal() {
-    isModalVisible.value = false;
-  }
+	function closeModal() {
+		isModalVisible.value = false;
+	}
 
-  return {
-    isModalVisible,
-    isEditMode,
-    openAddModal,
-    openEditModal,
-    closeModal,
-  };
+	return {
+		isModalVisible,
+		isEditMode,
+		openAddModal,
+		openEditModal,
+		closeModal,
+	};
 }

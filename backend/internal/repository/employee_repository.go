@@ -17,6 +17,7 @@ type EmployeeRepository interface {
 	UpdateFields(id uint, fields map[string]interface{}) error
 	Delete(id uint) error
 	CountByDepartment(deptID uint) (int64, error)
+	FindByUserID(userID uint) (*model.Employee, error)
 }
 
 // --- EmployeeRepository Implementation ---
@@ -56,14 +57,14 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 	offset := (query.Page - 1) * query.Limit
 
 	// Preload Department đê trả ra thông tin phòng ban
-	err := db.Preload("Department").Offset(offset).Limit(query.Limit).Order("created_at DESC").Find(&employee).Error
+	err := db.Preload("Department").Preload("User").Offset(offset).Limit(query.Limit).Order("created_at DESC").Find(&employee).Error
 
 	return employee, total, err
 }
 
 func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Preload("Department").First(&employee, id).Error
+	err := r.db.Preload("Department").Preload("User").First(&employee, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,16 @@ func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 }
 func (r *employeeRepository) FindByEmail(email string) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Preload("Department").Where("email = ?", email).First(&employee).Error
+	err := r.db.Preload("Department").Preload("User").Where("email = ?", email).First(&employee).Error
+	if err != nil {
+		return nil, err
+	}
+	return &employee, nil
+}
+
+func (r *employeeRepository) FindByUserID(userID uint) (*model.Employee, error) {
+	var employee model.Employee
+	err := r.db.Preload("Department").Preload("User").Where("user_id = ?", userID).First(&employee).Error
 	if err != nil {
 		return nil, err
 	}

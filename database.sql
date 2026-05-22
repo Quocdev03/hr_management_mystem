@@ -1,135 +1,66 @@
 -- ============================================================
--- HRM Database Schema - SQL Server
+-- HRM Database Schema - MySQL
 -- Mini HRM System cho Fresher Backend Golang
--- Chỉ giữ phần schema + constraint cần thiết
 -- Seed data sẽ được xử lý bằng Go (seed.go)
 -- ============================================================
-
 
 -- ============================================================
 -- 1. TẠO DATABASE
 -- ============================================================
 
-USE master;
-GO
-
--- Xóa database cũ nếu tồn tại (dùng khi dev/test)
-IF EXISTS (SELECT name FROM sys.databases WHERE name = N'hrm_db')
-BEGIN
-    ALTER DATABASE hrm_db SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE hrm_db;
-END
-GO
-
--- Tạo database mới
-CREATE DATABASE hrm_db
-COLLATE Vietnamese_CI_AS;
-GO
-
+DROP DATABASE IF EXISTS hrm_db;
+CREATE DATABASE hrm_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE hrm_db;
-GO
-
 
 -- ============================================================
--- 2. BẢNG permissions
--- Lưu danh sách quyền trong hệ thống
--- Ví dụ: employee:read, employee:create
--- ============================================================
-
-CREATE TABLE permissions (
-    id          INT IDENTITY(1,1) PRIMARY KEY,
-    name        NVARCHAR(100) NOT NULL UNIQUE,
-    description NVARCHAR(255),
-    created_at  DATETIME2 DEFAULT GETDATE(),
-    updated_at  DATETIME2 DEFAULT GETDATE(),
-    deleted_at  DATETIME2 NULL
-);
-GO
-
-
--- ============================================================
--- 3. BẢNG roles
+-- 2. BẢNG roles
 -- Vai trò: admin | hr | employee
 -- ============================================================
 
 CREATE TABLE roles (
-    id          INT IDENTITY(1,1) PRIMARY KEY,
-    name        NVARCHAR(50) NOT NULL UNIQUE,
-    description NVARCHAR(255),
-    created_at  DATETIME2 DEFAULT GETDATE(),
-    updated_at  DATETIME2 DEFAULT GETDATE(),
-    deleted_at  DATETIME2 NULL
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME NULL
 );
-GO
-
 
 -- ============================================================
--- 4. BẢNG role_permissions
--- Junction table - quan hệ nhiều-nhiều giữa roles và permissions
--- Không cần model Go riêng, GORM tự quản lý qua tag many2many
--- ============================================================
-
-CREATE TABLE role_permissions (
-    role_id       INT NOT NULL,
-    permission_id INT NOT NULL,
-
-    PRIMARY KEY (role_id, permission_id),
-
-    CONSTRAINT FK_role_permissions_role
-        FOREIGN KEY (role_id)
-        REFERENCES roles(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT FK_role_permissions_permission
-        FOREIGN KEY (permission_id)
-        REFERENCES permissions(id)
-        ON DELETE CASCADE
-);
-GO
-
-
--- ============================================================
--- 5. BẢNG departments
+-- 3. BẢNG departments
 -- Thông tin phòng ban
--- manager_id FK tới employees, thêm sau khi tạo xong bảng employees
 -- ============================================================
 
 CREATE TABLE departments (
-    id          INT IDENTITY(1,1) PRIMARY KEY,
-    name        NVARCHAR(100) NOT NULL UNIQUE,
-    code        NVARCHAR(20)  NOT NULL UNIQUE,
-    description NVARCHAR(255),
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL UNIQUE,
+    code        VARCHAR(20)  NOT NULL UNIQUE,
+    description VARCHAR(255),
     manager_id  INT NULL,
-    created_at  DATETIME2 DEFAULT GETDATE(),
-    updated_at  DATETIME2 DEFAULT GETDATE(),
-    deleted_at  DATETIME2 NULL
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME NULL
 );
-GO
-
 
 -- ============================================================
 -- 6. BẢNG users
 -- Tài khoản đăng nhập hệ thống
--- Password lưu dạng bcrypt hash, KHÔNG lưu plaintext
 -- ============================================================
 
 CREATE TABLE users (
-    id          INT IDENTITY(1,1) PRIMARY KEY,
-    user_name    NVARCHAR(100) NOT NULL UNIQUE,
-    email       NVARCHAR(150) NOT NULL UNIQUE,
-    password    NVARCHAR(255) NOT NULL,
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    user_name   VARCHAR(100) NOT NULL UNIQUE,
+    email       VARCHAR(150) NOT NULL UNIQUE,
+    password    VARCHAR(255) NOT NULL,
     role_id     INT NOT NULL,
-    is_active   BIT DEFAULT 1,
-    created_at  DATETIME2 DEFAULT GETDATE(),
-    updated_at  DATETIME2 DEFAULT GETDATE(),
-    deleted_at  DATETIME2 NULL,
+    is_active   BOOLEAN DEFAULT TRUE,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME NULL,
 
     CONSTRAINT FK_users_role
-        FOREIGN KEY (role_id)
-        REFERENCES roles(id)
+        FOREIGN KEY (role_id) REFERENCES roles(id)
 );
-GO
-
 
 -- ============================================================
 -- 7. BẢNG employees
@@ -137,89 +68,56 @@ GO
 -- ============================================================
 
 CREATE TABLE employees (
-    id            INT IDENTITY(1,1) PRIMARY KEY,
+    id            INT AUTO_INCREMENT PRIMARY KEY,
     user_id       INT NULL,       -- NULL nếu chưa có tài khoản hệ thống
     department_id INT NOT NULL,
-    first_name    NVARCHAR(100) NOT NULL,
-    last_name     NVARCHAR(100) NOT NULL,
-    email         NVARCHAR(150) NOT NULL UNIQUE,
-    phone         NVARCHAR(20),
-    position      NVARCHAR(100),
+    first_name    VARCHAR(100) NOT NULL,
+    last_name     VARCHAR(100) NOT NULL,
+    email         VARCHAR(150) NOT NULL UNIQUE,
+    phone         VARCHAR(20),
+    position      VARCHAR(100),
     salary        DECIMAL(15,2) DEFAULT 0,
-    join_date     DATE          DEFAULT CAST(GETDATE() AS DATE),
-    birth_date    DATE          NULL,
-    gender        NVARCHAR(10)  DEFAULT 'male',
-    status        NVARCHAR(20)  DEFAULT 'active',  -- active | inactive | resigned
-    created_at    DATETIME2     DEFAULT GETDATE(),
-    updated_at    DATETIME2     DEFAULT GETDATE(),
-    deleted_at    DATETIME2     NULL,
+    join_date     DATE DEFAULT (CURRENT_DATE),
+    birth_date    DATE NULL,
+    gender        VARCHAR(10)  DEFAULT 'male',
+    status        VARCHAR(20)  DEFAULT 'active',  -- active | inactive
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    DATETIME NULL,
 
-    -- Chỉ cho phép status hợp lệ
     CONSTRAINT CK_employees_status
-        CHECK (status IN ('active', 'inactive', 'resigned')),
+        CHECK (status IN ('active', 'inactive')),
 
-    -- Lương không được âm
     CONSTRAINT CK_employees_salary
         CHECK (salary >= 0),
 
-    -- Xoá user → set user_id = NULL, không xoá employee
     CONSTRAINT FK_employees_user
-        FOREIGN KEY (user_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
 
-    -- Không cho xoá department khi còn nhân viên
     CONSTRAINT FK_employees_department
-        FOREIGN KEY (department_id)
-        REFERENCES departments(id)
+        FOREIGN KEY (department_id) REFERENCES departments(id)
 );
-GO
-
 
 -- ============================================================
 -- 8. FK: departments.manager_id → employees.id
 -- Thêm sau khi bảng employees đã tồn tại
--- (tránh circular dependency khi CREATE TABLE)
 -- ============================================================
 
 ALTER TABLE departments
     ADD CONSTRAINT FK_departments_manager
-        FOREIGN KEY (manager_id)
-        REFERENCES employees(id)
-        ON DELETE SET NULL;  -- xoá employee → manager_id = NULL, không xoá dept
-GO
-
+        FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL;
 
 -- ============================================================
 -- 9. INDEX CƠ BẢN
 -- ============================================================
 
--- Hay JOIN employees theo department
 CREATE INDEX IX_employees_department_id ON employees (department_id);
-GO
-
--- Hay JOIN users theo role
 CREATE INDEX IX_users_role_id ON users (role_id);
-GO
-
--- Soft delete: hầu hết query đều lọc WHERE deleted_at IS NULL
-CREATE INDEX IX_employees_deleted_at   ON employees   (deleted_at);
+CREATE INDEX IX_employees_deleted_at ON employees (deleted_at);
 CREATE INDEX IX_departments_deleted_at ON departments (deleted_at);
-CREATE INDEX IX_users_deleted_at       ON users       (deleted_at);
-GO
+CREATE INDEX IX_users_deleted_at ON users (deleted_at);
 
-
--- ============================================================
--- 10. KIỂM TRA KẾT QUẢ
--- ============================================================
-
-SELECT TABLE_NAME
-FROM INFORMATION_SCHEMA.TABLES
-WHERE TABLE_TYPE = 'BASE TABLE'
-ORDER BY TABLE_NAME;
-GO
-
-PRINT N'';
-PRINT N'✅ HRM Database schema created successfully!';
-PRINT N'💡 Seed data sẽ được tạo bằng Go (config/seed.go)';
-GO
+-- MySQL syntax for unique index on user_id where user_id IS NOT NULL:
+-- MySQL 8.0 allows unique index containing NULLs by default, 
+-- multiple NULLs are distinct in MySQL.
+CREATE UNIQUE INDEX UQ_employees_user_id ON employees (user_id);

@@ -9,10 +9,10 @@ import (
 // EmployeeRepository interface cho các thao tác với bảng employees
 
 type EmployeeRepository interface {
+	WithTx(tx *gorm.DB) EmployeeRepository
 	Create(emp *model.Employee) error
 	FindAll(query model.PaginationQuery) ([]model.Employee, int64, error)
 	FindByID(id uint) (*model.Employee, error)
-	FindByEmail(email string) (*model.Employee, error)
 	Update(emp *model.Employee) error
 	UpdateFields(id uint, fields map[string]interface{}) error
 	Delete(id uint) error
@@ -32,7 +32,7 @@ func NewEmployeeRepository(db *gorm.DB) EmployeeRepository {
 }
 
 func (r *employeeRepository) Create(emp *model.Employee) error {
-	return r.db.Create(&emp).Error
+	return r.db.Create(emp).Error
 }
 
 // Tìm nhân viên với phân trang, tìm kiếm, preload quan hệ
@@ -41,14 +41,19 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 	var total int64
 
 	db := r.db.Model(&model.Employee{})
-	// Tìm theo tên hoặc email
+	// Tìm theo tên
 	if query.Search != "" {
 		db = db.Where(
-			"first_name LIKE ? OR last_name LIKE ? OR email LIKE ?",
+			"first_name LIKE ? OR last_name LIKE ? OR phone LIKE ?",
 			"%"+query.Search+"%",
 			"%"+query.Search+"%",
 			"%"+query.Search+"%",
 		)
+	}
+
+	// Lọc theo phòng ban khi cần
+	if query.DepartmentID > 0 {
+		db = db.Where("department_id = ?", query.DepartmentID)
 	}
 
 	db.Count(&total)
@@ -57,32 +62,35 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 	offset := (query.Page - 1) * query.Limit
 
 	// Preload Department đê trả ra thông tin phòng ban
-	err := db.Preload("Department").Preload("User").Offset(offset).Limit(query.Limit).Order("created_at DESC").Find(&employee).Error
+	err := db.
+		Preload("Department").
+		Preload("User").
+		Preload("User.Role").
+		Offset(offset).
+		Limit(query.Limit).
+		Order("created_at DESC").
+		Find(&employee).Error
 
 	return employee, total, err
 }
 
 func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Preload("Department").Preload("User").First(&employee, id).Error
+	err := r.db.
+		Preload("Department").
+		Preload("User").
+		Preload("User.Role").
+		First(&employee, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &employee, nil
 
-}
-func (r *employeeRepository) FindByEmail(email string) (*model.Employee, error) {
-	var employee model.Employee
-	err := r.db.Preload("Department").Preload("User").Where("email = ?", email).First(&employee).Error
-	if err != nil {
-		return nil, err
-	}
-	return &employee, nil
 }
 
 func (r *employeeRepository) FindByUserID(userID uint) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Preload("Department").Preload("User").Where("user_id = ?", userID).First(&employee).Error
+	err := r.db.Preload("Department").Preload("User").Preload("User.Role").Where("user_id = ?", userID).First(&employee).Error
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +105,14 @@ func (r *employeeRepository) UpdateFields(id uint, fields map[string]interface{}
 	if len(fields) == 0 {
 		return nil
 	}
-	return r.db.Model(&model.Employee{}).Where("id = ?", id).Updates(fields).Error
+
+	return r.db.Model(&model.Employee{}).
+		Where("id = ?", id).
+		Updates(fields).Error
+}
+
+func (r *employeeRepository) WithTx(tx *gorm.DB) EmployeeRepository {
+	return &employeeRepository{db: tx}
 }
 
 func (r *employeeRepository) Delete(id uint) error {

@@ -104,3 +104,12 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 
 	utils.Success(ctx, "Xoá user thành công", nil)
 }
+
+func (h *UserHandler) GetUsersWithoutEmployee(ctx *gin.Context) {
+	users, err := h.userSvc.GetUsersWithoutEmployee()
+	if err != nil {
+		utils.InternalServerError(ctx, err.Error())
+		return
+	}
+	utils.Success(ctx, "Lấy danh sách user chưa gắn nhân viên thành công", users)
+}

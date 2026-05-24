@@ -73,7 +73,6 @@ CREATE TABLE employees (
     department_id INT NOT NULL,
     first_name    VARCHAR(100) NOT NULL,
     last_name     VARCHAR(100) NOT NULL,
-    email         VARCHAR(150) NOT NULL UNIQUE,
     phone         VARCHAR(20),
     position      VARCHAR(100),
     salary        DECIMAL(15,2) DEFAULT 0,

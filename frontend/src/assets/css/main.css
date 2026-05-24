@@ -27,17 +27,9 @@
 
 	/* ---------------- Typography (xs → 6xl) ---------------- */
 	--fs-xs: clamp(0.75rem, calc(0.72rem + 0.2vw), 0.875rem); /* 12px → 14px */
-	--fs-sm: clamp(
-		0.875rem,
-		calc(0.86rem + 0.28vw),
-		0.9375rem
-	); /* 14px → 15px */
+	--fs-sm: clamp(0.875rem, calc(0.86rem + 0.28vw), 0.9375rem); /* 14px → 15px */
 	--fs-base: clamp(1rem, calc(0.98rem + 0.4vw), 1.0625rem); /* 16px → 17px */
-	--fs-lg: clamp(
-		1.125rem,
-		calc(1.08rem + 0.6vw),
-		1.1875rem
-	); /* 18px → 19px */
+	--fs-lg: clamp(1.125rem, calc(1.08rem + 0.6vw), 1.1875rem); /* 18px → 19px */
 	--fs-xl: clamp(1.25rem, calc(1.22rem + 0.8vw), 1.375rem); /* 20px → 22px */
 	--fs-2xl: clamp(1.5rem, calc(1.44rem + 1vw), 1.75rem); /* 24px → 28px */
 	--fs-3xl: clamp(1.875rem, calc(1.7rem + 1.25vw), 2.25rem); /* 30px → 36px */
@@ -80,7 +72,7 @@
 	--container-max-lg: 1024px;
 	--container-max-xl: 1280px;
 	--container-max-2xl: 1536px;
-	--container-padding: var(--size-sm);
+	--container-padding: var(--size-xs);
 
 	/* App chrome sizes */
 	--sidebar-width: 256px;
@@ -124,15 +116,11 @@
 	--border-radius-card: 24px;
 
 	/* Shadows */
-	--shadow-sm:
-		0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-	--shadow-md:
-		0 10px 25px -5px rgba(0, 0, 0, 0.03),
-		0 8px 10px -6px rgba(0, 0, 0, 0.01);
+	--shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+	--shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
 	--shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 	--shadow-hover:
-		0 20px 25px -5px rgba(0, 0, 0, 0.05),
-		0 10px 10px -5px rgba(0, 0, 0, 0.02);
+		0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
 	--shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 

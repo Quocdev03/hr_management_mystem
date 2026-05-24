@@ -16,9 +16,12 @@ type User struct {
 	UserName string `gorm:"size:100;uniqueIndex;not null" json:"user_name"`
 	Email    string `gorm:"size:150;uniqueIndex;not null" json:"email"`
 	Password string `gorm:"size:255;not null" json:"-"`
-	RoleID   uint   `gorm:"not null" json:"role_id"`
-	Role     Role   `gorm:"foreignKey:RoleID" json:"role,omitempty"`
-	IsActive bool   `gorm:"default:true" json:"is_active"`
+
+	RoleID uint `gorm:"not null" json:"role_id"`
+	Role   Role `gorm:"foreignKey:RoleID" json:"role,omitempty"`
+
+	IsActive bool `gorm:"default:true" json:"is_active"`
+
 	TimestampModel
 }
 

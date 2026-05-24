@@ -49,17 +49,15 @@ func (d *dashboardsRepository) GetEmployeeCountByDepartment() []model.Department
 	query := `
 	SELECT departments.name AS department_name, COUNT(employees.id) AS employee_count
 	FROM departments
-	LEFT JOIN employees ON employees.department_id = departments.id
-	GROUP BY department_name, department_id `
+	LEFT JOIN employees ON employees.department_id = departments.id AND employees.deleted_at IS NULL
+	WHERE departments.deleted_at IS NULL
+	GROUP BY department_name, departments.id `
 	d.db.Raw(query).Scan(&stats)
 	return stats
 }
 
 func (d *dashboardsRepository) GetEmployeeActive() int64 {
 	var count int64
-	query := `SELECT COUNT(*) AS active_employee
-			FROM employees
-			WHERE status = "active"`
-	d.db.Raw(query).Scan(&count)
+	d.db.Model(&model.Employee{}).Where("status = ?", "active").Count(&count)
 	return count
 }

@@ -8,6 +8,7 @@ import (
 
 // UserRepository interface cho các thao tác với bảng users
 type UserRepository interface {
+	WithTx(tx *gorm.DB) UserRepository
 	Create(user *model.User) error
 	FindAll(query model.PaginationQuery) ([]model.User, int64, error)
 	FindByID(id uint) (*model.User, error)
@@ -15,6 +16,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
 	Update(user *model.User) error
 	UpdateFields(id uint, fields map[string]interface{}) error
+	FindUsersWithoutEmployee() ([]model.User, error)
 	Delete(id uint) error
 }
 
@@ -100,4 +102,29 @@ func (r *userRepository) UpdateFields(id uint, fields map[string]interface{}) er
 
 func (r *userRepository) Delete(id uint) error {
 	return r.db.Delete(&model.User{}, id).Error
+}
+
+func (r *userRepository) WithTx(tx *gorm.DB) UserRepository {
+	return &userRepository{db: tx}
+}
+
+func (r *userRepository) FindUsersWithoutEmployee() ([]model.User, error) {
+	var users []model.User
+
+	err := r.db.
+		Model(&model.User{}).
+		Preload("Role").
+		Where("id NOT IN (?)",
+			r.db.Model(&model.Employee{}).
+				Select("user_id").
+				Where("user_id IS NOT NULL"),
+		).
+		Order("created_at DESC").
+		Find(&users).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

@@ -20,6 +20,7 @@ type UserService interface {
 	GetUserByID(id uint) (*model.User, error)
 	UpdateUser(id uint, req model.UpdateUserRequest) (*model.User, error)
 	DeleteUser(id uint) error
+	GetUsersWithoutEmployee() ([]model.User, error)
 }
 
 // --- User Service Implementation ---
@@ -38,8 +39,6 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	req.UserName = strings.TrimSpace(req.UserName)
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	req.Password = strings.TrimSpace(req.Password)
-
-
 
 	if req.RoleID == 0 {
 		return nil, errors.New("RoleID là bắt buộc")
@@ -138,8 +137,6 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.
 		req.Password = &tmp
 	}
 
-
-
 	user, err := us.userRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -204,4 +201,13 @@ func (us *userService) DeleteUser(id uint) error {
 	}
 
 	return us.userRepo.Delete(id)
+}
+
+func (us *userService) GetUsersWithoutEmployee() ([]model.User, error) {
+	users, err := us.userRepo.FindUsersWithoutEmployee()
+	if err != nil {
+		return nil, fmt.Errorf("Lấy danh sách user chưa gắn employee bị lỗi: %w", err)
+	}
+
+	return users, nil
 }

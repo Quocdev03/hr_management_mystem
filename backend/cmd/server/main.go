@@ -24,9 +24,6 @@ func main() {
 	// Khởi tạo Database
 	db := config.InitiDB(&cfg.Database)
 
-	// Seed data mẫu
-	// config.SeedData(db)
-
 	// Kết nối các layer của
 	// Handler -> Service -> Repository
 
@@ -39,8 +36,8 @@ func main() {
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT)
 	userScv := service.NewUserService(userRepo)
-	empScv := service.NewEmployeeService(empRepo, deptRepo, userRepo)
-	deptScv := service.NewDepartmentService(deptRepo, empRepo)
+	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo)
+	deptScv := service.NewDepartmentService(db, deptRepo, empRepo)
 	dashScv := service.NewDashboardService(dashRepo)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
@@ -79,7 +76,7 @@ func main() {
 
 	// Block đến khi nhận tín hiệu tắt
 	sig := <-quit
-	utils.Info("Đã nhận được tién hiệu: %v. Đang tắt...", sig)
+	utils.Info("Đã nhận được tín hiệu: %v. Đang tắt...", sig)
 
 	// Tạo context timeout 30s chờ request hoàn thành
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

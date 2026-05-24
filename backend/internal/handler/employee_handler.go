@@ -60,7 +60,7 @@ func (h *EmployeeHandler) GetEmployee(ctx *gin.Context) {
 func (h *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 	var req model.CreateEmployeeRequest
 
-	if err := ctx.ShouldBindBodyWithJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}

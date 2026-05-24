@@ -15,9 +15,10 @@ type TimestampModel struct {
 
 // PaginationQuery - phân trang tìm kiếm dùng chung
 type PaginationQuery struct {
-	Page   int    `form:"page,default=1"`
-	Limit  int    `form:"limit,default=10"`
-	Search string `form:"search"`
+	Page         int    `form:"page,default=1"`
+	Limit        int    `form:"limit,default=10"`
+	Search       string `form:"search"`
+	DepartmentID uint   `form:"department_id"`
 }
 
 // PaginatedResult - Trả về kết quả có phân trang

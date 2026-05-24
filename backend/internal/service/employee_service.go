@@ -25,13 +25,15 @@ type EmployeeService interface {
 // --- Employee Service Implementation ---
 
 type employeeService struct {
+	db       *gorm.DB
 	empRepo  repository.EmployeeRepository
 	deptRepo repository.DepartmentRepository
 	userRepo repository.UserRepository
 }
 
-func NewEmployeeService(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository) EmployeeService {
+func NewEmployeeService(db *gorm.DB, empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository) EmployeeService {
 	return &employeeService{
+		db:       db,
 		empRepo:  empRepo,
 		deptRepo: deptRepo,
 		userRepo: userRepo,
@@ -42,44 +44,11 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	// Chuẩn hoá dữ liệu
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
-	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	req.Phone = strings.TrimSpace(req.Phone)
 	req.Position = strings.TrimSpace(req.Position)
 	req.JoinDate = strings.TrimSpace(req.JoinDate)
 	req.BirthDate = strings.TrimSpace(req.BirthDate)
 	req.Gender = strings.TrimSpace(strings.ToLower(req.Gender))
-
-	// Validate UserID nếu có
-	if req.UserID != nil && *req.UserID > 0 {
-		user, err := es.userRepo.FindByID(*req.UserID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, errors.New("Không tìm thấy tài khoản người dùng này")
-			}
-			return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
-		}
-
-		existingEmp, err := es.empRepo.FindByUserID(user.ID)
-		if err == nil && existingEmp != nil {
-			return nil, errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
-		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
-		}
-	}
-	// Kiểm tra phòng ban tồn tại
-	if _, err := es.deptRepo.FindByID(req.DepartmentID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy phòng ban này")
-		}
-		return nil, fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
-	}
-
-	// Kiểm tra email tồn tại
-	if _, err := es.empRepo.FindByEmail(req.Email); err == nil {
-		return nil, errors.New("Email đã tồn tại")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("Lỗi kiểm tra email: %w", err)
-	}
 
 	// Parse ngày vào làm, mặc định là vừa tạo
 	joinDate := time.Now()
@@ -88,7 +57,6 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		if err != nil {
 			return nil, errors.New("Ngày vào làm không đúng định dạng, sử dụng YYYY-MM-DD")
 		}
-		// Kiểm tra ngày không ở tương lai
 		if parsed.After(time.Now()) {
 			return nil, errors.New("Ngày vào làm không được là ngày trong tương lai")
 		}
@@ -108,10 +76,10 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	if req.Gender == "" {
 		req.Gender = "male"
 	}
-
 	if req.Status == "" {
 		req.Status = "active"
 	}
+
 	var userID *uint
 	if req.UserID != nil && *req.UserID > 0 {
 		userID = req.UserID
@@ -122,7 +90,6 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		DepartmentID: req.DepartmentID,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
-		Email:        req.Email,
 		Phone:        req.Phone,
 		Position:     req.Position,
 		Salary:       req.Salary,
@@ -133,32 +100,51 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 		UserID:       userID,
 	}
 
-	if err := es.empRepo.Create(emp); err != nil {
-		return nil, fmt.Errorf("Tạo nhân viên không thành công: %w", err)
-	}
+	if err := es.db.Transaction(func(tx *gorm.DB) error {
+		txUserRepo := es.userRepo.WithTx(tx)
+		txEmpRepo := es.empRepo.WithTx(tx)
+		txDeptRepo := es.deptRepo.WithTx(tx)
 
-	if req.IsManager {
-		if err := es.setDepartmentManager(emp.DepartmentID, &emp.ID); err != nil {
-			return nil, err
+		if userID != nil {
+			user, err := txUserRepo.FindByID(*userID)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New("Không tìm thấy tài khoản người dùng này")
+				}
+				return fmt.Errorf("Lỗi kiểm tra user: %w", err)
+			}
+
+			existingEmp, err := txEmpRepo.FindByUserID(user.ID)
+			if err == nil && existingEmp != nil {
+				return errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
+			} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("Lỗi kiểm tra user: %w", err)
+			}
 		}
+
+		if _, err := txDeptRepo.FindByID(req.DepartmentID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("Không tìm thấy phòng ban này")
+			}
+			return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+		}
+
+		if err := txEmpRepo.Create(emp); err != nil {
+			return fmt.Errorf("Tạo nhân viên không thành công: %w", err)
+		}
+
+		if req.IsManager {
+			if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, emp.DepartmentID, &emp.ID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return es.empRepo.FindByID(emp.ID)
-}
-
-func (es *employeeService) setDepartmentManager(departmentID uint, managerID *uint) error {
-	dept, err := es.deptRepo.FindByID(departmentID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("Không tìm thấy phòng ban để cập nhật trưởng phòng")
-		}
-		return fmt.Errorf("Lỗi khi tìm phòng ban: %w", err)
-	}
-	dept.ManagerID = managerID
-	if err := es.deptRepo.Update(dept); err != nil {
-		return fmt.Errorf("Lỗi khi cập nhật trưởng phòng: %w", err)
-	}
-	return nil
 }
 
 // Danh sách nhân viên có phân trang và tìm kiếm
@@ -209,182 +195,183 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, errors.New("ID nhân viên phải lớn hơn 0")
 	}
 
-	// Chuẩn hoá dữ liệu cho các field được truyền vào
-	if req.FirstName != nil {
-		tmp := strings.TrimSpace(*req.FirstName)
-		req.FirstName = &tmp
-	}
-	if req.LastName != nil {
-		tmp := strings.TrimSpace(*req.LastName)
-		req.LastName = &tmp
-	}
-	if req.Phone != nil {
-		tmp := strings.TrimSpace(*req.Phone)
-		req.Phone = &tmp
-	}
-	if req.Position != nil {
-		tmp := strings.TrimSpace(*req.Position)
-		req.Position = &tmp
-	}
-	if req.Status != nil {
-		tmp := strings.TrimSpace(strings.ToLower(*req.Status))
-		req.Status = &tmp
-	}
-	if req.BirthDate != nil {
-		tmp := strings.TrimSpace(*req.BirthDate)
-		req.BirthDate = &tmp
-	}
-	if req.Gender != nil {
-		tmp := strings.TrimSpace(strings.ToLower(*req.Gender))
-		req.Gender = &tmp
-	}
-
 	emp, err := es.empRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy nhân viên")
+			return nil, errors.New("Không tìm thấy nhân viên này")
 		}
 		return nil, fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
 	}
 
-	oldDepartmentID := emp.DepartmentID
-	oldManagerID := (*uint)(nil)
-	if emp.Department.ManagerID != nil {
-		oldManagerID = emp.Department.ManagerID
-	}
-	newDepartmentID := emp.DepartmentID
-	departmentChanged := false
-	if req.DepartmentID != nil && *req.DepartmentID != emp.DepartmentID {
-		newDepartmentID = *req.DepartmentID
-		departmentChanged = true
-	}
-
-	updateData := make(map[string]interface{})
-
+	oldDeptID := emp.DepartmentID
+	newDeptID := emp.DepartmentID
 	if req.DepartmentID != nil {
-		if _, err := es.deptRepo.FindByID(*req.DepartmentID); err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, errors.New("Không tìm thấy phòng ban mới")
+		newDeptID = *req.DepartmentID
+	}
+
+	deptChanged := oldDeptID != newDeptID
+	isOldManager := emp.Department.ManagerID != nil && *emp.Department.ManagerID == emp.ID
+
+	if err := es.db.Transaction(func(tx *gorm.DB) error {
+		txEmpRepo := es.empRepo.WithTx(tx)
+		txDeptRepo := es.deptRepo.WithTx(tx)
+		txUserRepo := es.userRepo.WithTx(tx)
+
+		updateData := map[string]interface{}{}
+
+		if req.FirstName != nil {
+			updateData["first_name"] = strings.TrimSpace(*req.FirstName)
+		}
+		if req.LastName != nil {
+			updateData["last_name"] = strings.TrimSpace(*req.LastName)
+		}
+		if req.Phone != nil {
+			updateData["phone"] = strings.TrimSpace(*req.Phone)
+		}
+		if req.Position != nil {
+			updateData["position"] = strings.TrimSpace(*req.Position)
+		}
+		if req.Salary != nil {
+			if *req.Salary < 0 {
+				return errors.New("Lương không được âm")
 			}
-			return nil, fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+			updateData["salary"] = *req.Salary
 		}
-		updateData["department_id"] = *req.DepartmentID
-	}
-	if req.FirstName != nil {
-		updateData["first_name"] = *req.FirstName
-	}
-	if req.LastName != nil {
-		updateData["last_name"] = *req.LastName
-	}
-	if req.Phone != nil {
-		updateData["phone"] = *req.Phone
-	}
-	if req.Position != nil {
-		updateData["position"] = *req.Position
-	}
-	if req.Salary != nil {
-		if *req.Salary < 0 {
-			return nil, errors.New("Mức lương không được nhỏ hơn 0")
+		if req.Status != nil {
+			updateData["status"] = strings.TrimSpace(*req.Status)
 		}
-		updateData["salary"] = *req.Salary
-	}
-	if req.Status != nil {
-		if *req.Status != "active" && *req.Status != "inactive" {
-			return nil, errors.New("Trạng thái chỉ có thể là 'active' hoặc 'inactive'")
+		if req.Gender != nil {
+			updateData["gender"] = strings.TrimSpace(strings.ToLower(*req.Gender))
 		}
-		updateData["status"] = *req.Status
-	}
-	if req.BirthDate != nil {
-		if *req.BirthDate == "" {
-			updateData["birth_date"] = nil
-		} else {
+		if req.BirthDate != nil {
 			parsed, err := time.Parse("2006-01-02", *req.BirthDate)
 			if err != nil {
-				return nil, errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
+				return errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
 			}
 			updateData["birth_date"] = parsed
 		}
-	}
-	if req.Gender != nil {
-		if *req.Gender == "" {
-			updateData["gender"] = "male"
-		} else {
-			updateData["gender"] = *req.Gender
-		}
-	}
 
-	if req.UserID != nil {
-		if *req.UserID == 0 {
-			updateData["user_id"] = nil
-		} else {
-			user, err := es.userRepo.FindByID(*req.UserID)
-			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return nil, errors.New("Không tìm thấy tài khoản người dùng này")
+		if req.UserID != nil {
+			if *req.UserID == 0 {
+				updateData["user_id"] = nil
+			} else {
+				user, err := txUserRepo.FindByID(*req.UserID)
+				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return errors.New("Không tìm thấy tài khoản người dùng này")
+					}
+					return err
 				}
-				return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
-			}
 
-			existingEmp, err := es.empRepo.FindByUserID(user.ID)
-			if err == nil && existingEmp != nil && existingEmp.ID != emp.ID {
-				return nil, errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
-			} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, fmt.Errorf("Lỗi kiểm tra user: %w", err)
+				existingEmp, err := txEmpRepo.FindByUserID(user.ID)
+				if err == nil && existingEmp.ID != id {
+					return errors.New("User đã gắn cho nhân viên khác")
+				}
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+
+				updateData["user_id"] = *req.UserID
 			}
-			updateData["user_id"] = *req.UserID
 		}
-	}
 
-	if len(updateData) == 0 {
+		if req.DepartmentID != nil {
+			if _, err := txDeptRepo.FindByID(*req.DepartmentID); err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errors.New("Không tìm thấy phòng ban này")
+				}
+				return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+			}
+			updateData["department_id"] = *req.DepartmentID
+		}
+
+		if len(updateData) > 0 {
+			if err := txEmpRepo.UpdateFields(id, updateData); err != nil {
+				return fmt.Errorf("Cập nhật nhân viên thất bại: %w", err)
+			}
+		}
+
+		updatedEmp, err := txEmpRepo.FindByID(id)
+		if err != nil {
+			return fmt.Errorf("Reload nhân viên thất bại: %w", err)
+		}
+
 		if req.IsManager != nil {
 			if *req.IsManager {
-				if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID && oldDepartmentID != newDepartmentID {
-					if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
-						return nil, err
+				existingDept, err := txDeptRepo.FindByManagerID(updatedEmp.ID)
+				if err == nil && existingDept.ID != newDeptID {
+					return errors.New("Nhân viên đã là trưởng phòng của phòng ban khác")
+				}
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("Lỗi kiểm tra manager: %w", err)
+				}
+
+				if deptChanged && isOldManager {
+					if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
+						return err
 					}
 				}
-				if err := es.setDepartmentManager(newDepartmentID, &emp.ID); err != nil {
-					return nil, err
+
+				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, &updatedEmp.ID); err != nil {
+					return err
 				}
 			} else {
-				if oldManagerID != nil && *oldManagerID == emp.ID {
-					if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
-						return nil, err
+				if isOldManager {
+					if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
+						return err
 					}
 				}
 			}
-		}
-		return es.empRepo.FindByID(id)
-	}
-
-	if err := es.empRepo.UpdateFields(id, updateData); err != nil {
-		return nil, fmt.Errorf("Cập nhật thông tin nhân viên bị lỗi: %w", err)
-	}
-
-	if req.IsManager != nil {
-		if *req.IsManager {
-			if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID && oldDepartmentID != newDepartmentID {
-				if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
-					return nil, err
-				}
-			}
-			if err := es.setDepartmentManager(newDepartmentID, &emp.ID); err != nil {
-				return nil, err
-			}
 		} else {
-			if oldManagerID != nil && *oldManagerID == emp.ID {
-				if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
-					return nil, err
+			if deptChanged && isOldManager {
+				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
+					return err
 				}
 			}
 		}
-	} else if departmentChanged && oldManagerID != nil && *oldManagerID == emp.ID {
-		if err := es.setDepartmentManager(oldDepartmentID, nil); err != nil {
-			return nil, err
-		}
+
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return es.empRepo.FindByID(id)
+}
+
+func (es *employeeService) setDepartmentManager(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, departmentID uint, managerID *uint) error {
+	if departmentID == 0 {
+		return errors.New("ID phòng ban không hợp lệ khi gán trưởng phòng")
+	}
+
+	if _, err := deptRepo.FindByID(departmentID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("Không tìm thấy phòng ban để gán trưởng phòng")
+		}
+		return fmt.Errorf("Lỗi khi tìm phòng ban: %w", err)
+	}
+
+	if managerID != nil {
+		emp, err := empRepo.FindByID(*managerID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("Không tìm thấy nhân viên để gán làm trưởng phòng")
+			}
+			return fmt.Errorf("Lỗi khi tìm nhân viên quản lý: %w", err)
+		}
+		if emp.DepartmentID != departmentID {
+			return errors.New("Trưởng phòng phải thuộc chính phòng ban này")
+		}
+
+		existingDept, err := deptRepo.FindByManagerID(*managerID)
+		if err == nil && existingDept.ID != departmentID {
+			return fmt.Errorf("Nhân viên này đã là trưởng phòng của phòng khác")
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
+
+	return deptRepo.UpdateManager(departmentID, managerID)
 }
 
 func (es *employeeService) DeleteEmployee(id uint) error {

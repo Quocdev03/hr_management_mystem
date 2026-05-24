@@ -79,6 +79,7 @@ func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 	if !ok {
 		return
 	}
+
 	var req model.UpdateDepartmentRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")

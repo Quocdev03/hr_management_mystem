@@ -54,18 +54,23 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 // GetProfile godoc
 // GET /api/v1/auth/profile - cần JWT token
 func (h *AuthHandler) GetProfile(ctx *gin.Context) {
-	// Lấy thông tin user từ context set bởi AuthJWT middleware
-	userID, _ := ctx.Get(middleware.ContextKeyUserID)
-	email, _ := ctx.Get(middleware.ContextKeyEmail)
-	roleNam, _ := ctx.Get(middleware.ContextKeyRoleName)
-
-	emailStr, ok := email.(string)
-	if !ok {
-		utils.Unauthorized(ctx, "Email không hợp lệ trong token")
+	// Lấy từ context
+	userIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
+	if !exists {
+		utils.Unauthorized(ctx, "Không tìm thấy thông tin user")
 		return
 	}
 
-	emp, err := h.authSvc.GetProfile(emailStr)
+	userID, ok := userIDVal.(uint)
+	if !ok {
+		utils.Unauthorized(ctx, "UserID không hợp lệ")
+		return
+	}
+
+	email, _ := ctx.Get(middleware.ContextKeyEmail)
+	roleName, _ := ctx.Get(middleware.ContextKeyRoleName)
+
+	emp, err := h.authSvc.GetProfile(userID)
 	if err != nil {
 		utils.BadRequest(ctx, err.Error())
 		return
@@ -74,7 +79,7 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 	utils.Success(ctx, "Lấy thông tin hồ sơ thành công!", gin.H{
 		"user_id":   userID,
 		"email":     email,
-		"role_name": roleNam,
+		"role_name": roleName,
 		"employee":  emp,
 	})
 }

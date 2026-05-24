@@ -10,12 +10,13 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // AuthService interface - contract cho authentication
 type AuthService interface {
 	Login(req model.LoginRequest) (*model.LoginResponse, error)
-	GetProfile(email string) (*model.Employee, error)
+	GetProfile(ID uint) (*model.Employee, error)
 }
 
 // --- Auth Service Implementation ---
@@ -79,13 +80,13 @@ func (au *authServive) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	}, nil
 }
 
-func (au *authServive) GetProfile(email string) (*model.Employee, error) {
-	if email == "" {
-		return nil, errors.New("Email không hợp lệ")
-	}
+func (au *authServive) GetProfile(id uint) (*model.Employee, error) {
 
-	emp, err := au.empRepo.FindByEmail(email)
+	emp, err := au.empRepo.FindByUserID(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, errors.New("Không thể lấy thông tin hồ sơ nhân viên")
 	}
 

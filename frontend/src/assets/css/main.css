@@ -331,3 +331,55 @@ a:hover {
 		opacity: 1;
 	}
 }
+
+/* ===== Skeleton Loader Animation ===== */
+.skeleton {
+	background: linear-gradient(90deg, var(--bg-light) 25%, var(--border-color) 37%, var(--bg-light) 63%);
+	background-size: 400% 100%;
+	animation: skeleton-loading 1.4s ease infinite;
+	border-radius: var(--radius-sm);
+	display: inline-block;
+}
+
+@keyframes skeleton-loading {
+	0% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.skeleton-text {
+	height: 16px;
+	width: 100%;
+	margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+	margin-bottom: 0;
+}
+
+.skeleton-text--short {
+	width: 60%;
+}
+
+.skeleton-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: var(--radius-md);
+	flex-shrink: 0;
+}
+
+.skeleton-badge {
+	width: 80px;
+	height: 24px;
+	border-radius: var(--radius-sm);
+}
+
+.skeleton-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-sm);
+}
+

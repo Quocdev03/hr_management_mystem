@@ -296,35 +296,24 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			return fmt.Errorf("Reload nhân viên thất bại: %w", err)
 		}
 
+		// 1. Nếu chuyển phòng ban, tự động gỡ quyền trưởng phòng ở phòng cũ (nếu đang có)
+		if deptChanged && isOldManager {
+			if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
+				return err
+			}
+			isOldManager = false // Cập nhật lại state sau khi đã gỡ
+		}
+
+		// 2. Cập nhật quyền trưởng phòng theo yêu cầu mới
 		if req.IsManager != nil {
 			if *req.IsManager {
-				existingDept, err := txDeptRepo.FindByManagerID(updatedEmp.ID)
-				if err == nil && existingDept.ID != newDeptID {
-					return errors.New("Nhân viên đã là trưởng phòng của phòng ban khác")
-				}
-				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-					return fmt.Errorf("Lỗi kiểm tra manager: %w", err)
-				}
-
-				if deptChanged && isOldManager {
-					if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
-						return err
-					}
-				}
-
+				// Hàm setDepartmentManager đã bao gồm các logic kiểm tra an toàn
 				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, &updatedEmp.ID); err != nil {
 					return err
 				}
-			} else {
-				if isOldManager {
-					if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
-						return err
-					}
-				}
-			}
-		} else {
-			if deptChanged && isOldManager {
-				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
+			} else if isOldManager {
+				// Yêu cầu huỷ quyền trưởng phòng ở phòng hiện tại
+				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, nil); err != nil {
 					return err
 				}
 			}

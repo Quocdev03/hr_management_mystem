@@ -25,7 +25,8 @@ export const useUserStore = defineStore("user", () => {
 				pagination.value = {
 					total: data.total || 0,
 					page: data.page || 1,
-					totalPage: data.total_pages || 0,
+					limit: data.limit || 10,
+					totalPages: data.total_pages || 0,
 				};
 			}
 			return res;

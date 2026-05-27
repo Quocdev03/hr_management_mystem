@@ -20,7 +20,7 @@ const router = createRouter({
             { path: "dashboard", name: "dashboard", component: Dashboard },
             { path: "employees", name: "employees", component: EmployeeView },
             { path: "departments", name: "departments", component: DepartmentView },
-            { path: "users", name: "users", component: UserView },
+            { path: "users", name: "users", component: UserView, meta: { roles: ["admin"] } },
             { path: "profile", name: "profile", component: ProfileView },
          ],
       },
@@ -38,6 +38,15 @@ router.beforeEach((to) => {
    // Chưa đăng nhập mà vào các trang cần quyền (không có meta.public) -> đá ra trang login
    if (!to.meta.public && !token) {
       return { name: "login" };
+   }
+
+   // Kiểm tra phân quyền theo role (nếu route có meta.roles)
+   if (to.meta.roles && to.meta.roles.length > 0) {
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const roleName = user?.role?.name || "";
+      if (!to.meta.roles.includes(roleName)) {
+         return { name: "dashboard" };
+      }
    }
 
    // Hợp lệ -> cho phép đi tiếp

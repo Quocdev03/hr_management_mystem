@@ -6,13 +6,20 @@
 	import prevIcon from "@/assets/svg/chevron-left.svg";
 	import nextIcon from "@/assets/svg/chevron-right.svg";
 	import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+	import ModalDialog from "@/components/ModalDialog.vue";
+	import Skeleton from "@/components/Skeleton.vue";
 
 	import { useUserStore } from "@/store/user";
+	import { useAuthStore } from "@/store/auth";
 	import { useToast } from "vue-toastification";
 	import { storeToRefs } from "pinia";
 	import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 	import { onMounted, ref } from "vue";
+	
 	const userStore = useUserStore();
+	const authStore = useAuthStore();
+	const currentUser = authStore.user;
+	
 	const toast = useToast();
 
 	const { users, pagination, loading } = storeToRefs(userStore);
@@ -30,8 +37,93 @@
 	const deleteMessage = ref("");
 	const deleteLoading = ref(false);
 
-	function handleAdd() {}
-	function handleUpdate() {}
+	// Modal form state
+	const isModalVisible = ref(false);
+	const isEditing = ref(false);
+	const isRoleDisabled = ref(false);
+	const isActiveDisabled = ref(false);
+	const submitLoading = ref(false);
+	const currentUserId = ref(null);
+	const formData = ref({
+		user_name: "",
+		email: "",
+		password: "",
+		password_confirm: "",
+		role_id: 3,
+		is_active: true
+	});
+
+	const roles = [
+		{ id: 1, label: "Admin (Quản trị viên)" },
+		{ id: 2, label: "HR (Nhân sự)" },
+		{ id: 3, label: "Employee (Nhân viên)" }
+	];
+
+	function handleAdd() {
+		isEditing.value = false;
+		isRoleDisabled.value = false;
+		isActiveDisabled.value = false;
+		currentUserId.value = null;
+		formData.value = {
+			user_name: "",
+			email: "",
+			password: "",
+			password_confirm: "",
+			role_id: 3,
+			is_active: true
+		};
+		isModalVisible.value = true;
+	}
+
+	function handleUpdate(user) {
+		isEditing.value = true;
+		isRoleDisabled.value = (user.role_id === 1 || currentUser?.id === user.id);
+		isActiveDisabled.value = (currentUser?.id === user.id);
+		currentUserId.value = user.id;
+		formData.value = {
+			user_name: user.user_name,
+			email: user.email,
+			password: "", // Không hiển thị pass cũ, bỏ trống nếu ko đổi
+			password_confirm: "",
+			role_id: user.role_id,
+			is_active: user.is_active
+		};
+		isModalVisible.value = true;
+	}
+
+	async function submitForm() {
+		if (formData.value.password !== formData.value.password_confirm) {
+			toast.error("Mật khẩu xác nhận không khớp!");
+			return;
+		}
+
+		submitLoading.value = true;
+		let res;
+		
+		const payload = { ...formData.value };
+		delete payload.password_confirm; // Không gửi field này lên API
+
+		if (isEditing.value && !payload.password) {
+			delete payload.password;
+		}
+
+		if (isEditing.value) {
+			res = await userStore.updateUser(currentUserId.value, payload);
+		} else {
+			res = await userStore.createUser(payload);
+		}
+		
+		submitLoading.value = false;
+
+		if (res.success === false) {
+			toast.error(res.message || "Có lỗi xảy ra");
+			return;
+		}
+
+		toast.success(isEditing.value ? "Cập nhật thành công!" : "Thêm mới thành công!");
+		isModalVisible.value = false;
+		await loadUsers();
+	}
 
 	function handleDelete(user) {
 		deletingUser.value = user;
@@ -77,7 +169,7 @@
 					<span>{{ pagination.total }}</span> người dùng
 				</p>
 			</div>
-			<button class="btn btn--primary">
+			<button class="btn btn--primary" @click="handleAdd">
 				<img :src="plusIcon" alt="add" class="btn__icon" />
 				Thêm người dùng
 			</button>
@@ -95,8 +187,7 @@
 				</div>
 			</div>
 
-			<div v-if="loading" class="table-loading">Đang tải dữ liệu...</div>
-			<div v-else class="table-responsive">
+			<div class="table-responsive">
 				<table class="data-table">
 					<thead>
 						<tr>
@@ -107,48 +198,72 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="user in users" :key="user.id">
-							<td class="text-main fw-500">{{ user.user_name }}</td>
-							<td>
-								<span class="">{{ user.email }}</span>
-							</td>
-							<td>
-								<span
-									:class="[
-										'status-badge',
-										user.is_active
-											? 'status-badge--active'
-											: 'status-badge--inactive',
-									]"
-								>
-									{{ user.is_active ? "Hoạt động" : "Ngưng" }}
-								</span>
-							</td>
-							<td class="text-right">
-								<div class="action-group">
-									<button
-										class="btn-icon btn-icon--edit"
-										title="Chỉnh sửa"
-										@click=""
+						<!-- Loading skeleton rows -->
+						<template v-if="loading">
+							<tr v-for="i in 5" :key="'skeleton-' + i">
+								<td class="text-main fw-500">
+									<Skeleton type="text" width="130px" height="18px" />
+								</td>
+								<td>
+									<Skeleton type="text" width="200px" height="18px" />
+								</td>
+								<td>
+									<Skeleton type="text" class="status-badge" width="90px" height="24px" style="display: inline-block;" />
+								</td>
+								<td class="text-right">
+									<div class="action-group">
+										<Skeleton type="btn" />
+										<Skeleton type="btn" />
+									</div>
+								</td>
+							</tr>
+						</template>
+
+						<!-- Actual rows when loaded -->
+						<template v-else>
+							<tr v-for="user in users" :key="user.id">
+								<td class="text-main fw-500">{{ user.user_name }}</td>
+								<td>
+									<span class="">{{ user.email }}</span>
+								</td>
+								<td>
+									<span
+										:class="[
+											'status-badge',
+											user.is_active
+												? 'status-badge--active'
+												: 'status-badge--inactive',
+										]"
 									>
-										<img :src="editIcon" alt="edit" />
-									</button>
-									<button
-										class="btn-icon btn-icon--delete"
-										title="Xoá"
-										@click="handleDelete(user)"
-									>
-										<img :src="deleteIcon" alt="delete" />
-									</button>
-								</div>
-							</td>
-						</tr>
-						<tr v-if="users.length === 0">
-							<td colspan="4" class="empty-state">
-								<div class="empty-state__icon">🏢</div>
-								<p class="empty-state__text">Không có người dùng nào phù hợp.</p>
-							</td>
-						</tr>
+										{{ user.is_active ? "Hoạt động" : "Ngưng" }}
+									</span>
+								</td>
+								<td class="text-right">
+									<div class="action-group">
+										<button
+											class="btn-icon btn-icon--edit"
+											title="Chỉnh sửa"
+											@click="handleUpdate(user)"
+										>
+											<img :src="editIcon" alt="edit" />
+										</button>
+										<button
+											class="btn-icon btn-icon--delete"
+											title="Xoá"
+											@click="handleDelete(user)"
+										>
+											<img :src="deleteIcon" alt="delete" />
+										</button>
+									</div>
+								</td>
+							</tr>
+							<tr v-if="users.length === 0">
+								<td colspan="4" class="empty-state">
+									<div class="empty-state__icon">🏢</div>
+									<p class="empty-state__text">Không có người dùng nào phù hợp.</p>
+								</td>
+							</tr>
+						</template>
 					</tbody>
 				</table>
 			</div>
@@ -183,6 +298,52 @@
 			@confirm="confirmDelete"
 			@cancel="isDeleteModalVisible = false"
 		/>
+
+		<!-- Create / Update Modal -->
+		<ModalDialog
+			:visible="isModalVisible"
+			:title="isEditing ? 'Cập nhật người dùng' : 'Thêm người dùng mới'"
+			width="500px"
+			@close="isModalVisible = false"
+		>
+			<form @submit.prevent="submitForm" class="form-layout">
+				<div class="form-group">
+					<label>Tên đăng nhập <span class="text-danger">*</span></label>
+					<input v-model="formData.user_name" type="text" class="form-control" required placeholder="Nhập username..." />
+				</div>
+				<div class="form-group">
+					<label>Email <span class="text-danger">*</span></label>
+					<input v-model="formData.email" type="email" class="form-control" required placeholder="Nhập email..." />
+				</div>
+				<div class="form-group">
+					<label>Mật khẩu <span v-if="!isEditing" class="text-danger">*</span></label>
+					<input v-model="formData.password" type="password" class="form-control" :required="!isEditing" :placeholder="isEditing ? 'Bỏ trống nếu không đổi' : 'Tối thiểu 8 ký tự'" />
+				</div>
+				<div class="form-group">
+					<label>Xác nhận mật khẩu <span v-if="!isEditing || formData.password" class="text-danger">*</span></label>
+					<input v-model="formData.password_confirm" type="password" class="form-control" :required="(!isEditing) || !!formData.password" :placeholder="isEditing ? 'Nhập lại mật khẩu nếu có đổi' : 'Nhập lại mật khẩu'" />
+				</div>
+				<div class="form-group">
+					<label>Vai trò (Role)</label>
+					<select v-model="formData.role_id" class="form-control" :disabled="isRoleDisabled">
+						<option v-for="role in roles" :key="role.id" :value="role.id">
+							{{ role.label }}
+						</option>
+					</select>
+					<small v-if="isRoleDisabled" class="text-danger" style="margin-top: 4px; display: block;">Không thể thay đổi quyền của bản thân hoặc Admin khác</small>
+				</div>
+				<div class="form-group form-check" style="margin-top: var(--space-3); display: flex; align-items: center; gap: 8px;">
+					<input v-model="formData.is_active" type="checkbox" id="userActiveCheck" :disabled="isActiveDisabled" />
+					<label for="userActiveCheck" style="margin-bottom: 0; font-weight: normal; cursor: pointer;" :style="isActiveDisabled ? 'opacity: 0.6;' : ''">Tài khoản đang hoạt động</label>
+				</div>
+			</form>
+			<template #footer>
+				<button class="btn btn--outline" type="button" @click="isModalVisible = false" :disabled="submitLoading">Huỷ</button>
+				<button class="btn btn--primary" type="button" @click="submitForm" :disabled="submitLoading">
+					{{ submitLoading ? 'Đang lưu...' : 'Lưu lại' }}
+				</button>
+			</template>
+		</ModalDialog>
 	</div>
 </template>
 
@@ -443,5 +604,27 @@
 		.search-box {
 			max-width: none;
 		}
+	}
+
+	.disabled-btn {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	/* Form Layout in Modal */
+	.form-layout {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		padding: var(--space-2) 0;
+	}
+	.form-group label {
+		display: block;
+		margin-bottom: var(--space-2);
+		font-weight: var(--fw-semibold);
+		color: var(--text-main);
+	}
+	.text-danger {
+		color: var(--danger-color);
 	}
 </style>

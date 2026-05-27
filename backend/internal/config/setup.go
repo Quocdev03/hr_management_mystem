@@ -149,7 +149,7 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 
 	// ================= USERS =================
 	users := []model.User{
-		{UserName: "admin", Email: "Quocdt2003@ccquocn8n.cloud", Password: string(hashedPwdAdmin), RoleID: adminRole.ID},
+		{UserName: "admin", Email: "quocdt2003@ccquocn8n.cloud", Password: string(hashedPwdAdmin), RoleID: adminRole.ID},
 
 		{UserName: "it_lead", Email: "it_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
 		{UserName: "it_dev", Email: "it_dev@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},

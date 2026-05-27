@@ -5,10 +5,12 @@ import buildingIcon from "@/assets/svg/building.svg";
 import keyIcon from "@/assets/svg/key.svg";
 import { useDashboardStore } from "@/store/dashboard";
 import { computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import Skeleton from "@/components/Skeleton.vue";
 
 const dashboardStore = useDashboardStore();
-
-const dashboardStats = computed(() => dashboardStore.stats);
+const { stats, loading } = storeToRefs(dashboardStore);
+const dashboardStats = computed(() => stats.value);
 
 async function loadDashboard() {
 	try {
@@ -23,39 +25,60 @@ onMounted(loadDashboard);
 <template>
 	<div class="dashboard-container">
 		<div class="stats-grid">
+			<!-- Stat Card 1 -->
 			<div class="stat-card stat-card--blue">
 				<div class="stat-icon-wrapper">
 					<img :src="usersIcon" class="stat-icon" alt="users" />
 				</div>
-				<div class="stat-info">
-					<div class="stat-value">
-						{{ dashboardStats.total_employees }}
-					</div>
-					<div class="stat-label">Tổng nhân viên</div>
+				<div class="stat-info" style="flex-grow: 1;">
+					<template v-if="loading">
+						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton type="text" width="100px" height="16px" />
+					</template>
+					<template v-else>
+						<div class="stat-value">
+							{{ dashboardStats.total_employees }}
+						</div>
+						<div class="stat-label">Tổng nhân viên</div>
+					</template>
 				</div>
 			</div>
 
+			<!-- Stat Card 2 -->
 			<div class="stat-card stat-card--green">
 				<div class="stat-icon-wrapper">
 					<img :src="checkIcon" class="stat-icon" alt="active" />
 				</div>
-				<div class="stat-info">
-					<div class="stat-value">
-						{{ dashboardStats.total_employees_active }}
-					</div>
-					<div class="stat-label">Đang làm việc</div>
+				<div class="stat-info" style="flex-grow: 1;">
+					<template v-if="loading">
+						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton type="text" width="100px" height="16px" />
+					</template>
+					<template v-else>
+						<div class="stat-value">
+							{{ dashboardStats.total_employees_active }}
+						</div>
+						<div class="stat-label">Đang làm việc</div>
+					</template>
 				</div>
 			</div>
 
+			<!-- Stat Card 3 -->
 			<div class="stat-card stat-card--amber">
 				<div class="stat-icon-wrapper">
 					<img :src="buildingIcon" class="stat-icon" alt="dept" />
 				</div>
-				<div class="stat-info">
-					<div class="stat-value">
-						{{ dashboardStats.total_departments }}
-					</div>
-					<div class="stat-label">Phòng ban</div>
+				<div class="stat-info" style="flex-grow: 1;">
+					<template v-if="loading">
+						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton type="text" width="100px" height="16px" />
+					</template>
+					<template v-else>
+						<div class="stat-value">
+							{{ dashboardStats.total_departments }}
+						</div>
+						<div class="stat-label">Phòng ban</div>
+					</template>
 				</div>
 			</div>
 		</div>
@@ -64,33 +87,45 @@ onMounted(loadDashboard);
 		<section class="dept-section">
 			<h2 class="section-title">Nhân viên theo phòng ban</h2>
 			<div class="dept-grid">
-				<div
-					v-for="dept in dashboardStats.department_stats"
-					:key="dept.name"
-					class="dept-card"
-				>
-					<div class="dept-header">
-						<span class="dept-name">{{
-							dept.department_name
-						}}</span>
-						<span class="dept-count">{{
-							dept.employee_count
-						}}</span>
+				<template v-if="loading">
+					<div v-for="i in 3" :key="'skeleton-d-' + i" class="dept-card">
+						<div class="dept-header">
+							<Skeleton type="text" width="120px" height="18px" />
+							<Skeleton type="badge" width="40px" height="22px" />
+						</div>
+						<div class="progress-container">
+							<div class="skeleton" style="width: 100%; height: 100%;"></div>
+						</div>
 					</div>
-					<div class="progress-container">
-						<div
-							class="progress-bar"
-							:style="{
-								width:
-									(dept.employee_count /
-										(dashboardStats.total_employees || 1)) *
-										100 +
-									'%',
-							}"
-						></div>
-						div>
+				</template>
+				<template v-else>
+					<div
+						v-for="dept in dashboardStats.department_stats"
+						:key="dept.name"
+						class="dept-card"
+					>
+						<div class="dept-header">
+							<span class="dept-name">{{
+								dept.department_name
+							}}</span>
+							<span class="dept-count">{{
+								dept.employee_count
+							}}</span>
+						</div>
+						<div class="progress-container">
+							<div
+								class="progress-bar"
+								:style="{
+									width:
+										(dept.employee_count /
+											(dashboardStats.total_employees || 1)) *
+											100 +
+										'%',
+								}"
+							></div>
+						</div>
 					</div>
-				</div>
+				</template>
 			</div>
 		</section>
 	</div>

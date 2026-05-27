@@ -9,10 +9,12 @@
 
 	import ModalDialog from "@/components/ModalDialog.vue";
 	import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+	import Skeleton from "@/components/Skeleton.vue";
 
 	import { getInitials, formatDate, formatStatus } from "@/helpers/formatters";
 	import { useModalState } from "@/helpers/useModalState";
 	import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
+	import { usePermissions } from "@/helpers/usePermissions";
 
 	import plusIcon from "@/assets/svg/plus.svg";
 	import searchIcon from "@/assets/svg/search.svg";
@@ -26,6 +28,7 @@
 	const departmentStore = useDepartmentStore();
 	const userStore = useUserStore();
 	const toast = useToast();
+	const { canCreateEmployee, canEditEmployee, canDeleteEmployee, hasAnyEmployeeAction } = usePermissions();
 
 	const { employees, pagination, loading } = storeToRefs(employeeStore);
 	const { departments } = storeToRefs(departmentStore);
@@ -220,7 +223,7 @@
 					<span>{{ pagination.total }}</span> nhân viên
 				</p>
 			</div>
-			<button class="btn btn--primary" @click="handleAdd">
+			<button v-if="canCreateEmployee" class="btn btn--primary" @click="handleAdd">
 				<img :src="plusIcon" alt="add" class="btn__icon" />
 				Thêm nhân viên
 			</button>
@@ -240,9 +243,8 @@
 				</div>
 			</div>
 
-			<div v-if="loading" class="table-loading">Đang tải dữ liệu...</div>
 			<!-- Bảng dữ liệu -->
-			<div v-else class="table-responsive">
+			<div class="table-responsive">
 				<table class="data-table">
 					<thead>
 						<tr>
@@ -251,83 +253,124 @@
 							<th>Phòng ban / Chức vụ</th>
 							<th>Ngày vào làm</th>
 							<th>Trạng thái</th>
-							<th class="text-right">Thao tác</th>
+							<th v-if="hasAnyEmployeeAction" class="text-right">Thao tác</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="emp in employees" :key="emp.id">
-							<td>
-								<div class="user-info">
-									<div class="user-info__avatar">
-										{{ getInitials(emp.first_name, emp.last_name) }}
+						<!-- Loading skeleton rows -->
+						<template v-if="loading">
+							<tr v-for="i in 5" :key="'skeleton-' + i">
+								<td>
+									<div class="user-info">
+										<Skeleton type="avatar" />
+										<div class="user-info__details" style="width: 150px; display: flex; flex-direction: column; gap: var(--space-1);">
+											<Skeleton type="text" width="80%" />
+											<Skeleton type="text" width="50%" />
+										</div>
 									</div>
-									<div class="user-info__details">
-										<h1 class="user-info__name">
-											{{ emp.first_name }}
-											{{ emp.last_name }}
-										</h1>
-										<span class="user-info__email" v-if="emp.user">
-											{{ emp.user.email }}
-										</span>
-										<span class="user-info__email" v-if="emp.user">
-											User: {{ emp.user.user_name }}
-										</span>
-										<span v-else class="user-info__email">
-											Chưa có tài khoản
-										</span>
+								</td>
+								<td>
+									<Skeleton type="text" width="100px" />
+								</td>
+								<td>
+									<div class="job-info" style="width: 120px; display: flex; flex-direction: column; gap: var(--space-1);">
+										<Skeleton type="text" width="70%" />
+										<Skeleton type="text" width="50%" />
 									</div>
-								</div>
-							</td>
-							<td>
-								<span class="text-main fw-500">
-									{{ emp.phone || "—" }}
-								</span>
-							</td>
-							<td>
-								<div class="job-info">
-									<h1 class="job-info__dept">
-										{{ emp.department?.name || "N/A" }}
-									</h1>
-									<span class="job-info__pos">
-										{{ emp.position || "Nhân viên" }}
+								</td>
+								<td>
+									<Skeleton type="text" width="80px" />
+								</td>
+								<td>
+									<Skeleton type="badge" />
+								</td>
+								<td v-if="hasAnyEmployeeAction" class="text-right">
+									<div class="action-group">
+										<Skeleton type="btn" />
+										<Skeleton type="btn" />
+									</div>
+								</td>
+							</tr>
+						</template>
+
+						<!-- Actual rows when loaded -->
+						<template v-else>
+							<tr v-for="emp in employees" :key="emp.id">
+								<td>
+									<div class="user-info">
+										<div class="user-info__avatar">
+											{{ getInitials(emp.first_name, emp.last_name) }}
+										</div>
+										<div class="user-info__details">
+											<h1 class="user-info__name">
+												{{ emp.first_name }}
+												{{ emp.last_name }}
+											</h1>
+											<span class="user-info__email" v-if="emp.user">
+												{{ emp.user.email }}
+											</span>
+											<span class="user-info__email" v-if="emp.user">
+												User: {{ emp.user.user_name }}
+											</span>
+											<span v-else class="user-info__email">
+												Chưa có tài khoản
+											</span>
+										</div>
+									</div>
+								</td>
+								<td>
+									<span class="text-main fw-500">
+										{{ emp.phone || "—" }}
 									</span>
-								</div>
-							</td>
-							<td class="text-muted">
-								{{ formatDate(emp.join_date) }}
-							</td>
-							<td>
-								<span :class="['status-badge', `status-badge--${emp.status}`]">
-									{{ formatStatus(emp.status) }}
-								</span>
-							</td>
-							<td class="text-right">
-								<div class="action-group">
-									<button
-										class="btn-icon btn-icon--edit"
-										title="Chỉnh sửa"
-										@click="handleEdit(emp)"
-									>
-										<img :src="editIcon" alt="edit" />
-									</button>
-									<button
-										class="btn-icon btn-icon--delete"
-										title="Xoá"
-										@click="handleDelete(emp)"
-									>
-										<img :src="deleteIcon" alt="delete" />
-									</button>
-								</div>
-							</td>
-						</tr>
-						<tr v-if="employees.length === 0">
-							<td colspan="6" class="empty-state">
-								<div class="empty-state__icon">👥</div>
-								<p class="empty-state__text">
-									Không có dữ liệu nhân viên nào phù hợp.
-								</p>
-							</td>
-						</tr>
+								</td>
+								<td>
+									<div class="job-info">
+										<h1 class="job-info__dept">
+											{{ emp.department?.name || "N/A" }}
+										</h1>
+										<span class="job-info__pos">
+											{{ emp.position || "Nhân viên" }}
+										</span>
+									</div>
+								</td>
+								<td class="text-muted">
+									{{ formatDate(emp.join_date) }}
+								</td>
+								<td>
+									<span :class="['status-badge', `status-badge--${emp.status}`]">
+										{{ formatStatus(emp.status) }}
+									</span>
+								</td>
+								<td v-if="hasAnyEmployeeAction" class="text-right">
+									<div class="action-group">
+										<button
+											v-if="canEditEmployee"
+											class="btn-icon btn-icon--edit"
+											title="Chỉnh sửa"
+											@click="handleEdit(emp)"
+										>
+											<img :src="editIcon" alt="edit" />
+										</button>
+										<button
+											v-if="canDeleteEmployee"
+											class="btn-icon btn-icon--delete"
+											title="Xoá"
+											@click="handleDelete(emp)"
+										>
+											<img :src="deleteIcon" alt="delete" />
+										</button>
+									</div>
+								</td>
+							</tr>
+							<tr v-if="employees.length === 0">
+								<td colspan="6" class="empty-state">
+									<div class="empty-state__icon">👥</div>
+									<p class="empty-state__text">
+										Không có dữ liệu nhân viên nào phù hợp.
+									</p>
+								</td>
+							</tr>
+						</template>
 					</tbody>
 				</table>
 			</div>

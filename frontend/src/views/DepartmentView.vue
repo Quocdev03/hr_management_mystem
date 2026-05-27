@@ -9,9 +9,11 @@
 
 	import ModalDialog from "@/components/ModalDialog.vue";
 	import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+	import Skeleton from "@/components/Skeleton.vue";
 
 	import { useModalState } from "@/helpers/useModalState";
 	import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
+	import { usePermissions } from "@/helpers/usePermissions";
 
 	import plusIcon from "@/assets/svg/plus.svg";
 	import searchIcon from "@/assets/svg/search.svg";
@@ -25,6 +27,7 @@
 	const dashboardStore = useDashboardStore();
 	const employeeStore = useEmployeeStore();
 	const toast = useToast();
+	const { canCrudDepartment } = usePermissions();
 
 	const { departments, loading, pagination } = storeToRefs(departmentStore);
 	const { employees } = storeToRefs(employeeStore);
@@ -187,7 +190,7 @@
 					<span>{{ departments.length }}</span> phòng ban
 				</p>
 			</div>
-			<button class="btn btn--primary" @click="handleAdd">
+			<button v-if="canCrudDepartment" class="btn btn--primary" @click="handleAdd">
 				<img :src="plusIcon" alt="add" class="btn__icon" />
 				Thêm phòng ban
 			</button>
@@ -205,8 +208,7 @@
 				</div>
 			</div>
 
-			<div v-if="loading" class="table-loading">Đang tải dữ liệu...</div>
-			<div v-else class="table-responsive">
+			<div class="table-responsive">
 				<table class="data-table">
 					<thead>
 						<tr>
@@ -214,52 +216,79 @@
 							<th>Mã</th>
 							<th>Mô tả</th>
 							<th class="text-center">Trưởng Phòng</th>
-							<th class="text-right">Thao tác</th>
+							<th v-if="canCrudDepartment" class="text-right">Thao tác</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="dept in departments" :key="dept.id">
-							<td class="text-main fw-500">{{ dept.name }}</td>
-							<td>
-								<span class="dept-code">{{ dept.code }}</span>
-							</td>
-							<td class="text-muted">
-								{{ dept.description || "—" }}
-							</td>
-							<td class="text-center">
-								<span class="employee-count">
-									{{
-										dept.manager
-											? dept.manager.first_name + " " + dept.manager.last_name
-											: "Chưa có"
-									}}
-								</span>
-							</td>
-							<td class="text-right">
-								<div class="action-group">
-									<button
-										class="btn-icon btn-icon--edit"
-										title="Chỉnh sửa"
-										@click="handleEdit(dept)"
-									>
-										<img :src="editIcon" alt="edit" />
-									</button>
-									<button
-										class="btn-icon btn-icon--delete"
-										title="Xoá"
-										@click="handleDelete(dept)"
-									>
-										<img :src="deleteIcon" alt="delete" />
-									</button>
-								</div>
-							</td>
-						</tr>
-						<tr v-if="departments.length === 0">
-							<td colspan="5" class="empty-state">
-								<div class="empty-state__icon">🏢</div>
-								<p class="empty-state__text">Không có phòng ban nào phù hợp.</p>
-							</td>
-						</tr>
+						<!-- Loading skeleton rows -->
+						<template v-if="loading">
+							<tr v-for="i in 5" :key="'skeleton-' + i">
+								<td class="text-main fw-500">
+									<Skeleton type="text" width="150px" height="18px" />
+								</td>
+								<td>
+									<Skeleton type="text" class="dept-code" width="60px" height="22px" />
+								</td>
+								<td class="text-muted">
+									<Skeleton type="text" width="220px" height="16px" />
+								</td>
+								<td class="text-center">
+									<Skeleton type="text" class="employee-count" width="120px" height="18px" style="display: inline-block;" />
+								</td>
+								<td v-if="canCrudDepartment" class="text-right">
+									<div class="action-group">
+										<Skeleton type="btn" />
+										<Skeleton type="btn" />
+									</div>
+								</td>
+							</tr>
+						</template>
+
+						<!-- Actual rows when loaded -->
+						<template v-else>
+							<tr v-for="dept in departments" :key="dept.id">
+								<td class="text-main fw-500">{{ dept.name }}</td>
+								<td>
+									<span class="dept-code">{{ dept.code }}</span>
+								</td>
+								<td class="text-muted">
+									{{ dept.description || "—" }}
+								</td>
+								<td class="text-center">
+									<span class="employee-count">
+										{{
+											dept.manager
+												? dept.manager.first_name + " " + dept.manager.last_name
+												: "Chưa có"
+										}}
+									</span>
+								</td>
+								<td v-if="canCrudDepartment" class="text-right">
+									<div class="action-group">
+										<button
+											class="btn-icon btn-icon--edit"
+											title="Chỉnh sửa"
+											@click="handleEdit(dept)"
+										>
+											<img :src="editIcon" alt="edit" />
+										</button>
+										<button
+											class="btn-icon btn-icon--delete"
+											title="Xoá"
+											@click="handleDelete(dept)"
+										>
+											<img :src="deleteIcon" alt="delete" />
+										</button>
+									</div>
+								</td>
+							</tr>
+							<tr v-if="departments.length === 0">
+								<td colspan="5" class="empty-state">
+									<div class="empty-state__icon">🏢</div>
+									<p class="empty-state__text">Không có phòng ban nào phù hợp.</p>
+								</td>
+							</tr>
+						</template>
 					</tbody>
 				</table>
 			</div>

@@ -75,8 +75,10 @@
 	import { useAuthStore } from "@/store/auth";
 	import { useToast } from "vue-toastification";
 	import { storeToRefs } from "pinia";
+	import { useRouter } from "vue-router";
 
 	const toast = useToast();
+	const router = useRouter();
 	const authStore = useAuthStore();
 	const { loading } = storeToRefs(authStore);
 	const isPasswordVisible = ref(false);
@@ -92,7 +94,7 @@
 
 		toast.success("Đăng nhập thành công!");
 
-		window.location.href = "/";
+		router.push("/");
 	}
 
 	function togglePasswordVisibility() {

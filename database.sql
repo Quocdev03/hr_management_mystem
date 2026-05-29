@@ -33,8 +33,8 @@ CREATE TABLE roles (
 
 CREATE TABLE departments (
     id          INT AUTO_INCREMENT PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL UNIQUE,
-    code        VARCHAR(20)  NOT NULL UNIQUE,
+    name        VARCHAR(100) NOT NULL,
+    code        VARCHAR(20)  NOT NULL,
     description VARCHAR(255),
     manager_id  INT NULL,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -43,14 +43,14 @@ CREATE TABLE departments (
 );
 
 -- ============================================================
--- 6. BẢNG users
+-- 4. BẢNG users
 -- Tài khoản đăng nhập hệ thống
 -- ============================================================
 
 CREATE TABLE users (
     id          INT AUTO_INCREMENT PRIMARY KEY,
-    user_name   VARCHAR(100) NOT NULL UNIQUE,
-    email       VARCHAR(150) NOT NULL UNIQUE,
+    user_name   VARCHAR(100) NOT NULL,
+    email       VARCHAR(150) NOT NULL,
     password    VARCHAR(255) NOT NULL,
     role_id     INT NOT NULL,
     is_active   BOOLEAN DEFAULT TRUE,
@@ -63,7 +63,7 @@ CREATE TABLE users (
 );
 
 -- ============================================================
--- 7. BẢNG employees
+-- 5. BẢNG employees
 -- Thông tin chi tiết nhân viên
 -- ============================================================
 
@@ -78,14 +78,11 @@ CREATE TABLE employees (
     salary        DECIMAL(15,2) DEFAULT 0,
     join_date     DATE DEFAULT (CURRENT_DATE),
     birth_date    DATE NULL,
-    gender        VARCHAR(10)  DEFAULT 'male',
-    status        VARCHAR(20)  DEFAULT 'active',  -- active | inactive
+    gender        ENUM('male', 'female', 'other') DEFAULT 'male',
+    status        ENUM('active', 'inactive') DEFAULT 'active',
     created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at    DATETIME NULL,
-
-    CONSTRAINT CK_employees_status
-        CHECK (status IN ('active', 'inactive')),
 
     CONSTRAINT CK_employees_salary
         CHECK (salary >= 0),
@@ -98,7 +95,7 @@ CREATE TABLE employees (
 );
 
 -- ============================================================
--- 8. FK: departments.manager_id → employees.id
+-- 6. FK: departments.manager_id → employees.id
 -- Thêm sau khi bảng employees đã tồn tại
 -- ============================================================
 
@@ -107,7 +104,7 @@ ALTER TABLE departments
         FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL;
 
 -- ============================================================
--- 9. INDEX CƠ BẢN
+-- 7. INDEX CƠ BẢN VÀ COMPOSITE
 -- ============================================================
 
 CREATE INDEX IX_employees_department_id ON employees (department_id);
@@ -115,8 +112,15 @@ CREATE INDEX IX_users_role_id ON users (role_id);
 CREATE INDEX IX_employees_deleted_at ON employees (deleted_at);
 CREATE INDEX IX_departments_deleted_at ON departments (deleted_at);
 CREATE INDEX IX_users_deleted_at ON users (deleted_at);
+CREATE INDEX IX_roles_deleted_at ON roles (deleted_at);
 
--- MySQL syntax for unique index on user_id where user_id IS NOT NULL:
--- MySQL 8.0 allows unique index containing NULLs by default, 
--- multiple NULLs are distinct in MySQL.
-CREATE UNIQUE INDEX UQ_employees_user_id ON employees (user_id);
+-- Indexes thay thế cho UNIQUE bị loại bỏ
+CREATE INDEX IX_departments_name ON departments (name);
+CREATE INDEX IX_departments_code ON departments (code);
+CREATE INDEX IX_users_username ON users (user_name);
+CREATE INDEX IX_users_email ON users (email);
+CREATE INDEX IX_employees_user_id ON employees (user_id);
+
+-- Composite indexes cho query thường dùng
+CREATE INDEX IX_employees_dept_deleted ON employees (department_id, deleted_at);
+CREATE INDEX IX_employees_status_deleted ON employees (status, deleted_at);

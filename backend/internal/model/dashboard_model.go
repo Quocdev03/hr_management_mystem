@@ -1,9 +1,8 @@
 package model
 
 type DepartmentEmployeeCount struct {
-	DepartmentName    string `json:"department_name"`
-	EmployeeCount     int64  `json:"employee_count"`
-	DepartmentManager string `json:"department_manager"`
+	DepartmentName string `json:"department_name"`
+	EmployeeCount  int64  `json:"employee_count"`
 }
 
 type Dashboards struct {

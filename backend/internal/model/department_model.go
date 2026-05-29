@@ -4,9 +4,9 @@ package model
 // Phòng ban
 type Department struct {
 	ID          uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name        string     `gorm:"size:100;uniqueIndex;not null" json:"name"`
-	Code        string     `gorm:"size:20;uniqueIndex;not null" json:"code"`
-	Description string     `gorm:"size:500" json:"description"`
+	Name        string     `gorm:"size:100;not null;index" json:"name"`
+	Code        string     `gorm:"size:20;not null;index" json:"code"`
+	Description string     `gorm:"size:255" json:"description"`
 	ManagerID   *uint      `json:"manager_id"`
 	Manager     *Employee  `gorm:"foreignKey:ManagerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"manager,omitempty"`
 	Employees   []Employee `gorm:"foreignKey:DepartmentID" json:"employees,omitempty"`

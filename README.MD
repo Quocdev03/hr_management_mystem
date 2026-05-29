@@ -1,6 +1,9 @@
 # Hệ Thống Quản Lý Nhân Sự (HR Management System)
 
 [![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Quocdev03/HR_Management)
+![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)
+![Vue Version](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vuedotjs)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) được xây dựng với Backend bằng Go và Frontend bằng Vue.js 3. Hệ thống này cung cấp các chức năng cốt lõi để quản lý nhân viên, phòng ban và tài khoản người dùng cùng với phân quyền truy cập.
 
@@ -42,16 +45,16 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 
 ## 📸 Ảnh Chụp Màn Hình (Screenshots)
 
-| Trang Đăng Nhập | Bảng Điều Khiển (Dashboard) |
-| :---: | :---: |
+|                Trang Đăng Nhập                |            Bảng Điều Khiển (Dashboard)            |
+| :-------------------------------------------: | :-----------------------------------------------: |
 | ![Trang Đăng Nhập](./images_review/login.png) | ![Bảng Điều Khiển](./images_review/dashboard.png) |
 
-| Quản Lý Nhân Viên | Quản Lý Phòng Ban |
-| :---: | :---: |
+|                 Quản Lý Nhân Viên                  |                  Quản Lý Phòng Ban                   |
+| :------------------------------------------------: | :--------------------------------------------------: |
 | ![Quản Lý Nhân Viên](./images_review/employee.png) | ![Quản Lý Phòng Ban](./images_review/department.png) |
 
-| Quản Lý Người Dùng | Hồ Sơ Cá Nhân |
-| :---: | :---: |
+|               Quản Lý Người Dùng                |                 Hồ Sơ Cá Nhân                 |
+| :---------------------------------------------: | :-------------------------------------------: |
 | ![Quản Lý Người Dùng](./images_review/user.png) | ![Hồ Sơ Cá Nhân](./images_review/profile.png) |
 
 ## ⚙️ Cấu Trúc Dự Án (Project Structure)
@@ -183,10 +186,12 @@ DB_NAME=hrm_db
 # ... các biến khác
 
 # Redis - dùng tên service của Docker
-REDIS_HOST=localhost
+REDIS_HOST=redis
 REDIS_PORT=6379
 # ... các biến khác
 ```
+
+> **Lưu ý:** Khi chạy backend **trong Docker container**, giá trị `DB_HOST` và `REDIS_HOST` phải là tên service Docker (`mysql`, `redis`). Khi chạy backend **trực tiếp trên máy host** (không qua Docker), dùng `localhost`.
 
 **c. Thiết Lập Cơ Sở Dữ Liệu**
 Lệnh này sẽ tạo cấu trúc bảng, chạy migration và chèn dữ liệu khởi tạo ban đầu (người dùng, phòng ban, v.v.).
@@ -197,8 +202,7 @@ go run backend/cmd/setup/main.go
 
 > **Tài Khoản Admin Mặc Định:**
 >
-> - **Email:** `quocdt2003@ccquocn8n.cloud`
-> - **Password:** `12345678Quoc@`
+> Thông tin tài khoản mặc định được cấu hình qua biến môi trường trong file `backend/.env`. Xem file `.env.example` để biết giá trị khởi tạo. **Vui lòng đổi mật khẩu ngay sau khi đăng nhập lần đầu.**
 
 **d. Chạy Server Backend**
 Bạn có thể chạy server trực tiếp bằng lệnh go hoặc dùng Makefile.
@@ -238,7 +242,7 @@ npm run dev
 
 Ứng dụng frontend sẽ chạy tại `http://localhost:3000`.
 
-### 📜 Các Lệnh Makefile (Makefile Commands)
+## 📜 Các Lệnh Makefile
 
 File `Makefile` cung cấp các lệnh phím tắt tiện dụng cho quá trình code.
 

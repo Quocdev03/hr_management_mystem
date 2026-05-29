@@ -4,7 +4,7 @@ package model
 // Vai trò (admin, hr, employee)
 type Role struct {
 	ID          uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name        string `gorm:"size:50;uniqueIndex;not null" json:"name"`
+	Name        string `gorm:"size:50;not null;index" json:"name"`
 	Description string `gorm:"size:255" json:"description"`
 	TimestampModel
 }
@@ -13,8 +13,8 @@ type Role struct {
 // Tài khoản đăng nhập
 type User struct {
 	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserName string `gorm:"size:100;uniqueIndex;not null" json:"user_name"`
-	Email    string `gorm:"size:150;uniqueIndex;not null" json:"email"`
+	UserName string `gorm:"size:100;not null;index" json:"user_name"`
+	Email    string `gorm:"size:150;not null;index" json:"email"`
 	Password string `gorm:"size:255;not null" json:"-"`
 
 	RoleID uint `gorm:"not null" json:"role_id"`

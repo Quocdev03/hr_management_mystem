@@ -6,7 +6,7 @@ import "time"
 // Nhân viên
 type Employee struct {
 	ID           uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID       *uint      `gorm:"uniqueIndex" json:"user_id"`
+	UserID       *uint      `gorm:"index" json:"user_id"`
 	User         *User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	DepartmentID uint       `gorm:"not null" json:"department_id"`
 	Department   Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`

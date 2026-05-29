@@ -103,13 +103,6 @@ func CheckEmail(ve *ValidationErrors, email string) {
 	validateEmailFormat(ve, email)
 }
 
-func CheckEmailOptional(ve *ValidationErrors, email string) {
-	email = normalize(email)
-	if email == "" {
-		return
-	}
-	validateEmailFormat(ve, email)
-}
 
 func validatePasswordFormat(ve *ValidationErrors, password string) {
 	if len(password) < 8 {
@@ -129,12 +122,6 @@ func CheckPassword(ve *ValidationErrors, password string) {
 	validatePasswordFormat(ve, password)
 }
 
-func CheckPasswordOptional(ve *ValidationErrors, password string) {
-	if normalize(password) == "" {
-		return
-	}
-	validatePasswordFormat(ve, password)
-}
 
 func validateUsernameFormat(ve *ValidationErrors, username string) {
 	l := length(username)
@@ -154,13 +141,6 @@ func CheckUsername(ve *ValidationErrors, username string) {
 	validateUsernameFormat(ve, username)
 }
 
-func CheckUsernameOptional(ve *ValidationErrors, username string) {
-	username = normalize(username)
-	if username == "" {
-		return
-	}
-	validateUsernameFormat(ve, username)
-}
 
 func validatePhoneFormat(ve *ValidationErrors, phone string) {
 	if !regPhone.MatchString(phone) {
@@ -177,13 +157,6 @@ func CheckPhone(ve *ValidationErrors, phone string) {
 	validatePhoneFormat(ve, phone)
 }
 
-func CheckPhoneOptional(ve *ValidationErrors, phone string) {
-	phone = normalize(phone)
-	if phone == "" {
-		return
-	}
-	validatePhoneFormat(ve, phone)
-}
 
 func validateNameFormat(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen, maxLen int) {
 	l := length(name)
@@ -203,13 +176,6 @@ func CheckName(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen,
 	validateNameFormat(ve, fieldName, fieldLabel, name, minLen, maxLen)
 }
 
-func CheckNameOptional(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen, maxLen int) {
-	name = normalize(name)
-	if name == "" {
-		return
-	}
-	validateNameFormat(ve, fieldName, fieldLabel, name, minLen, maxLen)
-}
 
 func validateCodeFormat(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen, maxLen int) {
 	l := length(code)
@@ -229,10 +195,3 @@ func CheckCode(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen,
 	validateCodeFormat(ve, fieldName, fieldLabel, code, minLen, maxLen)
 }
 
-func CheckCodeOptional(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen, maxLen int) {
-	code = normalize(code)
-	if code == "" {
-		return
-	}
-	validateCodeFormat(ve, fieldName, fieldLabel, code, minLen, maxLen)
-}

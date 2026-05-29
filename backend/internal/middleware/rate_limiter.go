@@ -4,7 +4,6 @@ import (
 	"chiquoc_hocgolang/internal/utils"
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,10 +55,7 @@ func RateLimiter(rdb *redis.Client, limit int, window time.Duration) gin.Handler
 		// Nếu vượt quá giới hạn
 		if count > int64(limit) {
 			utils.Warn("IP %s đã vượt quá giới hạn lượt đăng nhập (%d/%d)", ip, count, limit)
-			ctx.JSON(http.StatusTooManyRequests, utils.Response{
-				Success: false,
-				Message: fmt.Sprintf("Bạn đã thử đăng nhập quá nhiều lần! Vui lòng thử lại sau %d giây.", retryAfterSeconds),
-			})
+			utils.TooManyRequests(ctx, fmt.Sprintf("Bạn đã thử đăng nhập quá nhiều lần! Vui lòng thử lại sau %d giây.", retryAfterSeconds))
 			ctx.Abort()
 			return
 		}

@@ -11,8 +11,8 @@ import (
 
 // --- Các hàm dùng chung cho tất cả handler ---
 
-// ParseUintParam parse URL parameter thành uint
-func ParseUintParam(c *gin.Context, param string) (uint, error) {
+// parseUintParam parse URL parameter thành uint
+func parseUintParam(c *gin.Context, param string) (uint, error) {
 	val, err := strconv.ParseUint(c.Param(param), 10, 64)
 	if err != nil {
 		return 0, err
@@ -24,7 +24,7 @@ func ParseUintParam(c *gin.Context, param string) (uint, error) {
 // Nếu không hợp lệ, tự động trả response BadRequest và return 0, false
 // Dùng chung cho tất cả endpoint có :id
 func ParseAndValidateID(ctx *gin.Context, entityName string) (uint, bool) {
-	id, err := ParseUintParam(ctx, "id")
+	id, err := parseUintParam(ctx, "id")
 	if err != nil {
 		utils.BadRequest(ctx, "ID "+entityName+" không hợp lệ, phải là số nguyên dương!")
 		return 0, false

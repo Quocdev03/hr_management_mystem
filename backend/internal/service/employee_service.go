@@ -1,6 +1,7 @@
 package service
 
 import (
+	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
 	"context"
@@ -155,16 +156,7 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 
 // Danh sách nhân viên có phân trang và tìm kiếm
 func (es *employeeService) GetEmployees(query model.PaginationQuery) (*model.PaginatedResult, error) {
-	// Chuẩn hoá phân trang
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 {
-		query.Limit = 10
-	}
-	if query.Limit > 100 {
-		query.Limit = 100
-	}
+	common.NormalizePagination(&query)
 
 	employees, total, err := es.empRepo.FindAll(query)
 	if err != nil {
@@ -217,6 +209,8 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 
 	deptChanged := oldDeptID != newDeptID
 	isOldManager := emp.Department.ManagerID != nil && *emp.Department.ManagerID == emp.ID
+
+	var result *model.Employee
 
 	if err := es.db.Transaction(func(tx *gorm.DB) error {
 		txEmpRepo := es.empRepo.WithTx(tx)
@@ -302,12 +296,14 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			return fmt.Errorf("Reload nhân viên thất bại: %w", err)
 		}
 
-		// 1. Nếu chuyển phòng ban, tự động gỡ quyền trưởng phòng ở phòng cũ (nếu đang có)
-		if deptChanged && isOldManager {
+		// 1. Nếu chuyển phòng ban, tự động gỡ quyền trưởng phòng ở phòng cũ (nếu đang có).
+		// Dùng biến local stillManager để tránh mutate outer scope từ trong closure.
+		stillManager := isOldManager
+		if deptChanged && stillManager {
 			if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
 				return err
 			}
-			isOldManager = false // Cập nhật lại state sau khi đã gỡ
+			stillManager = false
 		}
 
 		// 2. Cập nhật quyền trưởng phòng theo yêu cầu mới
@@ -317,7 +313,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, &updatedEmp.ID); err != nil {
 					return err
 				}
-			} else if isOldManager {
+			} else if stillManager {
 				// Yêu cầu huỷ quyền trưởng phòng ở phòng hiện tại
 				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, nil); err != nil {
 					return err
@@ -325,6 +321,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			}
 		}
 
+		result = updatedEmp
 		return nil
 	}); err != nil {
 		return nil, err
@@ -333,7 +330,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 	// Invalidate dashboard stats cache
 	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
 
-	return es.empRepo.FindByID(id)
+	return result, nil
 }
 
 func (es *employeeService) setDepartmentManager(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, departmentID uint, managerID *uint) error {
@@ -362,7 +359,7 @@ func (es *employeeService) setDepartmentManager(empRepo repository.EmployeeRepos
 
 		existingDept, err := deptRepo.FindByManagerID(*managerID)
 		if err == nil && existingDept.ID != departmentID {
-			return fmt.Errorf("Nhân viên này đã là trưởng phòng của phòng khác")
+			return errors.New("Nhân viên này đã là trưởng phòng của phòng khác")
 		}
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err

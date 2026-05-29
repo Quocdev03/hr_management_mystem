@@ -61,7 +61,15 @@ export const useAuthStore = defineStore("auth", () => {
 	}
 
 	// ===== Logout =====
-	function logout() {
+	async function logout() {
+		if (accessToken.value) {
+			try {
+				await api.post("/auth/logout");
+			} catch (error) {
+				console.error("Lỗi khi gọi API logout:", error);
+			}
+		}
+
 		accessToken.value = null;
 		user.value = null;
 

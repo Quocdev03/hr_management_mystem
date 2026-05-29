@@ -5,10 +5,13 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/utils"
+	"context"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -17,6 +20,7 @@ import (
 type AuthService interface {
 	Login(req model.LoginRequest) (*model.LoginResponse, error)
 	GetProfile(ID uint) (*model.Employee, error)
+	Logout(tokenString string, remainingTime time.Duration) error
 }
 
 // --- Auth Service Implementation ---
@@ -24,14 +28,24 @@ type authServive struct {
 	useRepo repository.UserRepository
 	empRepo repository.EmployeeRepository
 	jwtCfg  *config.JWTConfig
+	rdb     *redis.Client
 }
 
-func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, jwtCfg *config.JWTConfig) AuthService {
+func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, jwtCfg *config.JWTConfig, rdb *redis.Client) AuthService {
 	return &authServive{
 		useRepo: userRepo,
 		empRepo: empRepo,
 		jwtCfg:  jwtCfg,
+		rdb:     rdb,
 	}
+}
+
+func (au *authServive) Logout(tokenString string, remainingTime time.Duration) error {
+	if au.rdb == nil {
+		return errors.New("Redis client is not initialized")
+	}
+	ctx := context.Background()
+	return au.rdb.Set(ctx, "blacklist:"+tokenString, "true", remainingTime).Err()
 }
 
 // Login và trả về JWT Token

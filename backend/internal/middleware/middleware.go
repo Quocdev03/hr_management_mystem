@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 // Dùng constants để tránh typo khi get/set vào gin.Context
@@ -62,7 +63,7 @@ func Recovery() gin.HandlerFunc {
 }
 
 // Xác thực JWT token trong header Authorization
-func AuthJWT(cfg *config.JWTConfig) gin.HandlerFunc {
+func AuthJWT(cfg *config.JWTConfig, rdb *redis.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Lấy token từ header trước
 		authHeader := ctx.GetHeader("Authorization")
@@ -93,6 +94,20 @@ func AuthJWT(cfg *config.JWTConfig) gin.HandlerFunc {
 		ctx.Set(ContextKeyEmail, claims.Email)
 		ctx.Set(ContextKeyRoleID, claims.RoleID)
 		ctx.Set(ContextKeyRoleName, claims.RoleName)
+
+		// Set Token cho Logout
+		ctx.Set("TokenString", tokenString)
+		ctx.Set("TokenRemainingTime", time.Until(claims.ExpiresAt.Time))
+
+		// Kiểm tra Token đã bị đăng xuất chưa (Blacklist)
+		if rdb != nil {
+			isBlacklisted, err := rdb.Exists(ctx, "blacklist:"+tokenString).Result()
+			if err == nil && isBlacklisted > 0 {
+				utils.Unauthorized(ctx, "Token đã bị vô hiệu hoá (Đăng xuất)")
+				ctx.Abort()
+				return
+			}
+		}
 
 		ctx.Next()
 

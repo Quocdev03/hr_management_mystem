@@ -6,6 +6,7 @@ import (
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -82,4 +83,34 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 		"role_name": roleName,
 		"employee":  emp,
 	})
+}
+
+// Logout godoc
+// POST /api/v1/auth/logout - cần JWT token
+func (h *AuthHandler) Logout(ctx *gin.Context) {
+	tokenStringVal, exists := ctx.Get("TokenString")
+	if !exists {
+		utils.Unauthorized(ctx, "Không tìm thấy token")
+		return
+	}
+	tokenString := tokenStringVal.(string)
+
+	remainingTimeVal, exists := ctx.Get("TokenRemainingTime")
+	if !exists {
+		utils.Unauthorized(ctx, "Không thể xác định thời gian hết hạn")
+		return
+	}
+	remainingTime, ok := remainingTimeVal.(time.Duration)
+	if !ok {
+		utils.Unauthorized(ctx, "Dữ liệu thời gian không hợp lệ")
+		return
+	}
+
+	err := h.authSvc.Logout(tokenString, remainingTime)
+	if err != nil {
+		utils.BadRequest(ctx, "Không thể đăng xuất: "+err.Error())
+		return
+	}
+
+	utils.Success(ctx, "Đăng xuất thành công", nil)
 }

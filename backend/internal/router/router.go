@@ -46,12 +46,15 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 		auth.POST("/login", middleware.RateLimiter(rdb, 5, time.Minute), authHandler.Login)
 
 		// Profile Cần JWT token
-		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT), authHandler.GetProfile)
+		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
+		
+		// Đăng xuất
+		auth.POST("/logout", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.Logout)
 	}
 
 	// Tất cả routes bên dưới đều cần JWT token
 	protected := v1.Group("")
-	protected.Use(middleware.AuthJWT(&cfg.JWT))
+	protected.Use(middleware.AuthJWT(&cfg.JWT, rdb))
 
 	dashboard := protected.Group("/dashboard")
 	{

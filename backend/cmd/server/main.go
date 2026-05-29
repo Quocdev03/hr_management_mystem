@@ -47,7 +47,7 @@ func main() {
 	dashRepo := repository.NewDashboardsRepository(db)
 
 	// Services - chứa business logic
-	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT)
+	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT, rdb)
 	userScv := service.NewUserService(userRepo, cacheSvc)
 	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, cacheSvc)
 	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, cacheSvc)

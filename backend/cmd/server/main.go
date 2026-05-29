@@ -34,6 +34,8 @@ func main() {
 	fmt.Printf("[REDIS-info] Địa chỉ         : %s:%s (DB: %d)\n", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
 	fmt.Printf("[REDIS-info] Dashboard cache  : TTL 1 giờ  | Key: dashboard:stats\n")
 	fmt.Printf("[REDIS-info] Login rate limit  : 5 lượt / 1 phút / IP\n")
+	fmt.Printf("[REDIS-info] API GET Cache     : TTL 15 phút | Key: cache:{URL}\n")
+	fmt.Printf("[REDIS-info] API Invalidation  : Xóa tự động khi POST/PUT/DELETE\n")
 
 	// Kết nối các layer của
 	// Handler -> Service -> Repository

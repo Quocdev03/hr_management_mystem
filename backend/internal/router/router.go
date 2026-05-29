@@ -62,38 +62,40 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 	employees := protected.Group("/employees")
 	{
 		// Xem danh sách: tất cả roles đăng nhập đều xem được
-		employees.GET("", empHandler.GetEmployees)
-		employees.GET("/:id", empHandler.GetEmployee)
+		employees.GET("", middleware.CacheResponse(rdb, 15*time.Minute), empHandler.GetEmployees)
+		employees.GET("/:id", middleware.CacheResponse(rdb, 15*time.Minute), empHandler.GetEmployee)
 
 		// / Tạo/Sửa/Xóa: chỉ admin và hr mới được
-		employees.POST("", middleware.RequireRole("admin", "hr"), empHandler.CreateEmployee)
-		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), empHandler.UpdateEmployee)
+		employees.POST("", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.CreateEmployee)
+		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.UpdateEmployee)
 
 		// chỉ admin xóa
-		employees.DELETE("/:id", middleware.RequireRole("admin"), empHandler.DeleteEmployee)
+		employees.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.DeleteEmployee)
 
 	}
 	// Users
 	users := protected.Group("/users")
 	{
 		// / Tạo/Sửa/Xóa: chỉ admin
-		users.GET("", middleware.RequireRole("admin"), userHandler.GetUsers)
-		users.GET("/:id", middleware.RequireRole("admin"), userHandler.GetUser)
-		users.GET("/available", middleware.RequireRole("admin"), userHandler.GetUsersWithoutEmployee)
-		users.POST("", middleware.RequireRole("admin"), userHandler.CreateUser)
-		users.PUT("/:id", middleware.RequireRole("admin"), userHandler.UpdateUser)
-		users.DELETE("/:id", middleware.RequireRole("admin"), userHandler.DeleteUser)
+		users.GET("", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUsers)
+		users.GET("/:id", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUser)
+		users.GET("/available", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUsersWithoutEmployee)
+		
+		users.POST("", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.CreateUser)
+		users.PUT("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.UpdateUser)
+		users.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.DeleteUser)
 	}
 
 	// Departments
 	departments := protected.Group("departments")
 	{
 		// Tạo/Sửa/Xóa: chỉ admin
-		departments.GET("", deptHandler.GetDepartments)
-		departments.GET("/:id", deptHandler.GetDepartment)
-		departments.POST("", middleware.RequireRole("admin"), deptHandler.CreateDepartment)
-		departments.PUT("/:id", middleware.RequireRole("admin"), deptHandler.UpdateDepartment)
-		departments.DELETE("/:id", middleware.RequireRole("admin"), deptHandler.DeleteDepartment)
+		departments.GET("", middleware.CacheResponse(rdb, 15*time.Minute), deptHandler.GetDepartments)
+		departments.GET("/:id", middleware.CacheResponse(rdb, 15*time.Minute), deptHandler.GetDepartment)
+		
+		departments.POST("", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.CreateDepartment)
+		departments.PUT("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.UpdateDepartment)
+		departments.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.DeleteDepartment)
 
 	}
 

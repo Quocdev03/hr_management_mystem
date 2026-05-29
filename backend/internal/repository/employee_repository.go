@@ -37,7 +37,7 @@ func (r *employeeRepository) Create(emp *model.Employee) error {
 
 // Tìm nhân viên với phân trang, tìm kiếm, preload quan hệ
 func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Employee, int64, error) {
-	var employee []model.Employee
+	var employees []model.Employee
 	var total int64
 
 	db := r.db.Model(&model.Employee{})
@@ -69,9 +69,9 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 		Offset(offset).
 		Limit(query.Limit).
 		Order("created_at DESC").
-		Find(&employee).Error
+		Find(&employees).Error
 
-	return employee, total, err
+	return employees, total, err
 }
 
 func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {

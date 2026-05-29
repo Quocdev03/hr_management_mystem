@@ -58,7 +58,7 @@ func main() {
 	userHandler := handler.NewUserHandler(userScv)
 	empHandler := handler.NewEmployeeHandler(empScv)
 	deptHandler := handler.NewDepartmentHandler(deptScv)
-	dashHandler := handler.NewDashboardHanlder(dashScv)
+	dashHandler := handler.NewDashboardHandler(dashScv)
 
 	// Thiết lập router
 	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler)

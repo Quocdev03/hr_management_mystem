@@ -47,7 +47,7 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Kiểm tra tên phòng ban đã tồn tại chưa
-	if existingDepts, _, err := ds.deptRepo.FindAll(model.PaginationQuery{Page: 1, Limit: 1, Search: req.Name}); err == nil {
+	if existingDepts, _, err := ds.deptRepo.FindAll(model.PaginationQuery{Page: 1, Limit: 100, Search: req.Name}); err == nil {
 		for _, d := range existingDepts {
 			if strings.EqualFold(d.Name, req.Name) {
 				return nil, fmt.Errorf("Tên phòng ban '%s' đã tồn tại!", req.Name)
@@ -154,7 +154,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 
 			if !strings.EqualFold(name, dept.Name) {
 				existingDepts, _, err := txDeptRepo.FindAll(model.PaginationQuery{
-					Page: 1, Limit: 1, Search: name,
+					Page: 1, Limit: 100, Search: name,
 				})
 				if err == nil {
 					for _, d := range existingDepts {

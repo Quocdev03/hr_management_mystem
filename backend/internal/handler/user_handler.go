@@ -2,6 +2,7 @@ package handler
 
 import (
 	"chiquoc_hocgolang/internal/common"
+	"chiquoc_hocgolang/internal/middleware"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
@@ -90,7 +91,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	}
 
 	// Logic kiểm tra phân quyền an toàn
-	requesterID, exists := ctx.Get("userID")
+	requesterID, exists := ctx.Get(middleware.ContextKeyUserID)
 	if exists {
 		reqID := requesterID.(uint)
 		

@@ -15,9 +15,9 @@ type AuthHandler struct {
 	authSvc service.AuthService
 }
 
-func NewAuthHandler(authScv service.AuthService) *AuthHandler {
+func NewAuthHandler(authSvc service.AuthService) *AuthHandler {
 	return &AuthHandler{
-		authSvc: authScv,
+		authSvc: authSvc,
 	}
 }
 

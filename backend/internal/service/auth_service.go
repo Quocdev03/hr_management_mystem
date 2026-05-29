@@ -24,7 +24,7 @@ type AuthService interface {
 }
 
 // --- Auth Service Implementation ---
-type authServive struct {
+type authService struct {
 	useRepo repository.UserRepository
 	empRepo repository.EmployeeRepository
 	jwtCfg  *config.JWTConfig
@@ -32,7 +32,7 @@ type authServive struct {
 }
 
 func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, jwtCfg *config.JWTConfig, rdb *redis.Client) AuthService {
-	return &authServive{
+	return &authService{
 		useRepo: userRepo,
 		empRepo: empRepo,
 		jwtCfg:  jwtCfg,
@@ -40,7 +40,7 @@ func NewAuthService(userRepo repository.UserRepository, empRepo repository.Emplo
 	}
 }
 
-func (au *authServive) Logout(tokenString string, remainingTime time.Duration) error {
+func (au *authService) Logout(tokenString string, remainingTime time.Duration) error {
 	if au.rdb == nil {
 		return errors.New("Redis client is not initialized")
 	}
@@ -49,7 +49,7 @@ func (au *authServive) Logout(tokenString string, remainingTime time.Duration) e
 }
 
 // Login và trả về JWT Token
-func (au *authServive) Login(req model.LoginRequest) (*model.LoginResponse, error) {
+func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, error) {
 	// Validate đầu vào (defense-in-depth, handler đã validate rồi)
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	if req.Email == "" {
@@ -94,7 +94,7 @@ func (au *authServive) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	}, nil
 }
 
-func (au *authServive) GetProfile(id uint) (*model.Employee, error) {
+func (au *authService) GetProfile(id uint) (*model.Employee, error) {
 
 	emp, err := au.empRepo.FindByUserID(id)
 	if err != nil {

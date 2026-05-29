@@ -193,7 +193,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, errors.New("ID nhân viên phải lớn hơn 0")
 	}
 
-	emp, err := es.empRepo.FindByID(id)
+	_, err := es.empRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("Không tìm thấy nhân viên này")
@@ -201,21 +201,27 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
 	}
 
-	oldDeptID := emp.DepartmentID
-	newDeptID := emp.DepartmentID
-	if req.DepartmentID != nil {
-		newDeptID = *req.DepartmentID
-	}
-
-	deptChanged := oldDeptID != newDeptID
-	isOldManager := emp.Department.ManagerID != nil && *emp.Department.ManagerID == emp.ID
-
 	var result *model.Employee
 
 	if err := es.db.Transaction(func(tx *gorm.DB) error {
 		txEmpRepo := es.empRepo.WithTx(tx)
 		txDeptRepo := es.deptRepo.WithTx(tx)
 		txUserRepo := es.userRepo.WithTx(tx)
+
+		// Lấy lại dữ liệu nhân viên trong transaction để tính toán trạng thái chính xác nhất
+		empTx, err := txEmpRepo.FindByID(id)
+		if err != nil {
+			return fmt.Errorf("Lỗi khi tìm nhân viên trong transaction: %w", err)
+		}
+
+		oldDeptID := empTx.DepartmentID
+		newDeptID := empTx.DepartmentID
+		if req.DepartmentID != nil {
+			newDeptID = *req.DepartmentID
+		}
+
+		deptChanged := oldDeptID != newDeptID
+		isOldManager := empTx.Department.ManagerID != nil && *empTx.Department.ManagerID == empTx.ID
 
 		updateData := map[string]interface{}{}
 
@@ -380,8 +386,29 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 		}
 		return fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
 	}
-	if err := es.empRepo.Delete(id); err != nil {
-		return fmt.Errorf("Lỗi khi xoá nhân viên này: %w", err)
+	err := es.db.Transaction(func(tx *gorm.DB) error {
+		txEmpRepo := es.empRepo.WithTx(tx)
+		txDeptRepo := es.deptRepo.WithTx(tx)
+
+		// Kiểm tra xem nhân viên này có đang làm trưởng phòng không
+		if dept, err := txDeptRepo.FindByManagerID(id); err == nil {
+			// Tự động gỡ quyền trưởng phòng
+			if updateErr := txDeptRepo.UpdateManager(dept.ID, nil); updateErr != nil {
+				return fmt.Errorf("Lỗi khi gỡ quyền trưởng phòng trước khi xoá nhân viên: %w", updateErr)
+			}
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("Lỗi khi kiểm tra quyền trưởng phòng: %w", err)
+		}
+
+		if err := txEmpRepo.Delete(id); err != nil {
+			return fmt.Errorf("Lỗi khi xoá nhân viên này: %w", err)
+		}
+		
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
 	// Invalidate dashboard stats cache
 	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")

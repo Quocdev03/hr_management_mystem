@@ -82,7 +82,7 @@ func (r *userRepository) FindByUsername(username string) (*model.User, error) {
 
 func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Role").Where("email = ?  ", email).First(&user).Error
+	err := r.db.Preload("Role").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

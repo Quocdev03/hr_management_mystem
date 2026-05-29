@@ -14,7 +14,7 @@ import (
 // SetupRouter khởi tạo và cấu hình tất cả routes
 // Nơi kết nối middleware -> handler -> service -> repository
 
-func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder, userHandler *handler.UserHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardHandler, userHandler *handler.UserHandler) *gin.Engine {
 	// Tắt debug log trong production
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -47,7 +47,7 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 
 		// Profile Cần JWT token
 		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
-		
+
 		// Đăng xuất
 		auth.POST("/logout", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.Logout)
 	}
@@ -83,7 +83,7 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 		users.GET("", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUsers)
 		users.GET("/:id", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUser)
 		users.GET("/available", middleware.RequireRole("admin"), middleware.CacheResponse(rdb, 15*time.Minute), userHandler.GetUsersWithoutEmployee)
-		
+
 		users.POST("", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.CreateUser)
 		users.PUT("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.UpdateUser)
 		users.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), userHandler.DeleteUser)
@@ -95,7 +95,7 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 		// Tạo/Sửa/Xóa: chỉ admin
 		departments.GET("", middleware.CacheResponse(rdb, 15*time.Minute), deptHandler.GetDepartments)
 		departments.GET("/:id", middleware.CacheResponse(rdb, 15*time.Minute), deptHandler.GetDepartment)
-		
+
 		departments.POST("", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.CreateDepartment)
 		departments.PUT("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.UpdateDepartment)
 		departments.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/departments*"), deptHandler.DeleteDepartment)

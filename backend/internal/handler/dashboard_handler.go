@@ -7,20 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DashboardsHanlder struct {
+type DashboardHandler struct {
 	dashB service.DashboardService
 }
 
-func NewDashboardHanlder(dashB service.DashboardService) *DashboardsHanlder {
-	return &DashboardsHanlder{
+func NewDashboardHandler(dashB service.DashboardService) *DashboardHandler {
+	return &DashboardHandler{
 		dashB: dashB,
 	}
 }
 
-func (dashB *DashboardsHanlder) GetStats(ctx *gin.Context) {
+func (dashB *DashboardHandler) GetStats(ctx *gin.Context) {
 	result, err := dashB.dashB.GetStats()
 	if err != nil {
 		utils.InternalServerError(ctx, err.Error())
+		return
 	}
 
 	utils.Success(ctx, "Lấy số liệu dashboard thành công", result)

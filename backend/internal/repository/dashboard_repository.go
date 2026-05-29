@@ -7,11 +7,11 @@ import (
 )
 
 type DashboardsRepository interface {
-	CountUser() int64
-	CountEmployees() int64
-	CountDepartments() int64
-	GetEmployeeActive() int64
-	GetEmployeeCountByDepartment() []model.DepartmentEmployeeCount
+	CountUser() (int64, error)
+	CountEmployees() (int64, error)
+	CountDepartments() (int64, error)
+	GetEmployeeActive() (int64, error)
+	GetEmployeeCountByDepartment() ([]model.DepartmentEmployeeCount, error)
 }
 
 type dashboardsRepository struct {
@@ -24,25 +24,25 @@ func NewDashboardsRepository(db *gorm.DB) DashboardsRepository {
 	}
 }
 
-func (d *dashboardsRepository) CountUser() int64 {
+func (d *dashboardsRepository) CountUser() (int64, error) {
 	var count int64
-	d.db.Model(&model.User{}).Count(&count)
-	return count
+	err := d.db.Model(&model.User{}).Count(&count).Error
+	return count, err
 }
 
-func (d *dashboardsRepository) CountEmployees() int64 {
+func (d *dashboardsRepository) CountEmployees() (int64, error) {
 	var count int64
-	d.db.Model(&model.Employee{}).Count(&count)
-	return count
+	err := d.db.Model(&model.Employee{}).Count(&count).Error
+	return count, err
 }
 
-func (d *dashboardsRepository) CountDepartments() int64 {
+func (d *dashboardsRepository) CountDepartments() (int64, error) {
 	var count int64
-	d.db.Model(&model.Department{}).Count(&count)
-	return count
+	err := d.db.Model(&model.Department{}).Count(&count).Error
+	return count, err
 }
 
-func (d *dashboardsRepository) GetEmployeeCountByDepartment() []model.DepartmentEmployeeCount {
+func (d *dashboardsRepository) GetEmployeeCountByDepartment() ([]model.DepartmentEmployeeCount, error) {
 	var stats []model.DepartmentEmployeeCount
 
 	// Lấy tên phòng ban và đếm số nhân viên thuộc phòng ban đó
@@ -52,12 +52,12 @@ func (d *dashboardsRepository) GetEmployeeCountByDepartment() []model.Department
 	LEFT JOIN employees ON employees.department_id = departments.id AND employees.deleted_at IS NULL
 	WHERE departments.deleted_at IS NULL
 	GROUP BY department_name, departments.id `
-	d.db.Raw(query).Scan(&stats)
-	return stats
+	err := d.db.Raw(query).Scan(&stats).Error
+	return stats, err
 }
 
-func (d *dashboardsRepository) GetEmployeeActive() int64 {
+func (d *dashboardsRepository) GetEmployeeActive() (int64, error) {
 	var count int64
-	d.db.Model(&model.Employee{}).Where("status = ?", "active").Count(&count)
-	return count
+	err := d.db.Model(&model.Employee{}).Where("status = ?", "active").Count(&count).Error
+	return count, err
 }

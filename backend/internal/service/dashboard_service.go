@@ -5,6 +5,7 @@ import (
 	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/utils"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -38,12 +39,37 @@ func (s *dashboardService) GetStats() (*model.Dashboards, error) {
 	utils.Info("Cache miss hoặc Redis lỗi (%v). Tiến hành lấy dữ liệu từ MySQL database...", err)
 
 	// Lấy dữ liệu trực tiếp từ database
+	totalUsers, err := s.dashRepo.CountUser()
+	if err != nil {
+		return nil, fmt.Errorf("lỗi lấy tổng số user: %w", err)
+	}
+
+	totalEmployees, err := s.dashRepo.CountEmployees()
+	if err != nil {
+		return nil, fmt.Errorf("lỗi lấy tổng số nhân viên: %w", err)
+	}
+
+	totalDepartments, err := s.dashRepo.CountDepartments()
+	if err != nil {
+		return nil, fmt.Errorf("lỗi lấy tổng số phòng ban: %w", err)
+	}
+
+	totalActive, err := s.dashRepo.GetEmployeeActive()
+	if err != nil {
+		return nil, fmt.Errorf("lỗi lấy tổng số nhân viên active: %w", err)
+	}
+
+	deptStats, err := s.dashRepo.GetEmployeeCountByDepartment()
+	if err != nil {
+		return nil, fmt.Errorf("lỗi lấy thống kê phòng ban: %w", err)
+	}
+
 	dbStats := &model.Dashboards{
-		TotalUsers:           s.dashRepo.CountUser(),
-		TotalEmployees:       s.dashRepo.CountEmployees(),
-		TotalDepartments:     s.dashRepo.CountDepartments(),
-		TotalEmployeesActive: s.dashRepo.GetEmployeeActive(),
-		DepartmentStats:      s.dashRepo.GetEmployeeCountByDepartment(),
+		TotalUsers:           totalUsers,
+		TotalEmployees:       totalEmployees,
+		TotalDepartments:     totalDepartments,
+		TotalEmployeesActive: totalActive,
+		DepartmentStats:      deptStats,
 	}
 
 	// Lưu kết quả vào Redis cache, đặt TTL là 1 giờ. Bỏ qua lỗi nếu lưu cache thất bại.

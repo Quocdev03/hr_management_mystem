@@ -5,14 +5,16 @@ import (
 	"chiquoc_hocgolang/internal/handler"
 	"chiquoc_hocgolang/internal/middleware"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 // SetupRouter khởi tạo và cấu hình tất cả routes
 // Nơi kết nối middleware -> handler -> service -> repository
 
-func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder, userHandler *handler.UserHandler) *gin.Engine {
+func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.AuthHandler, empHandler *handler.EmployeeHandler, deptHandler *handler.DepartmentHandler, dashB *handler.DashboardsHanlder, userHandler *handler.UserHandler) *gin.Engine {
 	// Tắt debug log trong production
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -40,8 +42,8 @@ func SetupRouter(cfg *config.Config, authHandler *handler.AuthHandler, empHandle
 
 	auth := v1.Group("/auth")
 	{
-		// Auth không cần token
-		auth.POST("/login", authHandler.Login)
+		// Auth không cần token nhưng áp dụng rate limit: tối đa 5 lượt/phút
+		auth.POST("/login", middleware.RateLimiter(rdb, 5, time.Minute), authHandler.Login)
 
 		// Profile Cần JWT token
 		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT), authHandler.GetProfile)

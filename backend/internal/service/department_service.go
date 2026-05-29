@@ -3,6 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"context"
 
 	"errors"
 	"fmt"
@@ -27,13 +28,15 @@ type departmentService struct {
 	db       *gorm.DB
 	deptRepo repository.DepartmentRepository
 	empRepo  repository.EmployeeRepository
+	cacheSvc CacheService
 }
 
-func NewDepartmentService(db *gorm.DB, deptRepo repository.DepartmentRepository, empRepo repository.EmployeeRepository) DepartmentService {
+func NewDepartmentService(db *gorm.DB, deptRepo repository.DepartmentRepository, empRepo repository.EmployeeRepository, cacheSvc CacheService) DepartmentService {
 	return &departmentService{
 		db:       db,
 		deptRepo: deptRepo,
 		empRepo:  empRepo,
+		cacheSvc: cacheSvc,
 	}
 }
 
@@ -74,6 +77,9 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	if err := ds.deptRepo.Create(dept); err != nil {
 		return nil, fmt.Errorf("Lỗi khi tạo phòng ban: %w", err)
 	}
+
+	// Invalidate dashboard stats cache
+	_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
 
 	return dept, nil
 }
@@ -213,6 +219,9 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 		return nil, err
 	}
 
+	// Invalidate dashboard stats cache
+	_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
+
 	return updatedDept, nil
 }
 
@@ -222,7 +231,7 @@ func (ds *departmentService) DeleteDepartment(id uint) error {
 		return errors.New("ID phòng ban phải lớn hơn 0")
 	}
 
-	return ds.db.Transaction(func(tx *gorm.DB) error {
+	err := ds.db.Transaction(func(tx *gorm.DB) error {
 		txDeptRepo := ds.deptRepo.WithTx(tx)
 		txEmpRepo := ds.empRepo.WithTx(tx)
 
@@ -256,4 +265,11 @@ func (ds *departmentService) DeleteDepartment(id uint) error {
 
 		return nil
 	})
+
+	if err == nil {
+		// Invalidate dashboard stats cache
+		_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	}
+
+	return err
 }

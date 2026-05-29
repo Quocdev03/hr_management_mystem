@@ -17,10 +17,7 @@ export const useAuthStore = defineStore("auth", () => {
 		loading.value = true;
 
 		try {
-			const res = await api.post("/auth/login", {
-				email,
-				password,
-			});
+			const res = await api.post("/auth/login", { email, password });
 
 			if (res.success) {
 				const data = res.data;
@@ -37,10 +34,8 @@ export const useAuthStore = defineStore("auth", () => {
 		} catch (error) {
 			console.error("Login error:", error);
 
-			return {
-				success: false,
-				message: "Đăng nhập thất bại",
-			};
+			const errMessage = error.response?.data?.error || error.response?.data?.message || "Đăng nhập thất bại";
+			return { success: false, message: errMessage };
 		} finally {
 			loading.value = false;
 		}

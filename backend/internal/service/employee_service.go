@@ -3,6 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"context"
 
 	"errors"
 	"fmt"
@@ -29,14 +30,16 @@ type employeeService struct {
 	empRepo  repository.EmployeeRepository
 	deptRepo repository.DepartmentRepository
 	userRepo repository.UserRepository
+	cacheSvc CacheService
 }
 
-func NewEmployeeService(db *gorm.DB, empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository) EmployeeService {
+func NewEmployeeService(db *gorm.DB, empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository, cacheSvc CacheService) EmployeeService {
 	return &employeeService{
 		db:       db,
 		empRepo:  empRepo,
 		deptRepo: deptRepo,
 		userRepo: userRepo,
+		cacheSvc: cacheSvc,
 	}
 }
 
@@ -143,6 +146,9 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	}); err != nil {
 		return nil, err
 	}
+
+	// Invalidate dashboard stats cache
+	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
 
 	return es.empRepo.FindByID(emp.ID)
 }
@@ -324,6 +330,9 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, err
 	}
 
+	// Invalidate dashboard stats cache
+	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
+
 	return es.empRepo.FindByID(id)
 }
 
@@ -377,5 +386,8 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 	if err := es.empRepo.Delete(id); err != nil {
 		return fmt.Errorf("Lỗi khi xoá nhân viên này: %w", err)
 	}
+	// Invalidate dashboard stats cache
+	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
+
 	return nil
 }

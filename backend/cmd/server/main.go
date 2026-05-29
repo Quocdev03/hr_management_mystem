@@ -24,6 +24,17 @@ func main() {
 	// Khởi tạo Database
 	db := config.InitiDB(&cfg.Database)
 
+	// Khởi tạo Redis
+	rdb := config.InitRedis(&cfg.Redis)
+
+	// Khởi tạo CacheService
+	cacheSvc := service.NewCacheService(rdb)
+
+	// In bảng tóm tắt cấu hình Redis khi khởi động
+	fmt.Printf("[REDIS-info] Địa chỉ         : %s:%s (DB: %d)\n", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
+	fmt.Printf("[REDIS-info] Dashboard cache  : TTL 1 giờ  | Key: dashboard:stats\n")
+	fmt.Printf("[REDIS-info] Login rate limit  : 5 lượt / 1 phút / IP\n")
+
 	// Kết nối các layer của
 	// Handler -> Service -> Repository
 
@@ -35,10 +46,10 @@ func main() {
 
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT)
-	userScv := service.NewUserService(userRepo)
-	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo)
-	deptScv := service.NewDepartmentService(db, deptRepo, empRepo)
-	dashScv := service.NewDashboardService(dashRepo)
+	userScv := service.NewUserService(userRepo, cacheSvc)
+	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, cacheSvc)
+	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, cacheSvc)
+	dashScv := service.NewDashboardService(dashRepo, cacheSvc)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
 	authHandler := handler.NewAuthHandler(authScv)
@@ -48,7 +59,7 @@ func main() {
 	dashHandler := handler.NewDashboardHanlder(dashScv)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg, authHandler, empHandler, deptHandler, dashHandler, userHandler)
+	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server
@@ -90,6 +101,11 @@ func main() {
 	// Đóng kết nối database
 	sqlDB, _ := db.DB()
 	sqlDB.Close()
+
+	// Đóng kết nối Redis
+	if rdb != nil {
+		rdb.Close()
+	}
 
 	utils.Info("Server đã thoát thành công.")
 }

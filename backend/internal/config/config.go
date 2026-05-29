@@ -19,6 +19,7 @@ type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	Redis    RedisConfig
 }
 
 type AppConfig struct {
@@ -41,6 +42,13 @@ type JWTConfig struct {
 	ExpireHour int
 }
 
+type RedisConfig struct {
+	Host     string
+	Port     string
+	Password string
+	DB       int
+}
+
 func Load() *Config {
 	// Chỉ load .env khi đang chạy local
 	if err := godotenv.Load(); err != nil {
@@ -48,6 +56,7 @@ func Load() *Config {
 	}
 	// Chuyển string -> int vì env chỉ chứa string
 	expireHour, _ := strconv.Atoi(getEnv("JWT_EXPIRE_HOUR", "24"))
+	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
 	return &Config{
 		App: AppConfig{
@@ -66,6 +75,12 @@ func Load() *Config {
 		JWT: JWTConfig{
 			SecretKey:  getEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production"),
 			ExpireHour: expireHour,
+		},
+		Redis: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnv("REDIS_PORT", "6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       redisDB,
 		},
 	}
 }

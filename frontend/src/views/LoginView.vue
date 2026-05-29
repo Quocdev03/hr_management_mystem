@@ -88,10 +88,9 @@
 		const res = await authStore.login(credentials.email, credentials.password);
 
 		if (!res.success) {
-			toast.error(res.message || "Đăng nhập thất bại");
+			toast.error(res.message);
 			return;
 		}
-
 		toast.success("Đăng nhập thành công!");
 
 		router.push("/");

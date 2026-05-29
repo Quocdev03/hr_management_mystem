@@ -3,6 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"context"
 
 	"errors"
 	"fmt"
@@ -27,11 +28,13 @@ type UserService interface {
 
 type userService struct {
 	userRepo repository.UserRepository
+	cacheSvc CacheService
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, cacheSvc CacheService) UserService {
 	return &userService{
 		userRepo: userRepo,
+		cacheSvc: cacheSvc,
 	}
 }
 
@@ -72,6 +75,9 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	if err := us.userRepo.Create(user); err != nil {
 		return nil, fmt.Errorf("Tạo user không thành công: %w", err)
 	}
+
+	// Invalidate dashboard stats cache
+	_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
 
 	return us.userRepo.FindByID(user.ID)
 }
@@ -185,6 +191,9 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.
 		return nil, fmt.Errorf("Cập nhật user bị lỗi: %w", err)
 	}
 
+	// Invalidate dashboard stats cache
+	_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
+
 	return us.userRepo.FindByID(id)
 }
 
@@ -200,7 +209,12 @@ func (us *userService) DeleteUser(id uint) error {
 		return err
 	}
 
-	return us.userRepo.Delete(id)
+	err := us.userRepo.Delete(id)
+	if err == nil {
+		// Invalidate dashboard stats cache
+		_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	}
+	return err
 }
 
 func (us *userService) GetUsersWithoutEmployee() ([]model.User, error) {

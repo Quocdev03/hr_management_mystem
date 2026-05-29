@@ -302,47 +302,56 @@
 		<!-- Create / Update Modal -->
 		<ModalDialog
 			:visible="isModalVisible"
-			:title="isEditing ? 'Cập nhật người dùng' : 'Thêm người dùng mới'"
-			width="500px"
+			:title="isEditing ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'"
+			:subtitle="isEditing ? 'Cập nhật thông tin người dùng' : 'Nhập thông tin người dùng mới'"
+			size="lg"
 			@close="isModalVisible = false"
 		>
-			<form @submit.prevent="submitForm" class="form-layout">
-				<div class="form-group">
-					<label>Tên đăng nhập <span class="text-danger">*</span></label>
-					<input v-model="formData.user_name" type="text" class="form-control" required placeholder="Nhập username..." />
+			<form @submit.prevent="submitForm" class="user-form">
+				<div class="form-grid">
+					<div class="form-group">
+						<label class="form-label">Tên đăng nhập <span class="required">*</span></label>
+						<input v-model="formData.user_name" type="text" class="form-control" required placeholder="Nhập username..." />
+					</div>
+					<div class="form-group">
+						<label class="form-label">Email <span class="required">*</span></label>
+						<input v-model="formData.email" type="email" class="form-control" required placeholder="Nhập email..." />
+					</div>
+					<div class="form-group">
+						<label class="form-label">Mật khẩu <span v-if="!isEditing" class="required">*</span></label>
+						<input v-model="formData.password" type="password" class="form-control" :required="!isEditing" :placeholder="isEditing ? 'Bỏ trống nếu không đổi' : 'Tối thiểu 8 ký tự'" />
+					</div>
+					<div class="form-group">
+						<label class="form-label">Xác nhận mật khẩu <span v-if="!isEditing || formData.password" class="required">*</span></label>
+						<input v-model="formData.password_confirm" type="password" class="form-control" :required="(!isEditing) || !!formData.password" :placeholder="isEditing ? 'Nhập lại nếu đổi' : 'Nhập lại mật khẩu'" />
+					</div>
+					<div class="form-group">
+						<label class="form-label">Vai trò (Role)</label>
+						<select v-model="formData.role_id" class="form-control" :disabled="isRoleDisabled">
+							<option v-for="role in roles" :key="role.id" :value="role.id">
+								{{ role.label }}
+							</option>
+						</select>
+						<small v-if="isRoleDisabled" class="required" style="margin-top: 4px; display: block;">Không thể thay đổi quyền của bản thân/Admin khác</small>
+					</div>
+					<div class="form-group" style="justify-content: center; padding-top: 24px;">
+						<div class="form-check" style="display: flex; align-items: center; gap: 8px;">
+							<input v-model="formData.is_active" type="checkbox" id="userActiveCheck" :disabled="isActiveDisabled" />
+							<label for="userActiveCheck" style="margin-bottom: 0; font-weight: normal; cursor: pointer;" :style="isActiveDisabled ? 'opacity: 0.6;' : ''">Tài khoản đang hoạt động</label>
+						</div>
+					</div>
 				</div>
-				<div class="form-group">
-					<label>Email <span class="text-danger">*</span></label>
-					<input v-model="formData.email" type="email" class="form-control" required placeholder="Nhập email..." />
-				</div>
-				<div class="form-group">
-					<label>Mật khẩu <span v-if="!isEditing" class="text-danger">*</span></label>
-					<input v-model="formData.password" type="password" class="form-control" :required="!isEditing" :placeholder="isEditing ? 'Bỏ trống nếu không đổi' : 'Tối thiểu 8 ký tự'" />
-				</div>
-				<div class="form-group">
-					<label>Xác nhận mật khẩu <span v-if="!isEditing || formData.password" class="text-danger">*</span></label>
-					<input v-model="formData.password_confirm" type="password" class="form-control" :required="(!isEditing) || !!formData.password" :placeholder="isEditing ? 'Nhập lại mật khẩu nếu có đổi' : 'Nhập lại mật khẩu'" />
-				</div>
-				<div class="form-group">
-					<label>Vai trò (Role)</label>
-					<select v-model="formData.role_id" class="form-control" :disabled="isRoleDisabled">
-						<option v-for="role in roles" :key="role.id" :value="role.id">
-							{{ role.label }}
-						</option>
-					</select>
-					<small v-if="isRoleDisabled" class="text-danger" style="margin-top: 4px; display: block;">Không thể thay đổi quyền của bản thân hoặc Admin khác</small>
-				</div>
-				<div class="form-group form-check" style="margin-top: var(--space-3); display: flex; align-items: center; gap: 8px;">
-					<input v-model="formData.is_active" type="checkbox" id="userActiveCheck" :disabled="isActiveDisabled" />
-					<label for="userActiveCheck" style="margin-bottom: 0; font-weight: normal; cursor: pointer;" :style="isActiveDisabled ? 'opacity: 0.6;' : ''">Tài khoản đang hoạt động</label>
+
+				<div class="form-actions">
+					<button type="button" class="btn btn--secondary" @click="isModalVisible = false">
+						Hủy bỏ
+					</button>
+					<button type="submit" class="btn btn--primary" :disabled="submitLoading">
+						<span v-if="submitLoading" class="spinner"></span>
+						{{ isEditing ? "Lưu thay đổi" : "Thêm người dùng" }}
+					</button>
 				</div>
 			</form>
-			<template #footer>
-				<button class="btn btn--outline" type="button" @click="isModalVisible = false" :disabled="submitLoading">Huỷ</button>
-				<button class="btn btn--primary" type="button" @click="submitForm" :disabled="submitLoading">
-					{{ submitLoading ? 'Đang lưu...' : 'Lưu lại' }}
-				</button>
-			</template>
 		</ModalDialog>
 	</div>
 </template>
@@ -611,20 +620,66 @@
 		cursor: not-allowed;
 	}
 
-	/* Form Layout in Modal */
-	.form-layout {
+	/* ===== Form ===== */
+	.user-form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-		padding: var(--space-2) 0;
 	}
-	.form-group label {
-		display: block;
-		margin-bottom: var(--space-2);
+
+	.form-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-3);
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.form-group--full {
+		grid-column: 1 / -1;
+	}
+
+	.form-label {
+		font-size: var(--fs-sm);
 		font-weight: var(--fw-semibold);
-		color: var(--text-main);
 	}
-	.text-danger {
+
+	.form-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--border-color);
+	}
+
+	.required {
 		color: var(--danger-color);
+	}
+
+	.spinner {
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-right-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+		display: inline-block;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.form-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

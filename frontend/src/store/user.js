@@ -31,8 +31,11 @@ export const useUserStore = defineStore("user", () => {
 			}
 			return res;
 		} catch (error) {
-			console.log(error);
-			return { success: false, message: "Lỗi tải danh sách người dùng" };
+			console.error("Fetch users error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tải danh sách người dùng",
+			};
 		} finally {
 			loading.value = false;
 		}
@@ -49,8 +52,11 @@ export const useUserStore = defineStore("user", () => {
 			}
 			return res;
 		} catch (error) {
-			console.log(error);
-			return { success: false, message: "Lỗi tải danh sách người dùng" };
+			console.error("Fetch users without employee error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tải danh sách người dùng",
+			};
 		}
 	}
 	// Create Users
@@ -59,7 +65,11 @@ export const useUserStore = defineStore("user", () => {
 			const res = await api.post("/users", data);
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi tạo người dùng" };
+			console.error("Create user error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tạo người dùng",
+			};
 		}
 	}
 
@@ -69,7 +79,11 @@ export const useUserStore = defineStore("user", () => {
 			const res = await api.put(`/users/${id}`, data);
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi tạo người dùng" };
+			console.error("Update user error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi cập nhật người dùng",
+			};
 		}
 	}
 
@@ -79,7 +93,11 @@ export const useUserStore = defineStore("user", () => {
 			const res = await api.delete(`/users/${id}`);
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi tạo người dùng" };
+			console.error("Delete user error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi xoá người dùng",
+			};
 		}
 	}
 

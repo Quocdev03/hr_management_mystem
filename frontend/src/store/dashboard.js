@@ -29,10 +29,9 @@ export const useDashboardStore = defineStore("dashboard", () => {
 			return res;
 		} catch (error) {
 			console.error("Fetch dashboard error:", error);
-
 			return {
 				success: false,
-				message: "Lỗi tải dashboard",
+				message: error?.message || "Lỗi tải dashboard",
 			};
 		} finally {
 			loading.value = false;

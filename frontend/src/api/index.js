@@ -9,7 +9,7 @@ const api = axios.create({
  * Request Interceptor: Tự động gắn Token vào Header
  */
 
-api.interceptors.request.use(config => {
+api.interceptors.request.use((config) => {
 	const access_token = localStorage.getItem("access_token");
 	if (access_token) {
 		config.headers.Authorization = `Bearer ${access_token}`;
@@ -21,38 +21,38 @@ api.interceptors.request.use(config => {
  * Response Interceptor: Xử lý dữ liệu trả về và bắt lỗi tập trung
  */
 api.interceptors.response.use(
-	response => {
-		return response.data;
-	},
-	error => {
-		if (error.response) {
-			const { status, data } = error.response;
+	(response) => response.data,
+	(error) => {
+		// Normalize error to an Error with a useful message so callers can use `err.message`
+		let message = error.message || "Lỗi kết nối";
 
-			switch (status) {
-				case 401:
-					localStorage.removeItem("access_token");
-					if (window.location.pathname !== "/login") {
-						window.location.href = "/login";
-					}
-					break;
-				case 403:
-					console.error("Bạn không có quyền truy cập tính năng này");
-					break;
-				case 422:
-					console.error("Dữ liệu không hợp lệ:", data.error);
-					break;
-				case 500:
-					console.error("Lỗi hệ thống, vui lòng thử lại sau");
-					break;
-				default:
-					console.error(data.message || "Đã có lỗi xảy ra");
+		if (error.response && error.response.data) {
+			const d = error.response.data;
+			if (d.message) {
+				message = d.message;
+			} else if (d.error) {
+				if (typeof d.error === "string") message = d.error;
+				else if (d.error.message) message = d.error.message;
+				else message = JSON.stringify(d.error);
 			}
-		} else {
-			console.error("Không thể kết nối đến server");
+		} else if (error.response && error.response.statusText) {
+			message = error.response.statusText;
 		}
 
-		// Vẫn reject để component gọi API có thể catch lỗi và hiển thị thông báo riêng nếu cần
-		return Promise.reject(error);
+		const status = error.response?.status;
+
+		if (status === 401) {
+			localStorage.removeItem("access_token");
+			if (window.location.pathname !== "/login") {
+				window.location.href = "/login";
+			}
+		}
+
+		const normalized = new Error(message);
+		normalized.status = status;
+		normalized.response = error.response;
+
+		return Promise.reject(normalized);
 	},
 );
 

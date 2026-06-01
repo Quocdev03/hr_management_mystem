@@ -33,9 +33,10 @@ export const useAuthStore = defineStore("auth", () => {
 			return res;
 		} catch (error) {
 			console.error("Login error:", error);
-
-			const errMessage = error.response?.data?.error || error.response?.data?.message || "Đăng nhập thất bại";
-			return { success: false, message: errMessage };
+			return {
+				success: false,
+				message: error?.message || "Đăng nhập thất bại",
+			};
 		} finally {
 			loading.value = false;
 		}
@@ -54,7 +55,11 @@ export const useAuthStore = defineStore("auth", () => {
 				return res;
 			}
 		} catch (error) {
-			console.log(error);
+			console.error("Profile error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lấy thông tin thất bại",
+			};
 		} finally {
 			loading.value = false;
 		}

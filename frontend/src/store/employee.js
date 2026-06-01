@@ -34,9 +34,12 @@ export const useEmployeeStore = defineStore("employee", () => {
 
 			return res;
 		} catch (error) {
-			console.error(error);
+			console.error("Fetch employees error:", error);
 
-			return { success: false, message: "Lỗi tải danh sách nhân viên" };
+			return {
+				success: false,
+				message: error?.message || "Lỗi tải danh sách nhân viên",
+			};
 		} finally {
 			loading.value = false;
 		}
@@ -50,7 +53,11 @@ export const useEmployeeStore = defineStore("employee", () => {
 
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi tạo nhân viên" };
+			console.error("Create employee error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tạo nhân viên",
+			};
 		}
 	}
 
@@ -62,7 +69,11 @@ export const useEmployeeStore = defineStore("employee", () => {
 
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi cập nhật nhân viên" };
+			console.error("Update employee error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi cập nhật nhân viên",
+			};
 		}
 	}
 
@@ -74,7 +85,11 @@ export const useEmployeeStore = defineStore("employee", () => {
 
 			return res;
 		} catch (error) {
-			return { success: false, message: "Lỗi xoá nhân viên" };
+			console.error("Delete employee error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi xoá nhân viên",
+			};
 		}
 	}
 

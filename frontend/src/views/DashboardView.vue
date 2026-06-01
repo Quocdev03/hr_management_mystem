@@ -16,7 +16,7 @@ async function loadDashboard() {
 	try {
 		await dashboardStore.fetchDashboard();
 	} catch (err) {
-		console.log(err);
+		console.error("Lỗi khi tải dashboard:", err);
 	}
 }
 
@@ -30,9 +30,14 @@ onMounted(loadDashboard);
 				<div class="stat-icon-wrapper">
 					<img :src="usersIcon" class="stat-icon" alt="users" />
 				</div>
-				<div class="stat-info" style="flex-grow: 1;">
+				<div class="stat-info" style="flex-grow: 1">
 					<template v-if="loading">
-						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton
+							type="text"
+							width="60px"
+							height="32px"
+							style="margin-bottom: 4px"
+						/>
 						<Skeleton type="text" width="100px" height="16px" />
 					</template>
 					<template v-else>
@@ -49,9 +54,14 @@ onMounted(loadDashboard);
 				<div class="stat-icon-wrapper">
 					<img :src="checkIcon" class="stat-icon" alt="active" />
 				</div>
-				<div class="stat-info" style="flex-grow: 1;">
+				<div class="stat-info" style="flex-grow: 1">
 					<template v-if="loading">
-						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton
+							type="text"
+							width="60px"
+							height="32px"
+							style="margin-bottom: 4px"
+						/>
 						<Skeleton type="text" width="100px" height="16px" />
 					</template>
 					<template v-else>
@@ -68,9 +78,14 @@ onMounted(loadDashboard);
 				<div class="stat-icon-wrapper">
 					<img :src="buildingIcon" class="stat-icon" alt="dept" />
 				</div>
-				<div class="stat-info" style="flex-grow: 1;">
+				<div class="stat-info" style="flex-grow: 1">
 					<template v-if="loading">
-						<Skeleton type="text" width="60px" height="32px" style="margin-bottom: 4px;" />
+						<Skeleton
+							type="text"
+							width="60px"
+							height="32px"
+							style="margin-bottom: 4px"
+						/>
 						<Skeleton type="text" width="100px" height="16px" />
 					</template>
 					<template v-else>
@@ -94,7 +109,10 @@ onMounted(loadDashboard);
 							<Skeleton type="badge" width="40px" height="22px" />
 						</div>
 						<div class="progress-container">
-							<div class="skeleton" style="width: 100%; height: 100%;"></div>
+							<div
+								class="skeleton"
+								style="width: 100%; height: 100%"
+							></div>
 						</div>
 					</div>
 				</template>
@@ -105,12 +123,8 @@ onMounted(loadDashboard);
 						class="dept-card"
 					>
 						<div class="dept-header">
-							<span class="dept-name">{{
-								dept.department_name
-							}}</span>
-							<span class="dept-count">{{
-								dept.employee_count
-							}}</span>
+							<span class="dept-name">{{ dept.department_name }}</span>
+							<span class="dept-count">{{ dept.employee_count }}</span>
 						</div>
 						<div class="progress-container">
 							<div

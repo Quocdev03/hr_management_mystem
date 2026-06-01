@@ -69,11 +69,11 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 		employees.GET("/:id", middleware.CacheResponse(rdb, 15*time.Minute), empHandler.GetEmployee)
 
 		// / Tạo/Sửa/Xóa: chỉ admin và hr mới được
-		employees.POST("", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.CreateEmployee)
-		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.UpdateEmployee)
+		employees.POST("", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), empHandler.CreateEmployee)
+		employees.PUT("/:id", middleware.RequireRole("admin", "hr"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), empHandler.UpdateEmployee)
 
 		// chỉ admin xóa
-		employees.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), empHandler.DeleteEmployee)
+		employees.DELETE("/:id", middleware.RequireRole("admin"), middleware.ClearCache(rdb, "cache:/api/v1/employees*"), middleware.ClearCache(rdb, "cache:/api/v1/users*"), empHandler.DeleteEmployee)
 
 	}
 	// Users

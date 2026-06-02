@@ -118,8 +118,8 @@ onMounted(loadDashboard);
 				</template>
 				<template v-else>
 					<div
-						v-for="dept in dashboardStats.department_stats"
-						:key="dept.name"
+						v-for="(dept, idx) in dashboardStats.department_stats"
+						:key="dept.department_name + '-' + idx"
 						class="dept-card"
 					>
 						<div class="dept-header">

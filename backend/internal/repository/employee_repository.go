@@ -56,7 +56,9 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 		db = db.Where("department_id = ?", query.DepartmentID)
 	}
 
-	db.Count(&total)
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	// offset = (page - 1) * limit
 	offset := (query.Page - 1) * query.Limit

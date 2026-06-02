@@ -316,7 +316,10 @@ onMounted(async () => {
 								</td>
 							</tr>
 							<tr v-if="departments.length === 0">
-								<td colspan="5" class="empty-state">
+								<td
+									:colspan="canCrudDepartment ? 5 : 4"
+									class="empty-state"
+								>
 									<div class="empty-state__icon">🏢</div>
 									<p class="empty-state__text">
 										Không có phòng ban nào phù hợp.

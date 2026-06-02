@@ -1,16 +1,8 @@
 <template>
 	<Teleport to="body">
 		<Transition name="modal-fade">
-			<div
-				v-if="visible"
-				class="modal-overlay"
-				@click.self="$emit('close')"
-			>
-				<div
-					class="modal-container"
-					:class="[size]"
-					:style="customStyle"
-				>
+			<div v-if="visible" class="modal-overlay" @click.self="$emit('close')">
+				<div class="modal-container" :class="[size]" :style="customStyle">
 					<!-- Header -->
 					<div class="modal-header">
 						<div class="header-content">
@@ -68,13 +60,13 @@ const customStyle = computed(() => {
 .modal-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(15, 23, 42, 0.6);
-	backdrop-filter: blur(4px);
+	background: rgba(15, 23, 42, 0.55);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	z-index: 1000;
 	padding: var(--space-4);
+	touch-action: none;
 }
 
 .modal-container {
@@ -87,6 +79,8 @@ const customStyle = computed(() => {
 	flex-direction: column;
 	overflow: hidden;
 	animation: slideUp 0.3s ease-out;
+	transform: translateZ(0);
+	will-change: transform;
 }
 
 /* Kích thước chuẩn cho Modal */
@@ -145,6 +139,9 @@ const customStyle = computed(() => {
 .modal-body {
 	padding: var(--space-4);
 	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
 	font-size: var(--fs-base); /* 16px-17px */
 }
 

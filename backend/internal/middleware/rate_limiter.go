@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"chiquoc_hocgolang/internal/utils"
-	"context"
 	"fmt"
 	"time"
 
@@ -21,7 +20,7 @@ func RateLimiter(rdb *redis.Client, limit int, window time.Duration) gin.Handler
 
 		ip := ctx.ClientIP()
 		key := fmt.Sprintf("rate_limit:login:%s", ip)
-		redisCtx := context.Background()
+		redisCtx := ctx.Request.Context()
 
 		// Thực hiện tăng bộ đếm lên 1
 		count, err := rdb.Incr(redisCtx, key).Result()

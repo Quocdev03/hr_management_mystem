@@ -118,6 +118,10 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 				return fmt.Errorf("Lỗi kiểm tra user: %w", err)
 			}
 
+			if !user.IsActive {
+				return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+			}
+
 			existingEmp, err := txEmpRepo.FindByUserID(user.ID)
 			if err == nil && existingEmp != nil {
 				return errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
@@ -269,6 +273,10 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 					return err
 				}
 
+				if !user.IsActive {
+					return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+				}
+
 				existingEmp, err := txEmpRepo.FindByUserID(user.ID)
 				if err == nil && existingEmp.ID != id {
 					return errors.New("User đã gắn cho nhân viên khác")
@@ -403,7 +411,7 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 		if err := txEmpRepo.Delete(id); err != nil {
 			return fmt.Errorf("Lỗi khi xoá nhân viên này: %w", err)
 		}
-		
+
 		return nil
 	})
 

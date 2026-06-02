@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"chiquoc_hocgolang/internal/model"
@@ -73,7 +74,13 @@ func SeedData(db *gorm.DB) {
 		if err := seedDepartments(ctx); err != nil {
 			return err
 		}
-		if err := seedUsersAndEmployees(ctx); err != nil {
+		if err := seedUsers(ctx); err != nil {
+			return err
+		}
+		if err := seedEmployees(ctx); err != nil {
+			return err
+		}
+		if err := seedDepartmentManagers(ctx); err != nil {
 			return err
 		}
 		return nil
@@ -132,7 +139,7 @@ func seedDepartments(ctx *gorm.DB) error {
 	return nil
 }
 
-func seedUsersAndEmployees(ctx *gorm.DB) error {
+func seedUsers(ctx *gorm.DB) error {
 	var adminRole, hrRole, empRole model.Role
 	if err := ctx.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
 		return err
@@ -144,51 +151,39 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 		return err
 	}
 
-	hashedPwdAdmin, _ := bcrypt.GenerateFromPassword([]byte("12345678Quoc@"), bcrypt.DefaultCost)
-	hashedPwdEmployee, _ := bcrypt.GenerateFromPassword([]byte("Password123@"), bcrypt.DefaultCost)
+	hashedPwdAdmin, _ := bcrypt.GenerateFromPassword([]byte("Admin@2026"), bcrypt.DefaultCost)
+	hashedPwdHR, _ := bcrypt.GenerateFromPassword([]byte("Hr2026@pass"), bcrypt.DefaultCost)
+	hashedPwdEmployee, _ := bcrypt.GenerateFromPassword([]byte("Emp2026@pass"), bcrypt.DefaultCost)
 
-	// ================= USERS =================
-	users := []model.User{
-		{UserName: "admin", Email: "quocdt2003@ccquocn8n.cloud", Password: string(hashedPwdAdmin), RoleID: adminRole.ID},
+	roleIDs := map[string]uint{"admin": adminRole.ID, "hr": hrRole.ID, "employee": empRole.ID}
 
-		{UserName: "it_lead", Email: "it_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "it_dev", Email: "it_dev@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
+	for _, item := range getSeedEmployeeInfo() {
+		if item.Employee.BirthDate == nil {
+			return errors.New("birth date is required for seed user generation")
+		}
 
-		{UserName: "hr_lead", Email: "hr_lead@example.com", Password: string(hashedPwdEmployee), RoleID: hrRole.ID},
-		{UserName: "hr_recruiter", Email: "hr_recruiter@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
+		username := buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
+		email := buildEmail(username)
+		password := hashedPwdEmployee
+		switch item.RoleName {
+		case "admin":
+			password = hashedPwdAdmin
+		case "hr":
+			password = hashedPwdHR
+		}
 
-		{UserName: "fin_lead", Email: "fin_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "fin_analyst", Email: "fin_analyst@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
+		user := model.User{
+			UserName: username,
+			Email:    email,
+			Password: string(password),
+			RoleID:   roleIDs[item.RoleName],
+		}
 
-		{UserName: "sales_lead", Email: "sales_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "sales_rep1", Email: "sales_rep1@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "mkt_lead", Email: "mkt_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "mkt_exec", Email: "mkt_exec@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "cs_lead", Email: "cs_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "cs_agent", Email: "cs_agent@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "ops_lead", Email: "ops_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "ops_exec", Email: "ops_exec@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "legal_lead", Email: "legal_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "legal_exec", Email: "legal_exec@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "proc_lead", Email: "proc_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "proc_exec", Email: "proc_exec@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-
-		{UserName: "rnd_lead", Email: "rnd_lead@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-		{UserName: "rnd_researcher", Email: "rnd_researcher@example.com", Password: string(hashedPwdEmployee), RoleID: empRole.ID},
-	}
-
-	// upsert users
-	for i := range users {
 		var existing model.User
-		err := ctx.Unscoped().Where("user_name = ?", users[i].UserName).First(&existing).Error
+		err := ctx.Unscoped().Where("user_name = ?", user.UserName).First(&existing).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				if err := ctx.Create(&users[i]).Error; err != nil {
+				if err := ctx.Create(&user).Error; err != nil {
 					return err
 				}
 			} else {
@@ -200,79 +195,41 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 					return err
 				}
 			}
-			users[i] = existing
 		}
 	}
 
-	// ================= DEPARTMENTS =================
-	var itDept, hrDept, finDept, salesDept, mktDept, csDept, opsDept, legalDept, procDept, rndDept model.Department
+	return nil
+}
 
-	ctx.Where("code = ?", "IT").First(&itDept)
-	ctx.Where("code = ?", "HR").First(&hrDept)
-	ctx.Where("code = ?", "FIN").First(&finDept)
-	ctx.Where("code = ?", "SALES").First(&salesDept)
-	ctx.Where("code = ?", "MKT").First(&mktDept)
-	ctx.Where("code = ?", "CS").First(&csDept)
-	ctx.Where("code = ?", "OPS").First(&opsDept)
-	ctx.Where("code = ?", "LEGAL").First(&legalDept)
-	ctx.Where("code = ?", "PROC").First(&procDept)
-	ctx.Where("code = ?", "RND").First(&rndDept)
-
-	// ================= EMPLOYEES =================
-	b1 := time.Date(1988, 5, 10, 0, 0, 0, 0, time.UTC)
-	b2 := time.Date(1990, 8, 20, 0, 0, 0, 0, time.UTC)
-	b3 := time.Date(1993, 11, 7, 0, 0, 0, 0, time.UTC)
-	b4 := time.Date(1991, 3, 15, 0, 0, 0, 0, time.UTC)
-	b5 := time.Date(1992, 7, 22, 0, 0, 0, 0, time.UTC)
-
-	employees := []struct {
-		model.Employee
-		UserName string
-	}{
-		// IT
-		{model.Employee{DepartmentID: itDept.ID, FirstName: "Chí", LastName: "Quốc", Phone: "0912345678", Position: "Head of Engineering", Salary: 47000000, JoinDate: time.Now(), BirthDate: &b1, Gender: "male", Status: "active"}, "admin"},
-		{model.Employee{DepartmentID: itDept.ID, FirstName: "Hùng", LastName: "Nguyễn", Phone: "0912345679", Position: "Tech Lead", Salary: 35000000, JoinDate: time.Now(), BirthDate: &b2, Gender: "male", Status: "active"}, "it_lead"},
-		{model.Employee{DepartmentID: itDept.ID, FirstName: "Lan", LastName: "Trần", Phone: "0912345680", Position: "Backend Developer", Salary: 28000000, JoinDate: time.Now(), BirthDate: &b3, Gender: "female", Status: "inactive"}, "it_dev"},
-
-		// HR
-		{model.Employee{DepartmentID: hrDept.ID, FirstName: "Hà", LastName: "Nguyễn", Phone: "0912345681", Position: "HR Manager", Salary: 33000000, JoinDate: time.Now(), BirthDate: &b2, Gender: "female", Status: "active"}, "hr_lead"},
-		{model.Employee{DepartmentID: hrDept.ID, FirstName: "Mai", LastName: "Trần", Phone: "0912345682", Position: "Recruiter", Salary: 21000000, JoinDate: time.Now(), BirthDate: &b3, Gender: "female", Status: "active"}, "hr_recruiter"},
-
-		// FIN
-		{model.Employee{DepartmentID: finDept.ID, FirstName: "Anh", LastName: "Phạm", Phone: "0912345683", Position: "Finance Manager", Salary: 32000000, JoinDate: time.Now(), BirthDate: &b4, Gender: "male", Status: "active"}, "fin_lead"},
-
-		// SALES
-		{model.Employee{DepartmentID: salesDept.ID, FirstName: "Dũng", LastName: "Lê", Phone: "0912345684", Position: "Sales Manager", Salary: 31000000, JoinDate: time.Now(), BirthDate: &b5, Gender: "male", Status: "active"}, "sales_lead"},
-
-		// MKT
-		{model.Employee{DepartmentID: mktDept.ID, FirstName: "Hương", LastName: "Trần", Phone: "0912345685", Position: "Marketing Manager", Salary: 30000000, JoinDate: time.Now(), BirthDate: &b3, Gender: "female", Status: "active"}, "mkt_lead"},
-
-		// CS
-		{model.Employee{DepartmentID: csDept.ID, FirstName: "Vân", LastName: "Phạm", Phone: "0912345686", Position: "Customer Success Manager", Salary: 29000000, JoinDate: time.Now(), BirthDate: &b2, Gender: "female", Status: "active"}, "cs_lead"},
-
-		// OPS
-		{model.Employee{DepartmentID: opsDept.ID, FirstName: "Nam", LastName: "Đặng", Phone: "0912345687", Position: "Operations Manager", Salary: 30000000, JoinDate: time.Now(), BirthDate: &b1, Gender: "male", Status: "active"}, "ops_lead"},
-
-		// LEGAL
-		{model.Employee{DepartmentID: legalDept.ID, FirstName: "Minh", LastName: "Hoàng", Phone: "0912345688", Position: "Legal Manager", Salary: 30000000, JoinDate: time.Now(), BirthDate: &b5, Gender: "male", Status: "active"}, "legal_lead"},
-
-		// PROC
-		{model.Employee{DepartmentID: procDept.ID, FirstName: "Trâm", LastName: "Nguyễn", Phone: "0912345689", Position: "Procurement Manager", Salary: 30000000, JoinDate: time.Now(), BirthDate: &b4, Gender: "female", Status: "active"}, "proc_lead"},
-
-		// RND
-		{model.Employee{DepartmentID: rndDept.ID, FirstName: "Hải", LastName: "Bùi", Phone: "0912345690", Position: "R&D Manager", Salary: 30500000, JoinDate: time.Now(), BirthDate: &b1, Gender: "male", Status: "active"}, "rnd_lead"},
+func seedEmployees(ctx *gorm.DB) error {
+	departments := map[string]model.Department{}
+	for _, code := range []string{"IT", "HR", "FIN", "SALES", "MKT", "CS", "OPS", "LEGAL", "PROC", "RND"} {
+		var d model.Department
+		if err := ctx.Where("code = ?", code).First(&d).Error; err != nil {
+			return err
+		}
+		departments[code] = d
 	}
 
-	for i := range employees {
-		var u model.User
-		if err := ctx.Where("user_name = ?", employees[i].UserName).First(&u).Error; err == nil {
-			employees[i].UserID = &u.ID
+	for _, item := range getSeedEmployeeInfo() {
+		dept, ok := departments[item.DepartmentCode]
+		if !ok {
+			return fmt.Errorf("department code not found: %s", item.DepartmentCode)
+		}
+		item.Employee.DepartmentID = dept.ID
+
+		if item.Employee.BirthDate != nil {
+			username := buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
+			var user model.User
+			if err := ctx.Where("user_name = ?", username).First(&user).Error; err == nil {
+				item.Employee.UserID = &user.ID
+			}
 		}
 
 		var existing model.Employee
-		if err := ctx.Where("first_name = ? AND last_name = ? AND department_id = ?", employees[i].FirstName, employees[i].LastName, employees[i].DepartmentID).First(&existing).Error; err != nil {
+		if err := ctx.Where("first_name = ? AND last_name = ? AND department_id = ?", item.Employee.FirstName, item.Employee.LastName, item.Employee.DepartmentID).First(&existing).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				if err := ctx.Create(&employees[i].Employee).Error; err != nil {
+				if err := ctx.Create(&item.Employee).Error; err != nil {
 					return err
 				}
 			} else {
@@ -280,9 +237,8 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 			}
 		} else {
 			update := map[string]interface{}{}
-
-			if existing.UserID == nil && employees[i].UserID != nil {
-				update["user_id"] = employees[i].UserID
+			if existing.UserID == nil && item.Employee.UserID != nil {
+				update["user_id"] = item.Employee.UserID
 			}
 			if len(update) > 0 {
 				if err := ctx.Model(&existing).Updates(update).Error; err != nil {
@@ -292,23 +248,18 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 		}
 	}
 
-	// Gán trưởng phòng cho từng phòng ban nếu lead employee đã tồn tại
-	managerAssignments := map[string]string{
-		"IT":    "it_lead",
-		"HR":    "hr_lead",
-		"FIN":   "fin_lead",
-		"SALES": "sales_lead",
-		"MKT":   "mkt_lead",
-		"CS":    "cs_lead",
-		"OPS":   "ops_lead",
-		"LEGAL": "legal_lead",
-		"PROC":  "proc_lead",
-		"RND":   "rnd_lead",
-	}
+	return nil
+}
 
-	for code, userName := range managerAssignments {
+func seedDepartmentManagers(ctx *gorm.DB) error {
+	for _, item := range getSeedEmployeeInfo() {
+		if !item.IsManager || item.Employee.BirthDate == nil {
+			continue
+		}
+
+		username := buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
 		var u model.User
-		if err := ctx.Where("user_name = ?", userName).First(&u).Error; err != nil {
+		if err := ctx.Where("user_name = ?", username).First(&u).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				continue
 			}
@@ -323,10 +274,106 @@ func seedUsersAndEmployees(ctx *gorm.DB) error {
 			return err
 		}
 
-		if err := ctx.Model(&model.Department{}).Where("code = ?", code).Update("manager_id", manager.ID).Error; err != nil {
+		if err := ctx.Model(&model.Department{}).Where("code = ?", item.DepartmentCode).Update("manager_id", manager.ID).Error; err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+type seedEmployeeInfo struct {
+	Employee       model.Employee
+	RoleName       string
+	DepartmentCode string
+	IsManager      bool
+}
+
+func getSeedEmployeeInfo() []seedEmployeeInfo {
+	b1 := time.Date(1988, 5, 10, 0, 0, 0, 0, time.UTC)
+	b2 := time.Date(1990, 8, 20, 0, 0, 0, 0, time.UTC)
+	b3 := time.Date(1993, 11, 7, 0, 0, 0, 0, time.UTC)
+	b4 := time.Date(1991, 3, 15, 0, 0, 0, 0, time.UTC)
+	b5 := time.Date(1992, 7, 22, 0, 0, 0, 0, time.UTC)
+
+	return []seedEmployeeInfo{
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc", Phone: "0912345678", Position: "Head of Engineering", Salary: 47000000, JoinDate: time.Date(2017, 4, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "admin", DepartmentCode: "IT", IsManager: true},
+		{Employee: model.Employee{FirstName: "Hùng", LastName: "Nguyễn", Phone: "0912345679", Position: "Technical Lead", Salary: 35000000, JoinDate: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "IT", IsManager: true},
+		{Employee: model.Employee{FirstName: "Lan", LastName: "Trần", Phone: "0912345680", Position: "Backend Developer", Salary: 28000000, JoinDate: time.Date(2022, 9, 5, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "IT"},
+
+		{Employee: model.Employee{FirstName: "Hà", LastName: "Nguyễn", Phone: "0912345681", Position: "HR Manager", Salary: 33000000, JoinDate: time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "female", Status: "active"}, RoleName: "hr", DepartmentCode: "HR", IsManager: true},
+		{Employee: model.Employee{FirstName: "Mai", LastName: "Trần", Phone: "0912345682", Position: "Recruiter", Salary: 21000000, JoinDate: time.Date(2023, 1, 20, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "HR"},
+
+		{Employee: model.Employee{FirstName: "Anh", LastName: "Phạm", Phone: "0912345683", Position: "Finance Manager", Salary: 32000000, JoinDate: time.Date(2019, 8, 12, 0, 0, 0, 0, time.UTC), BirthDate: &b4, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "FIN", IsManager: true},
+		{Employee: model.Employee{FirstName: "Thu", LastName: "Lê", Phone: "0912345691", Position: "Accountant", Salary: 24000000, JoinDate: time.Date(2022, 6, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b5, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "FIN"},
+
+		{Employee: model.Employee{FirstName: "Dũng", LastName: "Lê", Phone: "0912345684", Position: "Sales Manager", Salary: 31000000, JoinDate: time.Date(2018, 7, 22, 0, 0, 0, 0, time.UTC), BirthDate: &b5, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "SALES", IsManager: true},
+		{Employee: model.Employee{FirstName: "Minh", LastName: "Hoàng", Phone: "0912345692", Position: "Sales Executive", Salary: 22000000, JoinDate: time.Date(2023, 3, 14, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "SALES"},
+
+		{Employee: model.Employee{FirstName: "Hương", LastName: "Trần", Phone: "0912345685", Position: "Marketing Manager", Salary: 30000000, JoinDate: time.Date(2021, 11, 15, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "MKT", IsManager: true},
+		{Employee: model.Employee{FirstName: "Nga", LastName: "Phạm", Phone: "0912345693", Position: "Content Specialist", Salary: 22000000, JoinDate: time.Date(2023, 4, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b4, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "MKT"},
+
+		{Employee: model.Employee{FirstName: "Vân", LastName: "Phạm", Phone: "0912345686", Position: "Customer Success Manager", Salary: 29000000, JoinDate: time.Date(2020, 12, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "CS", IsManager: true},
+		{Employee: model.Employee{FirstName: "Long", LastName: "Trần", Phone: "0912345694", Position: "Support Specialist", Salary: 19000000, JoinDate: time.Date(2023, 5, 8, 0, 0, 0, 0, time.UTC), BirthDate: &b5, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "CS"},
+
+		{Employee: model.Employee{FirstName: "Nam", LastName: "Đặng", Phone: "0912345687", Position: "Operations Manager", Salary: 30000000, JoinDate: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "OPS", IsManager: true},
+		{Employee: model.Employee{FirstName: "Vy", LastName: "Nguyễn", Phone: "0912345695", Position: "Logistics Coordinator", Salary: 20500000, JoinDate: time.Date(2024, 2, 15, 0, 0, 0, 0, time.UTC), BirthDate: &b4, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "OPS"},
+
+		{Employee: model.Employee{FirstName: "Minh", LastName: "Hoàng", Phone: "0912345688", Position: "Legal Manager", Salary: 30000000, JoinDate: time.Date(2022, 1, 20, 0, 0, 0, 0, time.UTC), BirthDate: &b5, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "LEGAL", IsManager: true},
+		{Employee: model.Employee{FirstName: "Hà", LastName: "Bùi", Phone: "0912345696", Position: "Legal Counsel", Salary: 23500000, JoinDate: time.Date(2023, 6, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "LEGAL"},
+
+		{Employee: model.Employee{FirstName: "Trâm", LastName: "Nguyễn", Phone: "0912345689", Position: "Procurement Manager", Salary: 30000000, JoinDate: time.Date(2021, 8, 5, 0, 0, 0, 0, time.UTC), BirthDate: &b4, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "PROC", IsManager: true},
+		{Employee: model.Employee{FirstName: "Hoài", LastName: "Vũ", Phone: "0912345697", Position: "Buyer", Salary: 21500000, JoinDate: time.Date(2023, 7, 12, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "PROC"},
+
+		{Employee: model.Employee{FirstName: "Hải", LastName: "Bùi", Phone: "0912345690", Position: "R&D Manager", Salary: 30500000, JoinDate: time.Date(2020, 10, 18, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "RND", IsManager: true},
+		{Employee: model.Employee{FirstName: "Trang", LastName: "Nguyễn", Phone: "0912345698", Position: "Research Engineer", Salary: 24500000, JoinDate: time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "RND"},
+	}
+}
+
+func buildUserName(firstName, lastName string, birthDate time.Time) string {
+	return fmt.Sprintf("%s%d", normalizeName(firstName+lastName), birthDate.Year())
+}
+
+func buildEmail(username string) string {
+	return fmt.Sprintf("%s@company.vn", username)
+}
+
+func normalizeName(value string) string {
+	value = strings.ToLower(value)
+	value = removeVietnameseAccents(value)
+	value = strings.ReplaceAll(value, " ", "")
+	value = strings.ReplaceAll(value, "-", "")
+	value = strings.ReplaceAll(value, "_", "")
+	value = strings.ReplaceAll(value, ".", "")
+	return value
+}
+
+func removeVietnameseAccents(value string) string {
+	replacer := strings.NewReplacer(
+		"á", "a", "à", "a", "ả", "a", "ã", "a", "ạ", "a",
+		"â", "a", "ấ", "a", "ầ", "a", "ẩ", "a", "ẫ", "a", "ậ", "a",
+		"ă", "a", "ắ", "a", "ằ", "a", "ẳ", "a", "ẵ", "a", "ặ", "a",
+		"é", "e", "è", "e", "ẻ", "e", "ẽ", "e", "ẹ", "e",
+		"ê", "e", "ế", "e", "ề", "e", "ể", "e", "ễ", "e", "ệ", "e",
+		"í", "i", "ì", "i", "ỉ", "i", "ĩ", "i", "ị", "i",
+		"ó", "o", "ò", "o", "ỏ", "o", "õ", "o", "ọ", "o",
+		"ô", "o", "ố", "o", "ồ", "o", "ổ", "o", "ỗ", "o", "ộ", "o",
+		"ơ", "o", "ớ", "o", "ờ", "o", "ở", "o", "ỡ", "o", "ợ", "o",
+		"ú", "u", "ù", "u", "ủ", "u", "ũ", "u", "ụ", "u",
+		"ư", "u", "ứ", "u", "ừ", "u", "ử", "u", "ữ", "u", "ự", "u",
+		"ý", "y", "ỳ", "y", "ỷ", "y", "ỹ", "y", "ỵ", "y",
+		"Á", "A", "À", "A", "Ả", "A", "Ã", "A", "Ạ", "A",
+		"Â", "A", "Ấ", "A", "Ầ", "A", "Ẩ", "A", "Ẫ", "A", "Ậ", "A",
+		"Ă", "A", "Ắ", "A", "Ằ", "A", "Ẳ", "A", "Ẵ", "A", "Ặ", "A",
+		"É", "E", "È", "E", "Ẻ", "E", "Ẽ", "E", "Ẹ", "E",
+		"Ê", "E", "Ế", "E", "Ề", "E", "Ể", "E", "Ễ", "E", "Ệ", "E",
+		"Í", "I", "Ì", "I", "Ỉ", "I", "Ĩ", "I", "Ị", "I",
+		"Ó", "O", "Ò", "O", "Ỏ", "O", "Õ", "O", "Ọ", "O",
+		"Ô", "O", "Ố", "O", "Ồ", "O", "Ổ", "O", "Ỗ", "O", "Ộ", "O",
+		"Ơ", "O", "Ớ", "O", "Ờ", "O", "Ở", "O", "Ỡ", "O", "Ợ", "O",
+		"Ú", "U", "Ù", "U", "Ủ", "U", "Ũ", "U", "Ụ", "U",
+		"Ư", "U", "Ứ", "U", "Ừ", "U", "Ử", "U", "Ữ", "U", "Ự", "U",
+		"Ý", "Y", "Ỳ", "Y", "Ỷ", "Y", "Ỹ", "Y", "Ỵ", "Y",
+	)
+	return replacer.Replace(value)
 }

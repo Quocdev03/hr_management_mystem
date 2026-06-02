@@ -19,60 +19,80 @@ import { ref, watch } from "vue";
  * }}
  */
 export function usePaginatedSearch(fetchFn, paginationRef, options) {
-  let debounceMs = 400;
-  if (options && options.debounce !== undefined) {
-    debounceMs = options.debounce;
-  }
+	let debounceMs = 400;
+	if (options && options.debounce !== undefined) {
+		debounceMs = options.debounce;
+	}
 
-  const searchQuery = ref("");
-  const errorMessage = ref(null);
-  let _debounceTimer = null;
+	const searchQuery = ref("");
+	const errorMessage = ref(null);
+	let _debounceTimer = null;
 
-  async function load(page) {
-    if (page === undefined) {
-      page = 1;
-    }
-    
-    errorMessage.value = null;
-    
-    let params = {
-      page: page,
-      limit: paginationRef.value.limit,
-      search: searchQuery.value,
-    };
-    
-    let res = await fetchFn(params);
-    
-    if (res.success === false) {
-      if (res.message) {
-        errorMessage.value = res.message;
-      } else {
-        errorMessage.value = "Lỗi tải dữ liệu";
-      }
-    }
-  }
+	async function load(page) {
+		if (page === undefined) {
+			page = 1;
+		}
 
-  function handlePageChange(page) {
-    if (page < 1) {
-      return;
-    }
-    if (page > paginationRef.value.totalPages) {
-      return;
-    }
-    load(page);
-  }
+		errorMessage.value = null;
 
-  watch(searchQuery, function () {
-    clearTimeout(_debounceTimer);
-    _debounceTimer = setTimeout(function () {
-      load(1);
-    }, debounceMs);
-  });
+		let params = {
+			page: page,
+			limit: paginationRef.value.limit,
+			search: searchQuery.value,
+		};
 
-  return {
-    searchQuery: searchQuery,
-    load: load,
-    handlePageChange: handlePageChange,
-    errorMessage: errorMessage,
-  };
+		const res = await fetchFn(params);
+
+		// Nếu fetch thành công, đảm bảo paginationRef có page đúng (fallback)
+		if (res && res.success !== false) {
+			try {
+				const respPage =
+					res.data && res.data.page ? Number(res.data.page) : Number(page);
+				if (
+					!Number.isNaN(respPage) &&
+					paginationRef &&
+					paginationRef.value
+				) {
+					paginationRef.value.page = respPage;
+				}
+			} catch (e) {
+				// ignore
+			}
+		}
+
+		if (res && res.success === false) {
+			if (res.message) {
+				errorMessage.value = res.message;
+			} else {
+				errorMessage.value = "Lỗi tải dữ liệu";
+			}
+		}
+
+		return res;
+	}
+
+	function handlePageChange(page) {
+		page = Number(page);
+		if (Number.isNaN(page) || page < 1) {
+			return;
+		}
+		if (page > paginationRef.value.totalPages) {
+			return;
+		}
+		load(page);
+	}
+
+	watch(searchQuery, function () {
+		clearTimeout(_debounceTimer);
+		_debounceTimer = setTimeout(function () {
+			load(1);
+		}, debounceMs);
+	});
+
+	return {
+		searchQuery: searchQuery,
+		load: load,
+		handlePageChange: handlePageChange,
+		errorMessage: errorMessage,
+	};
 }

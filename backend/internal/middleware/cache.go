@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"chiquoc_hocgolang/internal/utils"
-	"context"
 	"net/http"
 	"time"
 
@@ -17,8 +16,11 @@ type bodyLogWriter struct {
 	body *bytes.Buffer
 }
 
-func (w bodyLogWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
+func (w *bodyLogWriter) Write(b []byte) (int, error) {
+	if w.body == nil {
+		w.body = bytes.NewBuffer(nil)
+	}
+	_, _ = w.body.Write(b)
 	return w.ResponseWriter.Write(b)
 }
 
@@ -33,7 +35,7 @@ func CacheResponse(rdb *redis.Client, expiration time.Duration) gin.HandlerFunc 
 
 		// Tạo key cache dựa trên URL (bao gồm cả query params, vd: ?page=1)
 		key := "cache:" + ctx.Request.URL.RequestURI()
-		redisCtx := context.Background()
+		redisCtx := ctx.Request.Context()
 
 		// 1. Kiểm tra xem Redis có lưu cache cho key này chưa
 		val, err := rdb.Get(redisCtx, key).Result()
@@ -72,7 +74,7 @@ func ClearCache(rdb *redis.Client, pattern string) gin.HandlerFunc {
 		// Nếu xử lý thành công (status 2xx) thì tiến hành xoá cache
 		status := ctx.Writer.Status()
 		if status >= http.StatusOK && status < http.StatusMultipleChoices {
-			redisCtx := context.Background()
+			redisCtx := ctx.Request.Context()
 			
 			// Dùng SCAN để tìm tất cả các key match với pattern (thay vì KEYS để tránh block server)
 			var cursor uint64

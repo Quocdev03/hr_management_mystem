@@ -5,7 +5,14 @@ import { ref, computed } from "vue";
 export const useAuthStore = defineStore("auth", () => {
 	// ===== State =====
 	const accessToken = ref(localStorage.getItem("access_token") || null);
-	const user = ref(JSON.parse(localStorage.getItem("user")) || null);
+	// Safely parse localStorage user to avoid throwing on invalid JSON
+	let savedUser = null;
+	try {
+		savedUser = JSON.parse(localStorage.getItem("user") || "null");
+	} catch (e) {
+		savedUser = null;
+	}
+	const user = ref(savedUser);
 	const userProfile = ref(null);
 	const loading = ref(false);
 

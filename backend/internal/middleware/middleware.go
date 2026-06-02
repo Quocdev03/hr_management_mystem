@@ -101,7 +101,7 @@ func AuthJWT(cfg *config.JWTConfig, rdb *redis.Client) gin.HandlerFunc {
 
 		// Kiểm tra Token đã bị đăng xuất chưa (Blacklist)
 		if rdb != nil {
-			isBlacklisted, err := rdb.Exists(ctx, "blacklist:"+tokenString).Result()
+			isBlacklisted, err := rdb.Exists(ctx.Request.Context(), "blacklist:"+tokenString).Result()
 			if err == nil && isBlacklisted > 0 {
 				utils.Unauthorized(ctx, "Token đã bị vô hiệu hoá (Đăng xuất)")
 				ctx.Abort()

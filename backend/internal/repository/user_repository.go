@@ -48,7 +48,9 @@ func (r *userRepository) FindAll(query model.PaginationQuery) ([]model.User, int
 		)
 	}
 
-	db.Count(&total)
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 	offset := (query.Page - 1) * query.Limit
 
 	err := db.Preload("Role").Offset(offset).Limit(query.Limit).Order("created_at DESC").Find(&users).Error

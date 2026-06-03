@@ -45,6 +45,9 @@ func SetupRouter(cfg *config.Config, rdb *redis.Client, authHandler *handler.Aut
 		// Auth không cần token nhưng áp dụng rate limit: tối đa 5 lượt/phút
 		auth.POST("/login", middleware.RateLimiter(rdb, 5, time.Minute), authHandler.Login)
 
+		// Làm mới token
+		auth.POST("/refresh", middleware.RateLimiter(rdb, 10, time.Minute), authHandler.Refresh)
+
 		// Profile Cần JWT token
 		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
 

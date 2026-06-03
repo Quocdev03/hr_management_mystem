@@ -38,8 +38,9 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	SecretKey  string
-	ExpireHour int
+	SecretKey        string
+	ExpireHour       int
+	RefreshExpireDay int
 }
 
 type RedisConfig struct {
@@ -56,6 +57,7 @@ func Load() *Config {
 	}
 	// Chuyển string -> int vì env chỉ chứa string
 	expireHour, _ := strconv.Atoi(getEnv("JWT_EXPIRE_HOUR", "24"))
+	refreshExpireDay, _ := strconv.Atoi(getEnv("JWT_REFRESH_EXPIRE_DAY", "7"))
 	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
 	return &Config{
@@ -73,8 +75,9 @@ func Load() *Config {
 			Env:      getEnv("APP_ENV", "development"),
 		},
 		JWT: JWTConfig{
-			SecretKey:  getEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production"),
-			ExpireHour: expireHour,
+			SecretKey:        getEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production"),
+			ExpireHour:       expireHour,
+			RefreshExpireDay: refreshExpireDay,
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),

@@ -1,20 +1,20 @@
 <script setup>
-import deleteIcon from "@/assets/svg/warning.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import plusIcon from "@/assets/svg/plus.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
-import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
-import ModalDialog from "@/components/ModalDialog.vue";
-import Skeleton from "@/components/Skeleton.vue";
+import deleteIcon from '@/assets/svg/warning.svg';
+import editIcon from '@/assets/svg/edit.svg';
+import searchIcon from '@/assets/svg/search.svg';
+import plusIcon from '@/assets/svg/plus.svg';
+import prevIcon from '@/assets/svg/chevron-left.svg';
+import nextIcon from '@/assets/svg/chevron-right.svg';
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
+import ModalDialog from '@/components/ModalDialog.vue';
+import Skeleton from '@/components/Skeleton.vue';
 
-import { useUserStore } from "@/store/user";
-import { useAuthStore } from "@/store/auth";
-import { useToast } from "vue-toastification";
-import { storeToRefs } from "pinia";
-import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
-import { onMounted, ref } from "vue";
+import { useUserStore } from '@/store/user';
+import { useAuthStore } from '@/store/auth';
+import { useToast } from 'vue-toastification';
+import { storeToRefs } from 'pinia';
+import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
+import { onMounted, ref } from 'vue';
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
@@ -26,15 +26,15 @@ const { users, pagination, loading } = storeToRefs(userStore);
 
 // Search & pagination
 const {
-	searchQuery,
-	load: loadUsers,
-	handlePageChange,
+  searchQuery,
+  load: loadUsers,
+  handlePageChange,
 } = usePaginatedSearch((params) => userStore.fetchUser(params), pagination);
 
 // Delete modal state
 const isDeleteModalVisible = ref(false);
 const deletingUser = ref(null);
-const deleteMessage = ref("");
+const deleteMessage = ref('');
 const deleteLoading = ref(false);
 
 // Modal form state
@@ -45,117 +45,116 @@ const isActiveDisabled = ref(false);
 const submitLoading = ref(false);
 const currentUserId = ref(null);
 const formData = ref({
-	user_name: "",
-	email: "",
-	password: "",
-	password_confirm: "",
-	role_id: 3,
-	is_active: true,
+  user_name: '',
+  email: '',
+  password: '',
+  password_confirm: '',
+  role_id: 3,
+  is_active: true,
 });
 
 const roles = [
-	{ id: 1, label: "Admin (Quản trị viên)" },
-	{ id: 2, label: "HR (Nhân sự)" },
-	{ id: 3, label: "Employee (Nhân viên)" },
+  { id: 1, label: 'Admin (Quản trị viên)' },
+  { id: 2, label: 'HR (Nhân sự)' },
+  { id: 3, label: 'Employee (Nhân viên)' },
 ];
 
 function handleAdd() {
-	isEditing.value = false;
-	isRoleDisabled.value = false;
-	isActiveDisabled.value = false;
-	currentUserId.value = null;
-	formData.value = {
-		user_name: "",
-		email: "",
-		password: "",
-		password_confirm: "",
-		role_id: 3,
-		is_active: true,
-	};
-	isModalVisible.value = true;
+  isEditing.value = false;
+  isRoleDisabled.value = false;
+  isActiveDisabled.value = false;
+  currentUserId.value = null;
+  formData.value = {
+    user_name: '',
+    email: '',
+    password: '',
+    password_confirm: '',
+    role_id: 3,
+    is_active: true,
+  };
+  isModalVisible.value = true;
 }
 
 function handleUpdate(user) {
-	isEditing.value = true;
-	isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
-	isActiveDisabled.value = currentUser?.id === user.id;
-	currentUserId.value = user.id;
-	formData.value = {
-		user_name: user.user_name,
-		email: user.email,
-		password: "", // Không hiển thị pass cũ, bỏ trống nếu ko đổi
-		password_confirm: "",
-		role_id: user.role_id,
-		is_active: user.is_active,
-	};
-	isModalVisible.value = true;
+  isEditing.value = true;
+  isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
+  isActiveDisabled.value = currentUser?.id === user.id;
+  currentUserId.value = user.id;
+  formData.value = {
+    user_name: user.user_name,
+    email: user.email,
+    password: '', // Không hiển thị pass cũ, bỏ trống nếu ko đổi
+    password_confirm: '',
+    role_id: user.role_id,
+    is_active: user.is_active,
+  };
+  isModalVisible.value = true;
 }
 
 async function submitForm() {
-	if (formData.value.password !== formData.value.password_confirm) {
-		toast.error("Mật khẩu xác nhận không khớp!");
-		return;
-	}
+  if (formData.value.password !== formData.value.password_confirm) {
+    toast.error('Mật khẩu xác nhận không khớp!');
+    return;
+  }
 
-	submitLoading.value = true;
-	let res;
+  submitLoading.value = true;
+  let res;
 
-	const payload = { ...formData.value };
-	delete payload.password_confirm; // Không gửi field này lên API
+  const payload = { ...formData.value };
+  delete payload.password_confirm; // Không gửi field này lên API
 
-	if (isEditing.value && !payload.password) {
-		delete payload.password;
-	}
+  if (isEditing.value && !payload.password) {
+    delete payload.password;
+  }
 
-	if (isEditing.value) {
-		res = await userStore.updateUser(currentUserId.value, payload);
-	} else {
-		res = await userStore.createUser(payload);
-	}
+  if (isEditing.value) {
+    res = await userStore.updateUser(currentUserId.value, payload);
+  } else {
+    res = await userStore.createUser(payload);
+  }
 
-	submitLoading.value = false;
+  submitLoading.value = false;
 
-	if (res.success === false) {
-		toast.error(res.message || "Có lỗi xảy ra");
-		return;
-	}
+  if (res.success === false) {
+    toast.error(res.message || 'Có lỗi xảy ra');
+    return;
+  }
 
-	toast.success(
-		res.message ||
-			(isEditing.value ? "Cập nhật thành công!" : "Thêm mới thành công!"),
-	);
-	isModalVisible.value = false;
-	await loadUsers();
+  toast.success(
+    res.message ||
+      (isEditing.value ? 'Cập nhật thành công!' : 'Thêm mới thành công!'),
+  );
+  isModalVisible.value = false;
+  await loadUsers();
 }
 
 function handleDelete(user) {
-	deletingUser.value = user;
-	deleteMessage.value =
-		"Bạn có chắc chắn muốn xoá người dùng " + user.user_name + "?";
-	isDeleteModalVisible.value = true;
+  deletingUser.value = user;
+  deleteMessage.value = `Bạn có chắc chắn muốn xoá người dùng ${user.user_name}?`;
+  isDeleteModalVisible.value = true;
 }
 
 async function confirmDelete() {
-	let user = deletingUser.value;
-	if (!user) return;
+  const user = deletingUser.value;
+  if (!user) return;
 
-	deleteLoading.value = true;
-	const res = await userStore.deleteUser(user.id);
-	deleteLoading.value = false;
+  deleteLoading.value = true;
+  const res = await userStore.deleteUser(user.id);
+  deleteLoading.value = false;
 
-	if (res.success === false) {
-		toast.error(res.message || "Xoá người dùng thất bại");
-		return;
-	}
+  if (res.success === false) {
+    toast.error(res.message || 'Xoá người dùng thất bại');
+    return;
+  }
 
-	toast.success(res.message || "Xoá người dùng thành công");
-	isDeleteModalVisible.value = false;
-	deletingUser.value = null;
-	await loadUsers();
+  toast.success(res.message || 'Xoá người dùng thành công');
+  isDeleteModalVisible.value = false;
+  deletingUser.value = null;
+  await loadUsers();
 }
 
-onMounted(async function () {
-	await loadUsers();
+onMounted(async () => {
+  await loadUsers();
 });
 </script>
 <template>

@@ -1,3 +1,38 @@
+<script setup>
+	import mailIcon from "@/assets/svg/mail.svg";
+	import lockIcon from "@/assets/svg/lock.svg";
+	import eyeIcon from "@/assets/svg/eye.svg";
+	import eyeOffIcon from "@/assets/svg/eye-off.svg";
+	import usersIcon from "@/assets/svg/user.svg";
+	import { reactive, ref } from "vue";
+	import { useAuthStore } from "@/store/auth";
+	import { useToast } from "vue-toastification";
+	import { storeToRefs } from "pinia";
+	import { useRouter } from "vue-router";
+
+	const toast = useToast();
+	const router = useRouter();
+	const authStore = useAuthStore();
+	const { loading } = storeToRefs(authStore);
+	const isPasswordVisible = ref(false);
+	const credentials = reactive({ email: "", password: "" });
+
+	async function loginHandler() {
+		const res = await authStore.login(credentials.email, credentials.password);
+
+		if (!res.success) {
+			toast.error(res.message);
+			return;
+		}
+		toast.success("Đăng nhập thành công!");
+
+		router.push("/");
+	}
+
+	function togglePasswordVisibility() {
+		isPasswordVisible.value = !isPasswordVisible.value;
+	}
+</script>
 <template>
 	<!-- ===== Container Chính ===== -->
 	<main class="login-container">
@@ -65,41 +100,7 @@
 		</section>
 	</main>
 </template>
-<script setup>
-	import mailIcon from "@/assets/svg/mail.svg";
-	import lockIcon from "@/assets/svg/lock.svg";
-	import eyeIcon from "@/assets/svg/eye.svg";
-	import eyeOffIcon from "@/assets/svg/eye-off.svg";
-	import usersIcon from "@/assets/svg/user.svg";
-	import { reactive, ref } from "vue";
-	import { useAuthStore } from "@/store/auth";
-	import { useToast } from "vue-toastification";
-	import { storeToRefs } from "pinia";
-	import { useRouter } from "vue-router";
 
-	const toast = useToast();
-	const router = useRouter();
-	const authStore = useAuthStore();
-	const { loading } = storeToRefs(authStore);
-	const isPasswordVisible = ref(false);
-	const credentials = reactive({ email: "", password: "" });
-
-	async function loginHandler() {
-		const res = await authStore.login(credentials.email, credentials.password);
-
-		if (!res.success) {
-			toast.error(res.message);
-			return;
-		}
-		toast.success("Đăng nhập thành công!");
-
-		router.push("/");
-	}
-
-	function togglePasswordVisibility() {
-		isPasswordVisible.value = !isPasswordVisible.value;
-	}
-</script>
 <style scoped>
 	.login-container {
 		min-height: 100vh;

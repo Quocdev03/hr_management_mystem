@@ -1,59 +1,135 @@
-import axios from "axios";
-// --- Cấu hình Instance ---
+import axios from 'axios';
+
+// Cấu hình Axios Instance
 const api = axios.create({
-	baseURL: import.meta.env.VITE_API_URL,
-	timeout: 10000,
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 10000,
 });
 
-/**
- * Request Interceptor: Tự động gắn Token vào Header
- */
+// Biến trạng thái cho cơ chế refresh token
+let isRefreshing = false;
+let failedQueue = [];
 
+/**
+ * Giải phóng hàng đợi các request đang chờ sau khi refresh token hoàn tất.
+ * @param {Error|null} error
+ * @param {string|null} token
+ */
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
+  failedQueue = [];
+};
+
+/**
+ * Xóa toàn bộ dữ liệu xác thực và chuyển hướng về trang đăng nhập.
+ */
+const clearAuthData = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
+
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+};
+
+// Request Interceptor: Tự động gắn Access Token vào Header
 api.interceptors.request.use((config) => {
-	const access_token = localStorage.getItem("access_token");
-	if (access_token) {
-		config.headers.Authorization = `Bearer ${access_token}`;
-	}
-	return config;
+  const token = localStorage.getItem('access_token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
-/**
- * Response Interceptor: Xử lý dữ liệu trả về và bắt lỗi tập trung
- */
+// Response Interceptor: Chuẩn hóa dữ liệu trả về và xử lý lỗi tập trung
 api.interceptors.response.use(
-	(response) => response.data,
-	(error) => {
-		// Normalize error to an Error with a useful message so callers can use `err.message`
-		let message = error.message || "Lỗi kết nối";
+  (response) => response.data,
+  async (error) => {
+    // Trích xuất message lỗi từ các cấu trúc response khác nhau.
+    let message = error.message || 'Lỗi kết nối';
 
-		if (error.response && error.response.data) {
-			const d = error.response.data;
-			if (d.message) {
-				message = d.message;
-			} else if (d.error) {
-				if (typeof d.error === "string") message = d.error;
-				else if (d.error.message) message = d.error.message;
-				else message = JSON.stringify(d.error);
-			}
-		} else if (error.response && error.response.statusText) {
-			message = error.response.statusText;
-		}
+    if (error.response?.data) {
+      const d = error.response.data;
 
-		const status = error.response?.status;
+      if (d.message) {
+        message = d.message;
+      } else if (d.error) {
+        message =
+          typeof d.error === 'string'
+            ? d.error
+            : d.error.message || JSON.stringify(d.error);
+      }
+    } else if (error.response?.statusText) {
+      message = error.response.statusText;
+    }
 
-		if (status === 401) {
-			localStorage.removeItem("access_token");
-			if (window.location.pathname !== "/login") {
-				window.location.href = "/login";
-			}
-		}
+    const status = error.response?.status;
+    const originalRequest = error.config;
+    const isRefreshEndpoint = originalRequest?.url?.includes('/auth/refresh');
 
-		const normalized = new Error(message);
-		normalized.status = status;
-		normalized.response = error.response;
+    // Xử lý 401: thử làm mới Access Token trước khi redirect.
+    if (status === 401 && originalRequest && !originalRequest._retry && !isRefreshEndpoint) {
+      const refreshToken = localStorage.getItem('refresh_token');
 
-		return Promise.reject(normalized);
-	},
+      // Không có refresh token → xóa session và redirect.
+      if (!refreshToken) {
+        clearAuthData();
+        return Promise.reject(new Error(message));
+      }
+
+      // Đang có request refresh khác chạy → xếp hàng chờ.
+      if (isRefreshing) {
+        try {
+          const token = await new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          });
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+
+      // Bắt đầu refresh token.
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        if (!res.data?.success) {
+          throw new Error('Làm mới token thất bại');
+        }
+
+        const { access_token, refresh_token: newRefreshToken, user } = res.data.data;
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', newRefreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        processQueue(null, access_token);
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (err) {
+        processQueue(err, null);
+        clearAuthData();
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    // Chuẩn hóa error object để callers có thể dùng `err.message` và `err.status`.
+    const normalized = new Error(message);
+    normalized.status = status;
+    normalized.response = error.response;
+
+    return Promise.reject(normalized);
+  },
 );
 
 export default api;

@@ -1,27 +1,27 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useToast } from "vue-toastification";
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'vue-toastification';
 
-import { useEmployeeStore } from "@/store/employee";
-import { useDepartmentStore } from "@/store/department";
-import { useUserStore } from "@/store/user";
+import { useEmployeeStore } from '@/store/employee';
+import { useDepartmentStore } from '@/store/department';
+import { useUserStore } from '@/store/user';
 
-import ModalDialog from "@/components/ModalDialog.vue";
-import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
-import Skeleton from "@/components/Skeleton.vue";
+import ModalDialog from '@/components/ModalDialog.vue';
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
+import Skeleton from '@/components/Skeleton.vue';
 
-import { getInitials, formatDate, formatStatus } from "@/helpers/formatters";
-import { useModalState } from "@/helpers/useModalState";
-import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
-import { usePermissions } from "@/helpers/usePermissions";
+import { getInitials, formatDate, formatStatus } from '@/helpers/formatters';
+import { useModalState } from '@/helpers/useModalState';
+import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
+import { usePermissions } from '@/helpers/usePermissions';
 
-import plusIcon from "@/assets/svg/plus.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import deleteIcon from "@/assets/svg/delete.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
+import plusIcon from '@/assets/svg/plus.svg';
+import searchIcon from '@/assets/svg/search.svg';
+import editIcon from '@/assets/svg/edit.svg';
+import deleteIcon from '@/assets/svg/delete.svg';
+import prevIcon from '@/assets/svg/chevron-left.svg';
+import nextIcon from '@/assets/svg/chevron-right.svg';
 
 // Stores
 const employeeStore = useEmployeeStore();
@@ -29,10 +29,10 @@ const departmentStore = useDepartmentStore();
 const userStore = useUserStore();
 const toast = useToast();
 const {
-	canCreateEmployee,
-	canEditEmployee,
-	canDeleteEmployee,
-	hasAnyEmployeeAction,
+  canCreateEmployee,
+  canEditEmployee,
+  canDeleteEmployee,
+  hasAnyEmployeeAction,
 } = usePermissions();
 
 const { employees, pagination, loading } = storeToRefs(employeeStore);
@@ -49,8 +49,8 @@ const closeModal = modalState.closeModal;
 
 // Search & pagination
 const paginatedSearch = usePaginatedSearch(
-	(params) => employeeStore.fetchEmployees(params),
-	pagination,
+  (params) => employeeStore.fetchEmployees(params),
+  pagination,
 );
 const searchQuery = paginatedSearch.searchQuery;
 const loadEmployees = paginatedSearch.load;
@@ -65,191 +65,190 @@ const relationsLoaded = ref(false);
 // Delete modal state
 const isDeleteModalVisible = ref(false);
 const deletingEmployee = ref(null);
-const deleteMessage = ref("");
+const deleteMessage = ref('');
 const deleteLoading = ref(false);
 
 /** Tạo object formData từ data ban đầu, đảm bảo luôn có đủ các field */
 function buildFormData(data = {}) {
-	const d = data ?? {};
-	return {
-		user_id: d.user_id ?? null,
-		first_name: d.first_name ?? "",
-		last_name: d.last_name ?? "",
-		phone: d.phone ?? "",
-		department_id: d.department_id ?? "",
-		position: d.position ?? "",
-		salary: d.salary ?? null,
-		join_date: d.join_date ?? "",
-		status: d.status ?? "active",
-		gender: d.gender ?? "",
-		birth_date: d.birth_date ?? "",
-	};
+  const d = data ?? {};
+  return {
+    user_id: d.user_id ?? null,
+    first_name: d.first_name ?? '',
+    last_name: d.last_name ?? '',
+    phone: d.phone ?? '',
+    department_id: d.department_id ?? '',
+    position: d.position ?? '',
+    salary: d.salary ?? null,
+    join_date: d.join_date ?? '',
+    status: d.status ?? 'active',
+    gender: d.gender ?? '',
+    birth_date: d.birth_date ?? '',
+  };
 }
 
 async function loadFormRelations(force = false) {
-	if (!force && relationsLoaded.value) {
-		return;
-	}
+  if (!force && relationsLoaded.value) {
+    return;
+  }
 
-	try {
-		await Promise.all([
-			departmentStore.fetchDepartments(),
-			userStore.fetchUsersWithoutEmployee(),
-		]);
-		relationsLoaded.value = true;
-	} catch (err) {
-		console.error("Lỗi khi tải dữ liệu liên quan:", err);
-	}
+  try {
+    await Promise.all([
+      departmentStore.fetchDepartments(),
+      userStore.fetchUsersWithoutEmployee(),
+    ]);
+    relationsLoaded.value = true;
+  } catch (err) {
+    console.error('Lỗi khi tải dữ liệu liên quan:', err);
+  }
 }
 
 // Handlers
 async function handleAdd() {
-	editingEmployee.value = null;
-	formData.value = buildFormData();
-	openAddModal();
-	await loadFormRelations();
+  editingEmployee.value = null;
+  formData.value = buildFormData();
+  openAddModal();
+  await loadFormRelations();
 }
 
 async function handleEdit(emp) {
-	let empCopy = Object.assign({}, emp);
+  const empCopy = { ...emp };
 
-	if (empCopy.birth_date) {
-		let dateParts = empCopy.birth_date.split("T");
-		empCopy.birth_date = dateParts[0];
-	} else {
-		empCopy.birth_date = "";
-	}
+  if (empCopy.birth_date) {
+    const dateParts = empCopy.birth_date.split('T');
+    empCopy.birth_date = dateParts[0];
+  } else {
+    empCopy.birth_date = '';
+  }
 
-	if (empCopy.join_date) {
-		let dateParts = empCopy.join_date.split("T");
-		empCopy.join_date = dateParts[0];
-	} else {
-		empCopy.join_date = "";
-	}
+  if (empCopy.join_date) {
+    const dateParts = empCopy.join_date.split('T');
+    empCopy.join_date = dateParts[0];
+  } else {
+    empCopy.join_date = '';
+  }
 
-	editingEmployee.value = empCopy;
-	formData.value = buildFormData(empCopy);
-	openEditModal();
-	await loadFormRelations();
+  editingEmployee.value = empCopy;
+  formData.value = buildFormData(empCopy);
+  openEditModal();
+  await loadFormRelations();
 }
 
 function handleDelete(emp) {
-	deletingEmployee.value = emp;
-	deleteMessage.value =
-		"Bạn có chắc chắn muốn xoá " + emp.first_name + " " + emp.last_name + "?";
-	isDeleteModalVisible.value = true;
+  deletingEmployee.value = emp;
+  deleteMessage.value = `Bạn có chắc chắn muốn xoá ${emp.first_name} ${emp.last_name}?`;
+  isDeleteModalVisible.value = true;
 }
 
 async function confirmDelete() {
-	let emp = deletingEmployee.value;
-	if (!emp) {
-		return;
-	}
+  const emp = deletingEmployee.value;
+  if (!emp) {
+    return;
+  }
 
-	deleteLoading.value = true;
-	const res = await employeeStore.deleteEmployee(emp.id);
-	deleteLoading.value = false;
+  deleteLoading.value = true;
+  const res = await employeeStore.deleteEmployee(emp.id);
+  deleteLoading.value = false;
 
-	if (res.success === false) {
-		toast.error(res.message);
-		return;
-	}
+  if (res.success === false) {
+    toast.error(res.message);
+    return;
+  }
 
-	toast.success(res.message);
-	isDeleteModalVisible.value = false;
-	deletingEmployee.value = null;
-	await loadEmployees(pagination.value.page);
+  toast.success(res.message);
+  isDeleteModalVisible.value = false;
+  deletingEmployee.value = null;
+  await loadEmployees(pagination.value.page);
 }
 
 async function handleFormSubmit() {
-	formLoading.value = true;
-	let res;
+  formLoading.value = true;
+  let res;
 
-	if (isEditMode.value === true) {
-		// Edit mode: build a normalized dirty-check payload to avoid false diffs
-		const original = buildFormData(editingEmployee.value);
+  if (isEditMode.value === true) {
+    // Edit mode: build a normalized dirty-check payload to avoid false diffs
+    const original = buildFormData(editingEmployee.value);
 
-		function normalizeForCompare(obj) {
-			const out = {};
-			Object.keys(obj).forEach((k) => {
-				const v = obj[k];
-				if (v === null || typeof v === "undefined") {
-					out[k] = "";
-					return;
-				}
-				// Normalize primary numeric IDs and salary to string form
-				if (k === "user_id" || k === "department_id" || k === "salary") {
-					out[k] = String(v);
-					return;
-				}
-				// Dates and other primitives -> string
-				out[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
-			});
-			return out;
-		}
+    function normalizeForCompare(obj) {
+      const out = {};
+      Object.keys(obj).forEach((k) => {
+        const v = obj[k];
+        if (v === null || typeof v === 'undefined') {
+          out[k] = '';
+          return;
+        }
+        // Normalize primary numeric IDs and salary to string form
+        if (k === 'user_id' || k === 'department_id' || k === 'salary') {
+          out[k] = String(v);
+          return;
+        }
+        // Dates and other primitives -> string
+        out[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      });
+      return out;
+    }
 
-		const normOriginal = normalizeForCompare(original);
-		const normForm = normalizeForCompare(formData.value);
+    const normOriginal = normalizeForCompare(original);
+    const normForm = normalizeForCompare(formData.value);
 
-		const payload = Object.fromEntries(
-			Object.keys(normOriginal)
-				.filter((k) => normForm[k] !== normOriginal[k])
-				.map((k) => [k, formData.value[k]]),
-		);
+    const payload = Object.fromEntries(
+      Object.keys(normOriginal)
+        .filter((k) => normForm[k] !== normOriginal[k])
+        .map((k) => [k, formData.value[k]]),
+    );
 
-		if (Object.keys(payload).length === 0) {
-			toast.info("Không có dữ liệu thay đổi");
-			formLoading.value = false;
-			return;
-		}
+    if (Object.keys(payload).length === 0) {
+      toast.info('Không có dữ liệu thay đổi');
+      formLoading.value = false;
+      return;
+    }
 
-		// Sanitize values for Go backend
-		if ("user_id" in payload) {
-			payload.user_id =
-				formData.value.user_id == null || formData.value.user_id === ""
-					? 0
-					: Number(formData.value.user_id);
-		}
-		if ("department_id" in payload) {
-			payload.department_id = Number(payload.department_id);
-		}
+    // Sanitize values for Go backend
+    if ('user_id' in payload) {
+      payload.user_id =
+        formData.value.user_id == null || formData.value.user_id === ''
+          ? 0
+          : Number(formData.value.user_id);
+    }
+    if ('department_id' in payload) {
+      payload.department_id = Number(payload.department_id);
+    }
 
-		res = await employeeStore.updateEmployee(
-			editingEmployee.value.id,
-			payload,
-		);
-	} else {
-		// Create mode
-		const data = { ...formData.value };
-		data.user_id =
-			data.user_id !== "" && data.user_id != null
-				? Number(data.user_id)
-				: null;
-		data.department_id =
-			data.department_id !== "" ? Number(data.department_id) : undefined;
+    res = await employeeStore.updateEmployee(
+      editingEmployee.value.id,
+      payload,
+    );
+  } else {
+    // Create mode
+    const data = { ...formData.value };
+    data.user_id =
+      data.user_id !== '' && data.user_id != null
+        ? Number(data.user_id)
+        : null;
+    data.department_id =
+      data.department_id !== '' ? Number(data.department_id) : undefined;
 
-		res = await employeeStore.createEmployee(data);
-	}
+    res = await employeeStore.createEmployee(data);
+  }
 
-	formLoading.value = false;
+  formLoading.value = false;
 
-	if (res.success === false) {
-		toast.error(res.message);
-		return;
-	}
+  if (res.success === false) {
+    toast.error(res.message);
+    return;
+  }
 
-	relationsLoaded.value = false;
+  relationsLoaded.value = false;
 
-	if (isEditMode.value === true) {
-		toast.success(res.message);
-	}
+  if (isEditMode.value === true) {
+    toast.success(res.message);
+  }
 
-	closeModal();
-	await loadEmployees(pagination.value.page);
+  closeModal();
+  await loadEmployees(pagination.value.page);
 }
 
-onMounted(async function () {
-	await loadEmployees();
+onMounted(async () => {
+  await loadEmployees();
 });
 </script>
 

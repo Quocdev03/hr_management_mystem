@@ -1,105 +1,93 @@
-import api from "@/api";
-import { defineStore } from "pinia";
-import { ref } from "vue";
+import api from '@/api';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
-export const useEmployeeStore = defineStore("employee", () => {
-	// ===== State =====
+export const useEmployeeStore = defineStore('employee', () => {
+  // State
+  const employees = ref([]);
+  const pagination = ref({ total: 0, page: 1, limit: 10, totalPages: 0 });
+  const loading = ref(false);
 
-	const employees = ref([]);
+  // Fetch Employees
+  async function fetchEmployees(params = {}) {
+    loading.value = true;
 
-	const pagination = ref({ total: 0, page: 1, limit: 10, totalPages: 0 });
+    try {
+      const res = await api.get('/employees', { params });
 
-	const loading = ref(false);
+      if (res.success) {
+        const { data } = res;
 
-	// ===== Fetch Employees =====
+        employees.value = data.items || [];
+        pagination.value = {
+          total: data.total || 0,
+          page: data.page || 1,
+          limit: data.limit || 10,
+          totalPages: data.total_pages || 0,
+        };
+      }
 
-	async function fetchEmployees(params = {}) {
-		loading.value = true;
+      return res;
+    } catch (error) {
+      console.error('Fetch employees error:', error);
+      return {
+        success: false,
+        message: error?.message || 'Lỗi tải danh sách nhân viên',
+      };
+    } finally {
+      loading.value = false;
+    }
+  }
 
-		try {
-			const res = await api.get("/employees", { params });
+  // Create
+  async function createEmployee(data) {
+    try {
+      const res = await api.post('/employees', data);
+      return res;
+    } catch (error) {
+      console.error('Create employee error:', error);
+      return {
+        success: false,
+        message: error?.message || 'Lỗi tạo nhân viên',
+      };
+    }
+  }
 
-			if (res.success) {
-				const data = res.data;
+  // Update
+  async function updateEmployee(id, data) {
+    try {
+      const res = await api.put(`/employees/${id}`, data);
+      return res;
+    } catch (error) {
+      console.error('Update employee error:', error);
+      return {
+        success: false,
+        message: error?.message || 'Lỗi cập nhật nhân viên',
+      };
+    }
+  }
 
-				employees.value = data.items || [];
+  // Delete
+  async function deleteEmployee(id) {
+    try {
+      const res = await api.delete(`/employees/${id}`);
+      return res;
+    } catch (error) {
+      console.error('Delete employee error:', error);
+      return {
+        success: false,
+        message: error?.message || 'Lỗi xoá nhân viên',
+      };
+    }
+  }
 
-				pagination.value = {
-					total: data.total || 0,
-					page: data.page || 1,
-					limit: data.limit || 10,
-					totalPages: data.total_pages || 0,
-				};
-			}
-
-			return res;
-		} catch (error) {
-			console.error("Fetch employees error:", error);
-
-			return {
-				success: false,
-				message: error?.message || "Lỗi tải danh sách nhân viên",
-			};
-		} finally {
-			loading.value = false;
-		}
-	}
-
-	// ===== Create =====
-
-	async function createEmployee(data) {
-		try {
-			const res = await api.post("/employees", data);
-
-			return res;
-		} catch (error) {
-			console.error("Create employee error:", error);
-			return {
-				success: false,
-				message: error?.message || "Lỗi tạo nhân viên",
-			};
-		}
-	}
-
-	// ===== Update =====
-
-	async function updateEmployee(id, data) {
-		try {
-			const res = await api.put(`/employees/${id}`, data);
-
-			return res;
-		} catch (error) {
-			console.error("Update employee error:", error);
-			return {
-				success: false,
-				message: error?.message || "Lỗi cập nhật nhân viên",
-			};
-		}
-	}
-
-	// ===== Delete =====
-
-	async function deleteEmployee(id) {
-		try {
-			const res = await api.delete(`/employees/${id}`);
-
-			return res;
-		} catch (error) {
-			console.error("Delete employee error:", error);
-			return {
-				success: false,
-				message: error?.message || "Lỗi xoá nhân viên",
-			};
-		}
-	}
-
-	return {
-		employees,
-		pagination,
-		loading,
-		fetchEmployees,
-		createEmployee,
-		updateEmployee,
-		deleteEmployee,
-	};
+  return {
+    employees,
+    pagination,
+    loading,
+    fetchEmployees,
+    createEmployee,
+    updateEmployee,
+    deleteEmployee,
+  };
 });

@@ -106,11 +106,42 @@ func (h *AuthHandler) Logout(ctx *gin.Context) {
 		return
 	}
 
-	err := h.authSvc.Logout(tokenString, remainingTime)
+	var reqBody struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	// Bind JSON nhưng không bắt buộc (nếu không có vẫn blacklist access token).
+	_ = ctx.ShouldBindJSON(&reqBody)
+
+	err := h.authSvc.Logout(tokenString, remainingTime, reqBody.RefreshToken)
 	if err != nil {
 		utils.BadRequest(ctx, "Không thể đăng xuất: "+err.Error())
 		return
 	}
 
 	utils.Success(ctx, "Đăng xuất thành công", nil)
+}
+
+// Refresh godoc
+// POST /api/v1/auth/refresh
+func (h *AuthHandler) Refresh(ctx *gin.Context) {
+	var req model.RefreshRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, "Dữ liệu yêu cầu không hợp lệ")
+		return
+	}
+
+	req.RefreshToken = strings.TrimSpace(req.RefreshToken)
+	if req.RefreshToken == "" {
+		utils.BadRequest(ctx, "Refresh token là bắt buộc")
+		return
+	}
+
+	result, err := h.authSvc.RefreshToken(req.RefreshToken)
+	if err != nil {
+		utils.Unauthorized(ctx, err.Error())
+		return
+	}
+
+	utils.Success(ctx, "Làm mới token thành công", result)
 }

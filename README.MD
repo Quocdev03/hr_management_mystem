@@ -22,7 +22,8 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 - **RESTful API:** Xây dựng với web framework Gin.
 - **ORM:** Tương tác cơ sở dữ liệu hiệu quả bằng GORM.
 - **Database:** Hỗ trợ MySQL.
-- **Xác Thực (Authentication):** Xác thực an toàn dựa trên JWT (JSON Web Token).
+- **Xác Thực (Authentication):** Xác thực an toàn dựa trên JWT (JSON Web Token) với cơ chế **Refresh Token** (token rotation) — Access Token ngắn hạn, Refresh Token dài hạn lưu trong Redis.
+- **Token Blacklist:** Access token bị vô hiệu hoá sau đăng xuất và lưu vào Redis với TTL bằng thời gian hết hạn còn lại — tự động dọn dẹp, không lưu vĩnh viễn.
 - **Phân Quyền (Authorization):** Middleware Phân Quyền Dựa Trên Vai Trò (RBAC) để bảo vệ các API (`admin`, `hr`, `employee`).
 - **Bộ Nhớ Đệm (Caching) & Giới Hạn Request (Rate Limiting):** Sử dụng Redis để lưu cache các API GET và giới hạn số lượt đăng nhập.
 - **Kiến Trúc Tầng (Layered Architecture):** Tuân thủ mô hình chuẩn Handler -> Service -> Repository.
@@ -40,6 +41,8 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 - **Giao Diện CRUD:** Giao diện người dùng trực quan để quản lý Nhân Viên, Phòng Ban và Người Dùng.
 - **Bảng Điều Khiển (Dashboard):** Bảng thống kê tập trung hiển thị các thông số chính của hệ thống.
 - **HTTP Client:** Giao tiếp API qua instance Axios đã được cấu hình sẵn với các interceptor để quản lý token và xử lý lỗi.
+- **Silent Refresh:** Khi Access Token hết hạn (401), Axios interceptor tự động gọi `/auth/refresh`, xếp hàng các request đang chờ và retry tất cả sau khi có token mới — minh bạch với người dùng.
+- **API Interceptor Refactor:** Đã tối ưu logic xử lý token refresh, tách helper (`processQueue`, `clearAuthData`), áp dụng `async/await` và chuẩn hoá code theo JavaScript Style Guide.
 - **Giao Diện Đáp Ứng (Responsive UI):** Thiết kế hiển thị tốt trên nhiều kích thước màn hình.
 - **Thành Phần UI Hiện Đại:** Bao gồm các component dùng lại như modal, hộp thoại xác nhận và skeleton loader giúp cải thiện trải nghiệm người dùng.
 
@@ -100,7 +103,8 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 - **Xác Thực (Authentication - `/auth`)**
    - `POST /login`: Đăng nhập và nhận JWT.
    - `GET /profile`: Lấy thông tin hồ sơ của người dùng đang đăng nhập.
-   - `POST /logout`: Đăng xuất và vô hiệu hoá Token (Blacklist).
+   - `POST /logout`: Đăng xuất, blacklist access token (Redis TTL), xoá refresh token.
+   - `POST /refresh`: Lấy access token mới bằng refresh token (token rotation).
 
 - **Nhân Viên (Employees - `/employees`)**
    - `GET /`: Lấy danh sách nhân viên có phân trang.
@@ -183,6 +187,11 @@ DB_USER=root
 DB_PASSWORD=password123
 DB_NAME=hrm_db
 
+# JWT
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRE_HOUR=1
+REFRESH_EXPIRE_DAY=7
+
 # ... các biến khác
 
 # Redis - dùng tên service của Docker
@@ -253,3 +262,8 @@ File `Makefile` cung cấp các lệnh phím tắt tiện dụng cho quá trình
 - `make build`: Biên dịch (build) file thực thi Go.
 - `make clean`: Xóa file build thực thi.
 - `make tidy`: Dọn dẹp và cập nhật các module Go.
+
+## 📐 Quy Chuẩn Code (Code Style)
+
+- **Backend (Go):** Tuân thủ idiomatic Go — error wrapping, sentinel errors, godoc comments, layered architecture.
+- **Frontend (JavaScript/Vue):** Áp dụng **JavaScript Style Guide** — single quotes, 2-space indent, `const`/`let` (không dùng `var`), arrow functions, template literals, `async/await` thay vì promise chain, optional chaining (`?.`), và trailing commas.

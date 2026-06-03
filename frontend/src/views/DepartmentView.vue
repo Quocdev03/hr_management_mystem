@@ -1,26 +1,26 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useToast } from "vue-toastification";
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useToast } from 'vue-toastification';
 
-import { useDepartmentStore } from "@/store/department";
-import { useDashboardStore } from "@/store/dashboard";
-import { useEmployeeStore } from "@/store/employee";
+import { useDepartmentStore } from '@/store/department';
+import { useDashboardStore } from '@/store/dashboard';
+import { useEmployeeStore } from '@/store/employee';
 
-import ModalDialog from "@/components/ModalDialog.vue";
-import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
-import Skeleton from "@/components/Skeleton.vue";
+import ModalDialog from '@/components/ModalDialog.vue';
+import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
+import Skeleton from '@/components/Skeleton.vue';
 
-import { useModalState } from "@/helpers/useModalState";
-import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
-import { usePermissions } from "@/helpers/usePermissions";
+import { useModalState } from '@/helpers/useModalState';
+import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
+import { usePermissions } from '@/helpers/usePermissions';
 
-import plusIcon from "@/assets/svg/plus.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import deleteIcon from "@/assets/svg/delete.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
+import plusIcon from '@/assets/svg/plus.svg';
+import searchIcon from '@/assets/svg/search.svg';
+import editIcon from '@/assets/svg/edit.svg';
+import deleteIcon from '@/assets/svg/delete.svg';
+import prevIcon from '@/assets/svg/chevron-left.svg';
+import nextIcon from '@/assets/svg/chevron-right.svg';
 
 // Stores
 const departmentStore = useDepartmentStore();
@@ -34,163 +34,162 @@ const { employees } = storeToRefs(employeeStore);
 
 // Modal state
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
-	useModalState();
+  useModalState();
 
 // Search & pagination
 const {
-	searchQuery,
-	load: loadDepartments,
-	handlePageChange,
+  searchQuery,
+  load: loadDepartments,
+  handlePageChange,
 } = usePaginatedSearch(
-	(params) => departmentStore.fetchDepartments(params),
-	pagination,
+  (params) => departmentStore.fetchDepartments(params),
+  pagination,
 );
 
 // Local state
 const editingDepartment = ref(null);
 const formLoading = ref(false);
 const initialFormData = () => ({
-	name: "",
-	code: "",
-	description: "",
-	manager_id: null,
+  name: '',
+  code: '',
+  description: '',
+  manager_id: null,
 });
 const formData = ref(initialFormData());
 
 // Delete modal state
 const isDeleteModalVisible = ref(false);
 const deletingDepartment = ref(null);
-const deleteMessage = ref("");
+const deleteMessage = ref('');
 const deleteLoading = ref(false);
 
 // Fetch lists
 async function loadEmployees() {
-	try {
-		await employeeStore.fetchEmployees({ page: 1, limit: 100 });
-	} catch (err) {
-		console.error("Lỗi khi tải danh sách nhân viên:", err);
-	}
+  try {
+    await employeeStore.fetchEmployees({ page: 1, limit: 100 });
+  } catch (err) {
+    console.error('Lỗi khi tải danh sách nhân viên:', err);
+  }
 }
 
 // Handlers
 function handleAdd() {
-	editingDepartment.value = null;
-	formData.value = initialFormData();
-	openAddModal();
+  editingDepartment.value = null;
+  formData.value = initialFormData();
+  openAddModal();
 }
 
 async function handleEdit(department) {
-	editingDepartment.value = { ...department };
-	formData.value = {
-		name: department.name ?? "",
-		code: department.code ?? "",
-		description: department.description ?? "",
-		manager_id: department.manager_id ?? department.manager?.id ?? null,
-	};
-	openEditModal();
-	await loadEmployees();
+  editingDepartment.value = { ...department };
+  formData.value = {
+    name: department.name ?? '',
+    code: department.code ?? '',
+    description: department.description ?? '',
+    manager_id: department.manager_id ?? department.manager?.id ?? null,
+  };
+  openEditModal();
+  await loadEmployees();
 }
 
 function handleDelete(department) {
-	deletingDepartment.value = department;
-	deleteMessage.value =
-		"Bạn có chắc chắn muốn xoá phòng ban " + department.name + "?";
-	isDeleteModalVisible.value = true;
+  deletingDepartment.value = department;
+  deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
+  isDeleteModalVisible.value = true;
 }
 
 async function confirmDelete() {
-	const department = deletingDepartment.value;
-	if (!department) {
-		return;
-	}
+  const department = deletingDepartment.value;
+  if (!department) {
+    return;
+  }
 
-	deleteLoading.value = true;
-	try {
-		const res = await departmentStore.deleteDepartment(department.id);
+  deleteLoading.value = true;
+  try {
+    const res = await departmentStore.deleteDepartment(department.id);
 
-		if (!res.success) {
-			toast.error(res.message);
-			return;
-		}
+    if (!res.success) {
+      toast.error(res.message);
+      return;
+    }
 
-		toast.success("Xoá phòng ban thành công");
-		isDeleteModalVisible.value = false;
-		deletingDepartment.value = null;
-		await loadDepartments();
-	} catch (err) {
-		toast.error(err?.message || "Đã xảy ra lỗi khi xoá phòng ban");
-		console.error("confirmDelete error:", err);
-	} finally {
-		deleteLoading.value = false;
-	}
+    toast.success('Xoá phòng ban thành công');
+    isDeleteModalVisible.value = false;
+    deletingDepartment.value = null;
+    await loadDepartments();
+  } catch (err) {
+    toast.error(err?.message || 'Đã xảy ra lỗi khi xoá phòng ban');
+    console.error('confirmDelete error:', err);
+  } finally {
+    deleteLoading.value = false;
+  }
 }
 
 async function handleFormSubmit() {
-	formLoading.value = true;
-	try {
-		let res;
+  formLoading.value = true;
+  try {
+    let res;
 
-		if (isEditMode.value) {
-			// Chỉ gửi các field đã thay đổi so với dữ liệu gốc (partial update)
-			const original = editingDepartment.value ?? {};
-			const payload = {};
+    if (isEditMode.value) {
+      // Chỉ gửi các field đã thay đổi so với dữ liệu gốc (partial update)
+      const original = editingDepartment.value ?? {};
+      const payload = {};
 
-			if (formData.value.name !== (original.name ?? "")) {
-				payload.name = formData.value.name;
-			}
-			if (formData.value.description !== (original.description ?? "")) {
-				payload.description = formData.value.description;
-			}
+      if (formData.value.name !== (original.name ?? '')) {
+        payload.name = formData.value.name;
+      }
+      if (formData.value.description !== (original.description ?? '')) {
+        payload.description = formData.value.description;
+      }
 
-			const originalManagerId =
-				original.manager_id ?? original.manager?.id ?? null;
-			const currentManagerId = formData.value.manager_id || null;
-			if (currentManagerId !== originalManagerId) {
-				// Gửi 0 khi xoá manager (backend dùng 0 làm sentinel "xoá trưởng phòng")
-				payload.manager_id =
-					currentManagerId === null ? 0 : currentManagerId;
-			}
+      const originalManagerId =
+        original.manager_id ?? original.manager?.id ?? null;
+      const currentManagerId = formData.value.manager_id || null;
+      if (currentManagerId !== originalManagerId) {
+        // Gửi 0 khi xoá manager (backend dùng 0 làm sentinel "xoá trưởng phòng")
+        payload.manager_id =
+          currentManagerId === null ? 0 : currentManagerId;
+      }
 
-			if (Object.keys(payload).length === 0) {
-				toast.info("Không có dữ liệu thay đổi");
-				return;
-			}
+      if (Object.keys(payload).length === 0) {
+        toast.info('Không có dữ liệu thay đổi');
+        return;
+      }
 
-			res = await departmentStore.updateDepartment(
-				editingDepartment.value.id,
-				payload,
-			);
-		} else {
-			// Tạo mới: gửi đủ các field cần thiết
-			res = await departmentStore.createDepartment({
-				name: formData.value.name,
-				code: formData.value.code,
-				description: formData.value.description,
-				manager_id: formData.value.manager_id || null,
-			});
-		}
+      res = await departmentStore.updateDepartment(
+        editingDepartment.value.id,
+        payload,
+      );
+    } else {
+      // Tạo mới: gửi đủ các field cần thiết
+      res = await departmentStore.createDepartment({
+        name: formData.value.name,
+        code: formData.value.code,
+        description: formData.value.description,
+        manager_id: formData.value.manager_id || null,
+      });
+    }
 
-		if (!res.success) {
-			toast.error(res.message);
-			return;
-		}
+    if (!res.success) {
+      toast.error(res.message);
+      return;
+    }
 
-		if (isEditMode.value) {
-			toast.success(res.message);
-		}
+    if (isEditMode.value) {
+      toast.success(res.message);
+    }
 
-		closeModal();
-		await loadDepartments();
-	} catch (err) {
-		toast.error(err?.message || "Đã xảy ra lỗi khi lưu phòng ban");
-		console.error("handleFormSubmit error:", err);
-	} finally {
-		formLoading.value = false;
-	}
+    closeModal();
+    await loadDepartments();
+  } catch (err) {
+    toast.error(err?.message || 'Đã xảy ra lỗi khi lưu phòng ban');
+    console.error('handleFormSubmit error:', err);
+  } finally {
+    formLoading.value = false;
+  }
 }
 
 onMounted(async () => {
-	await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
+  await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
 });
 </script>
 

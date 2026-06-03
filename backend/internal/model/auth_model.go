@@ -17,15 +17,22 @@ type LoginRequest struct {
 
 // LoginResponse  - dữ liệu trả về sau khi đăng nhập thành công
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	User        User   `json:"user"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	User         User   `json:"user"`
 }
 
 // Claims chứa thông tin được mã hóa trong JWT token
 type Claims struct {
-	UserID   uint   `json:"user_id"`
-	Email    string `json:"email"`
-	RoleID   uint   `json:"role_id"`
-	RoleName string `json:"role_name"`
+	UserID    uint   `json:"user_id"`
+	Email     string `json:"email"`
+	RoleID    uint   `json:"role_id"`
+	RoleName  string `json:"role_name"`
+	TokenType string `json:"token_type"` // "access" | "refresh"
 	jwt.RegisteredClaims
+}
+
+// RefreshRequest - dữ liệu yêu cầu làm mới token
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
 }

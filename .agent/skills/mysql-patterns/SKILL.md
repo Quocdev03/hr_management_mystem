@@ -241,48 +241,20 @@ acceptable. It is not a replacement for normal transactional consistency.
 
 ## Connection Pools
 
-SQLAlchemy example:
+In Go, connection pooling is handled by `database/sql` via GORM's `db.DB()` method:
 
-```python
-from sqlalchemy import create_engine
-
-engine = create_engine(
-    "mysql+mysqlconnector://app:secret@db.internal/app",
-    pool_size=10,
-    max_overflow=5,
-    pool_timeout=30,
-    pool_recycle=240,
-    pool_pre_ping=True,
-    connect_args={"connect_timeout": 5},
-)
+```go
+sqlDB, err := db.DB()
+if err == nil {
+    sqlDB.SetMaxOpenConns(10)
+    sqlDB.SetMaxIdleConns(5)
+    sqlDB.SetConnMaxLifetime(time.Duration(240) * time.Second)
+}
 ```
 
-Node.js `mysql2` example:
-
-```javascript
-import mysql from 'mysql2/promise';
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 30000,
-});
-
-const [rows] = await pool.execute(
-  'SELECT id, total FROM orders WHERE account_id = ? LIMIT 50',
-  [accountId],
-);
-```
-
-Keep application pool recycling below the server `wait_timeout`. If the server
-uses `wait_timeout = 300`, a `pool_recycle` around 240 seconds is coherent;
-`pool_pre_ping` still helps recover from network and failover events.
+Keep application pool recycling or lifetime below the server `wait_timeout`. If the server
+uses `wait_timeout = 300`, set connection max lifetime accordingly (e.g. 240 seconds or 4 minutes)
+to recover from stale network connections.
 
 ## Diagnostics
 

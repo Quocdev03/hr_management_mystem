@@ -6,7 +6,6 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
-	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -91,10 +90,6 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 
 	user, err := h.userSvc.UpdateUser(id, req, reqID)
 	if err != nil {
-		if errors.Is(err, service.ErrSelfRoleChange) || errors.Is(err, service.ErrSelfDeactivate) {
-			utils.Forbidden(ctx, err.Error())
-			return
-		}
 		utils.BadRequest(ctx, err.Error())
 		return
 	}

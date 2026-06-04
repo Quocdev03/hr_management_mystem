@@ -6,6 +6,7 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -77,41 +78,23 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	// Lấy thông tin user bị tác động để kiểm tra phân quyền
-	targetUser, err := h.userSvc.GetUserByID(id)
-	if err != nil {
-		utils.NotFound(ctx, "Không tìm thấy user")
-		return
-	}
-
 	var req model.UpdateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
 		return
 	}
 
-	// Logic kiểm tra phân quyền an toàn
-	requesterID, exists := ctx.Get(middleware.ContextKeyUserID)
-	if exists {
-		reqID := requesterID.(uint)
-		
-		// 1. Ngăn tự đổi quyền bản thân HOẶC đổi quyền của Admin khác
-		if req.RoleID != nil && *req.RoleID != targetUser.RoleID {
-			if targetUser.RoleID == 1 || targetUser.ID == reqID {
-				utils.Forbidden(ctx, "Không thể tự thay đổi quyền của mình hoặc của Admin khác")
-				return
-			}
-		}
-
-		// 2. Ngăn tự khoá tài khoản của chính mình
-		if targetUser.ID == reqID && req.IsActive != nil && !*req.IsActive {
-			utils.Forbidden(ctx, "Không thể tự vô hiệu hoá tài khoản của chính mình")
-			return
-		}
+	var reqID uint
+	if requesterID, exists := ctx.Get(middleware.ContextKeyUserID); exists {
+		reqID = requesterID.(uint)
 	}
 
-	user, err := h.userSvc.UpdateUser(id, req)
+	user, err := h.userSvc.UpdateUser(id, req, reqID)
 	if err != nil {
+		if errors.Is(err, service.ErrSelfRoleChange) || errors.Is(err, service.ErrSelfDeactivate) {
+			utils.Forbidden(ctx, err.Error())
+			return
+		}
 		utils.BadRequest(ctx, err.Error())
 		return
 	}

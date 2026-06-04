@@ -19,7 +19,7 @@ type UserService interface {
 	Create(req model.CreateUserRequest) (*model.User, error)
 	GetUsers(query model.PaginationQuery) (*model.PaginatedResult, error)
 	GetUserByID(id uint) (*model.User, error)
-	UpdateUser(id uint, req model.UpdateUserRequest) (*model.User, error)
+	UpdateUser(id uint, req model.UpdateUserRequest, requesterID uint) (*model.User, error)
 	DeleteUser(id uint) error
 	GetUsersWithoutEmployee() ([]model.User, error)
 }
@@ -125,7 +125,7 @@ func (us *userService) GetUserByID(id uint) (*model.User, error) {
 	return user, nil
 }
 
-func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.User, error) {
+func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requesterID uint) (*model.User, error) {
 	if id == 0 {
 		return nil, errors.New("ID user phải lớn hơn 0")
 	}
@@ -149,6 +149,19 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest) (*model.
 			return nil, errors.New("Không tìm thấy user")
 		}
 		return nil, err
+	}
+
+	// Logic kiểm tra phân quyền an toàn.
+	// 1. Ngăn tự đổi quyền bản thân HOẶC đổi quyền của Admin khác.
+	if req.RoleID != nil && *req.RoleID != user.RoleID {
+		if user.RoleID == 1 || user.ID == requesterID {
+			return nil, errors.New("Không thể tự thay đổi quyền của mình hoặc của Admin khác")
+		}
+	}
+
+	// 2. Ngăn tự khoá tài khoản của chính mình.
+	if user.ID == requesterID && req.IsActive != nil && !*req.IsActive {
+		return nil, errors.New("Không thể tự vô hiệu hoá tài khoản của chính mình")
 	}
 
 	updateData := make(map[string]interface{})

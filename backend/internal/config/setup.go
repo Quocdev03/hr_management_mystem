@@ -92,6 +92,12 @@ func SeedData(db *gorm.DB) {
 	}
 
 	log.Println("Chèn dữ liệu thành công")
+	log.Println("=================================================================")
+	log.Println("🔑 DANH SÁCH TÀI KHOẢN MẪU ĐÃ ĐƯỢC KHỞI TẠO:")
+	log.Println("   1. [Admin]      Username: chiquoc23AD   | Password: chiquoc23AD")
+	log.Println("   2. [HR]         Username: chiquoc23HR   | Password: chiquoc23HR")
+	log.Println("   3. [Employee]   Username: chiquoc23EMP  | Password: chiquoc23EMP")
+	log.Println("=================================================================")
 }
 
 func seedRoles(ctx *gorm.DB) error {
@@ -151,9 +157,10 @@ func seedUsers(ctx *gorm.DB) error {
 		return err
 	}
 
-	hashedPwdAdmin, _ := bcrypt.GenerateFromPassword([]byte("Admin@2026"), bcrypt.DefaultCost)
-	hashedPwdHR, _ := bcrypt.GenerateFromPassword([]byte("Hr2026@pass"), bcrypt.DefaultCost)
-	hashedPwdEmployee, _ := bcrypt.GenerateFromPassword([]byte("Emp2026@pass"), bcrypt.DefaultCost)
+	hashedPwdEmployeeDefault, _ := bcrypt.GenerateFromPassword([]byte("Emp2026@pass"), bcrypt.DefaultCost)
+	hashedPwdAdminSpecial, _ := bcrypt.GenerateFromPassword([]byte("chiquoc23AD"), bcrypt.DefaultCost)
+	hashedPwdHRSpecial, _ := bcrypt.GenerateFromPassword([]byte("chiquoc23HR"), bcrypt.DefaultCost)
+	hashedPwdEmployeeSpecial, _ := bcrypt.GenerateFromPassword([]byte("chiquoc23EMP"), bcrypt.DefaultCost)
 
 	roleIDs := map[string]uint{"admin": adminRole.ID, "hr": hrRole.ID, "employee": empRole.ID}
 
@@ -162,15 +169,24 @@ func seedUsers(ctx *gorm.DB) error {
 			return errors.New("birth date is required for seed user generation")
 		}
 
-		username := buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
-		email := buildEmail(username)
-		password := hashedPwdEmployee
-		switch item.RoleName {
-		case "admin":
-			password = hashedPwdAdmin
-		case "hr":
-			password = hashedPwdHR
+		var username string
+		var password []byte
+
+		if item.RoleName == "admin" {
+			username = "chiquoc23AD"
+			password = hashedPwdAdminSpecial
+		} else if item.RoleName == "hr" {
+			username = "chiquoc23HR"
+			password = hashedPwdHRSpecial
+		} else if item.RoleName == "employee" && item.Employee.LastName == "Quốc EMP" {
+			username = "chiquoc23EMP"
+			password = hashedPwdEmployeeSpecial
+		} else {
+			username = buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
+			password = hashedPwdEmployeeDefault
 		}
+
+		email := buildEmail(username)
 
 		user := model.User{
 			UserName: username,
@@ -219,7 +235,17 @@ func seedEmployees(ctx *gorm.DB) error {
 		item.Employee.DepartmentID = dept.ID
 
 		if item.Employee.BirthDate != nil {
-			username := buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
+			var username string
+			if item.RoleName == "admin" {
+				username = "chiquoc23AD"
+			} else if item.RoleName == "hr" {
+				username = "chiquoc23HR"
+			} else if item.RoleName == "employee" && item.Employee.LastName == "Quốc EMP" {
+				username = "chiquoc23EMP"
+			} else {
+				username = buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
+			}
+			
 			var user model.User
 			if err := ctx.Where("user_name = ?", username).First(&user).Error; err == nil {
 				item.Employee.UserID = &user.ID
@@ -298,10 +324,10 @@ func getSeedEmployeeInfo() []seedEmployeeInfo {
 
 	return []seedEmployeeInfo{
 		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc", Phone: "0912345678", Position: "Head of Engineering", Salary: 47000000, JoinDate: time.Date(2017, 4, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "admin", DepartmentCode: "IT", IsManager: true},
-		{Employee: model.Employee{FirstName: "Hùng", LastName: "Nguyễn", Phone: "0912345679", Position: "Technical Lead", Salary: 35000000, JoinDate: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "IT", IsManager: true},
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc EMP", Phone: "0912345679", Position: "Technical Lead", Salary: 35000000, JoinDate: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "IT", IsManager: true},
 		{Employee: model.Employee{FirstName: "Lan", LastName: "Trần", Phone: "0912345680", Position: "Backend Developer", Salary: 28000000, JoinDate: time.Date(2022, 9, 5, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "IT"},
 
-		{Employee: model.Employee{FirstName: "Hà", LastName: "Nguyễn", Phone: "0912345681", Position: "HR Manager", Salary: 33000000, JoinDate: time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "female", Status: "active"}, RoleName: "hr", DepartmentCode: "HR", IsManager: true},
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc HR", Phone: "0912345681", Position: "HR Manager", Salary: 33000000, JoinDate: time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "hr", DepartmentCode: "HR", IsManager: true},
 		{Employee: model.Employee{FirstName: "Mai", LastName: "Trần", Phone: "0912345682", Position: "Recruiter", Salary: 21000000, JoinDate: time.Date(2023, 1, 20, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "HR"},
 
 		{Employee: model.Employee{FirstName: "Anh", LastName: "Phạm", Phone: "0912345683", Position: "Finance Manager", Salary: 32000000, JoinDate: time.Date(2019, 8, 12, 0, 0, 0, 0, time.UTC), BirthDate: &b4, Gender: "male", Status: "active"}, RoleName: "employee", DepartmentCode: "FIN", IsManager: true},

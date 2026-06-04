@@ -18,3 +18,9 @@
   - [.agent/agent_memory.md](file:///c:/Users/ccquo/Downloads/Compressed/HR_Managerment_System/.agent/agent_memory.md) (Updated)
 - **Result**: Successfully deleted 3 redundant skill directories and optimized 2 remaining skill configurations to align perfectly with Go + GORM + MySQL + Vue 3 architecture.
 - **Notes**: Total skill count reduced from 13 to 10. Agent context space is now more clean and memory efficient.
+feat: dockerize Go backend (1.26.2) and Vue 3 frontend with Nginx reverse proxy
+
+- Added backend/Dockerfile (golang:1.26-alpine) and docker-entrypoint.sh to auto-run setup/migration.
+- Added frontend/Dockerfile (node:20-alpine & nginx) with reverse proxy for /api/v1 to avoid CORS.
+- Updated README.MD to reflect Go version requirement (1.26.2+).
+- Integrated backend and frontend services into docker-compose.yml.

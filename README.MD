@@ -1,7 +1,7 @@
 # Hệ Thống Quản Lý Nhân Sự (HR Management System)
 
 [![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Quocdev03/HR_Management)
-![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)
+![Go Version](https://img.shields.io/badge/Go-1.26.2+-00ADD8?logo=go)
 ![Vue Version](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vuedotjs)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -137,47 +137,55 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 
 - Git
 - Docker và Docker Compose
-- Go (phiên bản 1.22 trở lên)
-- Node.js (phiên bản 20 trở lên) và npm
+- Go (phiên bản 1.26.2 trở lên) - *chỉ cần khi chạy local không qua Docker*
+- Node.js (phiên bản 20 trở lên) và npm - *chỉ cần khi chạy local không qua Docker*
 
-### 1. Clone Repository
+---
 
+### 🐳 Cách 1: Chạy Nhanh Bằng Docker (Khuyên Dùng)
+
+Đây là cách nhanh nhất và đơn giản nhất để khởi động toàn bộ dự án. Bạn **không cần** cài đặt Go, Node.js hay cơ sở dữ liệu trên máy tính cá nhân của mình.
+
+1. **Khởi động Docker Desktop** trên máy tính của bạn.
+2. **Khởi chạy container** bằng cách chạy lệnh sau tại thư mục gốc của dự án:
+   ```sh
+   docker-compose up --build -d
+   ```
+3. **Kiểm tra logs**:
+   ```sh
+   docker-compose logs -f backend
+   ```
+4. **Truy cập ứng dụng**:
+   - Giao diện Web (Frontend): [http://localhost](http://localhost) (cổng 80)
+   - API Backend: [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
+
+---
+
+### 💻 Cách 2: Chạy Thủ Công (Local Development)
+
+Nếu bạn muốn chạy và sửa đổi code trực tiếp trên máy của mình:
+
+#### 1. Clone Repository
 ```sh
 git clone https://github.com/quocdev03/HR_Management.git
 cd HR_Management
 ```
 
-### 2. Cài Đặt Backend
+#### 2. Cài Đặt Backend
 
-Backend, database và cache được quản lý bởi Docker Compose.
-
-**a. Khởi Chạy Docker Containers**
-Lệnh này sẽ build và chạy các dịch vụ MySQL, Redis dưới nền.
-
+**a. Khởi Chạy Database & Cache bằng Docker**
+Lệnh này sẽ build và chạy các dịch vụ MySQL, Redis dưới nền máy host.
 ```sh
-docker-compose up -d
+docker-compose up -d mysql redis
 ```
 
-> Các dịch vụ sẽ chạy tại:
->
-> - **MySQL**: `localhost:3306`
-> - **Redis**: `localhost:6379`
-
 **b. Cấu Hình Biến Môi Trường (Environment Variables)**
-
-Copy file cấu hình mẫu và đặt vào thư mục `backend`.
-
+Copy file cấu hình mẫu và đặt vào thư mục `backend`:
 ```sh
 cp .env.example backend/.env
 ```
-
-Mở file `backend/.env` và đảm bảo các cấu hình database, Redis khớp với thiết lập trong `docker-compose.yml`. Mặc định không cần thay đổi gì nếu bạn chạy Docker trên `localhost`.
-
+Mở file `backend/.env` và cập nhật cấu hình kết nối database/redis sử dụng `localhost` thay vì tên service của Docker:
 ```env
-# backend/.env
-
-# App
-APP_PORT=8080
 APP_ENV=development
 
 # Database (MySQL) - dùng tên service của Docker
@@ -203,15 +211,11 @@ REDIS_PORT=6379
 > **Lưu ý:** Khi chạy backend **trong Docker container**, giá trị `DB_HOST` và `REDIS_HOST` phải là tên service Docker (`mysql`, `redis`). Khi chạy backend **trực tiếp trên máy host** (không qua Docker), dùng `localhost`.
 
 **c. Thiết Lập Cơ Sở Dữ Liệu**
-Lệnh này sẽ tạo cấu trúc bảng, chạy migration và chèn dữ liệu khởi tạo ban đầu (người dùng, phòng ban, v.v.).
+Lệnh này sẽ tạo cấu trúc bảng, chạy migration và chèn dữ liệu khởi tạo ban đầu, tài khoản mặc định (người dùng, phòng ban, v.v.).
 
 ```sh
 go run backend/cmd/setup/main.go
 ```
-
-> **Tài Khoản Admin Mặc Định:**
->
-> Thông tin tài khoản mặc định được cấu hình qua biến môi trường trong file `backend/.env`. Xem file `.env.example` để biết giá trị khởi tạo. **Vui lòng đổi mật khẩu ngay sau khi đăng nhập lần đầu.**
 
 **d. Chạy Server Backend**
 Bạn có thể chạy server trực tiếp bằng lệnh go hoặc dùng Makefile.
@@ -262,8 +266,3 @@ File `Makefile` cung cấp các lệnh phím tắt tiện dụng cho quá trình
 - `make build`: Biên dịch (build) file thực thi Go.
 - `make clean`: Xóa file build thực thi.
 - `make tidy`: Dọn dẹp và cập nhật các module Go.
-
-## 📐 Quy Chuẩn Code (Code Style)
-
-- **Backend (Go):** Tuân thủ idiomatic Go — error wrapping, sentinel errors, godoc comments, layered architecture.
-- **Frontend (JavaScript/Vue):** Áp dụng **JavaScript Style Guide** — single quotes, 2-space indent, `const`/`let` (không dùng `var`), arrow functions, template literals, `async/await` thay vì promise chain, optional chaining (`?.`), và trailing commas.

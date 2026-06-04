@@ -27,9 +27,6 @@ func main() {
 	// Khởi tạo Redis
 	rdb := config.InitRedis(&cfg.Redis)
 
-	// Khởi tạo CacheService
-	cacheSvc := service.NewCacheService(rdb)
-
 	// In bảng tóm tắt cấu hình Redis khi khởi động
 	fmt.Printf("[REDIS-info] Địa chỉ         : %s:%s (DB: %d)\n", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
 	fmt.Printf("[REDIS-info] Dashboard cache  : TTL 1 giờ  | Key: dashboard:stats\n")
@@ -47,6 +44,7 @@ func main() {
 	dashRepo := repository.NewDashboardsRepository(db)
 
 	// Services - chứa business logic
+	cacheSvc := service.NewCacheService(rdb)
 	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT, rdb)
 	userScv := service.NewUserService(userRepo, cacheSvc)
 	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, cacheSvc)

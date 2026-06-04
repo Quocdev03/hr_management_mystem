@@ -15,7 +15,7 @@ import (
 // Dùng constants để tránh typo khi get/set vào gin.Context
 const (
 	ContextKeyUserID   = "userID"
-	ContextKeyEmail    = "username"
+	ContextKeyEmail    = "email"
 	ContextKeyRoleID   = "roleID"
 	ContextKeyRoleName = "roleName"
 )

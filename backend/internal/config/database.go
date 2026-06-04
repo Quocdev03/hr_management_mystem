@@ -14,7 +14,7 @@ import (
 	glogger "gorm.io/gorm/logger"
 )
 
-func InitiDB(cfg *DatabaseConfig) *gorm.DB {
+func InitDB(cfg *DatabaseConfig) *gorm.DB {
 	// 1. Set log level theo môi trường cho GORM
 	var logLevel glogger.LogLevel
 
@@ -40,7 +40,7 @@ func InitiDB(cfg *DatabaseConfig) *gorm.DB {
 	// Tối đa 10 kết nối cùng lúc, giữ 5 kết nối, không hết hạn
 	sqlDB.SetMaxOpenConns(10)
 	sqlDB.SetMaxIdleConns(5)
-	sqlDB.SetConnMaxLifetime(0)
+	sqlDB.SetConnMaxLifetime(1)
 
 	log.Println("Kết nối database và tạo các bảng thành công!")
 	return db

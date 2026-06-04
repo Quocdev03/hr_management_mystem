@@ -15,7 +15,7 @@ func main() {
 
 	// Bước 2: Kết nối database
 	log.Println("=== Bước 2: Kết nối database ===")
-	db := config.InitiDB(&cfg.Database)
+	db := config.InitDB(&cfg.Database)
 
 	// Bước 3: Chạy migrations (tạo / cập nhật bảng)
 	log.Println("=== Bước 3: Chạy migrations ===")

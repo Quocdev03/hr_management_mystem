@@ -81,7 +81,7 @@ func (r *departmentRepository) FindByCode(code string) (*model.Department, error
 	if err != nil {
 		return nil, err
 	}
-	return &dept, err
+	return &dept, nil
 }
 
 func (r *departmentRepository) FindByManagerID(managerID uint) (*model.Department, error) {
@@ -95,7 +95,6 @@ func (r *departmentRepository) FindByManagerID(managerID uint) (*model.Departmen
 
 func (r *departmentRepository) Update(dept *model.Department) error {
 	// Dùng map để GORM có thể ghi đúng giá trị NULL (ví dụ: xoá manager)
-	// Updates() với struct sẽ bỏ qua nil/zero-value dù đã có Select()
 	updates := map[string]interface{}{
 		"name":        dept.Name,
 		"description": dept.Description,

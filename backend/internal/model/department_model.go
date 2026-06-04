@@ -10,7 +10,6 @@ type Department struct {
 	ManagerID   *uint      `json:"manager_id"`
 	Manager     *Employee  `gorm:"foreignKey:ManagerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"manager,omitempty"`
 	Employees   []Employee `gorm:"foreignKey:DepartmentID" json:"employees,omitempty"`
-
 	TimestampModel
 }
 

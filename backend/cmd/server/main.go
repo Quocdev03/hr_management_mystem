@@ -22,7 +22,7 @@ func main() {
 	utils.Info("Đang chạy HMR API - Môi trường: %s", cfg.App.Env)
 
 	// Khởi tạo Database
-	db := config.InitiDB(&cfg.Database)
+	db := config.InitDB(&cfg.Database)
 
 	// Khởi tạo Redis
 	rdb := config.InitRedis(&cfg.Redis)

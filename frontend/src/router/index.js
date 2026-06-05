@@ -36,7 +36,7 @@ const router = createRouter({
 					component: UserView,
 					meta: { roles: ["admin"] },
 				},
-				{ path: "profile", name: "profile", component: ProfileView },
+				{ path: "me", name: "me", component: ProfileView },
 			],
 		},
 	],

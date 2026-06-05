@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function profile() {
     loading.value = true;
     try {
-      const res = await api.get('/auth/profile');
+      const res = await api.get('/auth/me');
       if (res.success) {
         userProfile.value = res.data;
         return res;

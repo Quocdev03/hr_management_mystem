@@ -102,7 +102,7 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 
 - **Xác Thực (Authentication - `/auth`)**
    - `POST /login`: Đăng nhập và nhận JWT.
-   - `GET /profile`: Lấy thông tin hồ sơ của người dùng đang đăng nhập.
+   - `GET /me`: Lấy thông tin hồ sơ của người dùng đang đăng nhập.
    - `POST /logout`: Đăng xuất, blacklist access token (Redis TTL), xoá refresh token.
    - `POST /refresh`: Lấy access token mới bằng refresh token (token rotation).
 

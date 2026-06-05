@@ -17,7 +17,7 @@
 				<img :src="usersIcon" alt="user" class="nav-icon" />
 				<span>Người Dùng</span>
 			</router-link>
-			<router-link to="/profile" class="nav-item" active-class="active">
+			<router-link to="/me" class="nav-item" active-class="active">
 				<img :src="profileIcon" alt="profile" class="nav-icon" />
 				<span>Hồ Sơ</span>
 			</router-link>

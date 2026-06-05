@@ -57,8 +57,8 @@ func SetupRouter(
 		// POST /auth/refresh — Làm mới access token, rate limit 10 lượt/phút
 		auth.POST("/refresh", middleware.RateLimiter(rdb, 10, time.Minute), authHandler.Refresh)
 
-		// GET /auth/profile — Lấy hồ sơ người dùng (cần JWT)
-		auth.GET("/profile", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
+		// GET /auth/me — Lấy hồ sơ người dùng (cần JWT)
+		auth.GET("/me", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
 
 		// POST /auth/logout — Đăng xuất, blacklist token (cần JWT)
 		auth.POST("/logout", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.Logout)

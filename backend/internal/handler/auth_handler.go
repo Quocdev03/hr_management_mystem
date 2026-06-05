@@ -53,7 +53,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 }
 
 // GetProfile godoc
-// GET /api/v1/auth/profile - cần JWT token
+// GET /api/v1/auth/me - cần JWT token
 func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 	// Lấy từ context
 	userIDVal, exists := ctx.Get(middleware.ContextKeyUserID)

@@ -213,7 +213,12 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 			return fmt.Errorf("Lỗi khi cập nhật phòng ban: %w", err)
 		}
 
-		updatedDept = dept
+		// Reload lại từ DB để lấy dữ liệu mới nhất (kể cả Manager preloaded)
+		reloaded, err := txDeptRepo.FindByID(id)
+		if err != nil {
+			return fmt.Errorf("Lỗi reload phòng ban sau cập nhật: %w", err)
+		}
+		updatedDept = reloaded
 		return nil
 	}); err != nil {
 		return nil, err

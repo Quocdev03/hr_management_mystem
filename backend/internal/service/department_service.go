@@ -144,7 +144,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 			return fmt.Errorf("Lỗi khi tìm phòng ban: %w", err)
 		}
 
-		updated := false
+		updates := map[string]interface{}{}
 
 		if req.Name != nil {
 			name := strings.TrimSpace(*req.Name)
@@ -163,21 +163,17 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 						}
 					}
 				}
-				dept.Name = name
-				updated = true
+				updates["name"] = name
 			}
 		}
 
 		if req.Description != nil {
-			dept.Description = strings.TrimSpace(*req.Description)
-			updated = true
+			updates["description"] = strings.TrimSpace(*req.Description)
 		}
 
 		if req.ManagerID != nil {
 			if *req.ManagerID == 0 {
-				dept.ManagerID = nil
-				dept.Manager = nil
-				updated = true
+				updates["manager_id"] = gorm.Expr("NULL")
 			} else {
 				emp, err := txEmpRepo.FindByID(*req.ManagerID)
 				if err != nil {
@@ -199,17 +195,16 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 					return err
 				}
 
-				dept.ManagerID = req.ManagerID
-				updated = true
+				updates["manager_id"] = *req.ManagerID
 			}
 		}
 
-		if !updated {
+		if len(updates) == 0 {
 			updatedDept = dept
 			return nil
 		}
 
-		if err := txDeptRepo.Update(dept); err != nil {
+		if err := txDeptRepo.Update(id, updates); err != nil {
 			return fmt.Errorf("Lỗi khi cập nhật phòng ban: %w", err)
 		}
 
@@ -257,9 +252,7 @@ func (ds *departmentService) DeleteDepartment(id uint) error {
 		}
 
 		if dept.ManagerID != nil {
-			dept.ManagerID = nil
-			dept.Manager = nil
-			if err := txDeptRepo.Update(dept); err != nil {
+			if err := txDeptRepo.UpdateManager(id, nil); err != nil {
 				return fmt.Errorf("Lỗi khi xoá trưởng phòng trước khi xoá phòng ban: %w", err)
 			}
 		}

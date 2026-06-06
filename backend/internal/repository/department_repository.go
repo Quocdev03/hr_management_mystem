@@ -14,7 +14,7 @@ type DepartmentRepository interface {
 	FindByID(id uint) (*model.Department, error)
 	FindByCode(code string) (*model.Department, error)
 	FindByManagerID(managerID uint) (*model.Department, error)
-	Update(dept *model.Department) error
+	Update(id uint, updates map[string]interface{}) error
 	UpdateManager(departmentID uint, managerID *uint) error
 	Delete(id uint) error
 }
@@ -93,25 +93,9 @@ func (r *departmentRepository) FindByManagerID(managerID uint) (*model.Departmen
 	return &dept, nil
 }
 
-func (r *departmentRepository) Update(dept *model.Department) error {
-	updates := map[string]interface{}{
-		"name":        dept.Name,
-		"description": dept.Description,
-	}
-
-	// Phải xử lý manager_id riêng biệt:
-	// - GORM Updates() bỏ qua nil values trong map → manager_id NULL sẽ không được ghi
-	// - Dùng gorm.Expr("NULL") để force ghi NULL xuống DB
-	if dept.ManagerID == nil {
-		updates["manager_id"] = gorm.Expr("NULL")
-	} else {
-		updates["manager_id"] = *dept.ManagerID
-	}
-
-	// Dùng Where("id = ?") thay vì Model(struct) để GORM luôn target đúng record
-	// tránh trường hợp GORM không resolve được primary key từ struct state
+func (r *departmentRepository) Update(id uint, updates map[string]interface{}) error {
 	return r.db.Model(&model.Department{}).
-		Where("id = ?", dept.ID).
+		Where("id = ?", id).
 		Updates(updates).Error
 }
 

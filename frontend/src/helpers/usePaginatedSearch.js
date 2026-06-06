@@ -19,80 +19,89 @@ import { ref, watch } from "vue";
  * }}
  */
 export function usePaginatedSearch(fetchFn, paginationRef, options) {
-	let debounceMs = 400;
-	if (options && options.debounce !== undefined) {
-		debounceMs = options.debounce;
-	}
+	// ─── Cấu hình ────────────────────────────────────────────────────────────
 
-	const searchQuery = ref("");
-	const errorMessage = ref(null);
-	let _debounceTimer = null;
+	// Lấy debounce từ options, mặc định 400ms nếu không truyền
+	const debounceMs = options?.debounce !== undefined ? options.debounce : 400;
 
-	async function load(page) {
-		if (page === undefined) {
-			page = 1;
-		}
+	// ─── State ───────────────────────────────────────────────────────────────
 
+	const searchQuery = ref(""); // Từ khoá tìm kiếm hiện tại
+	const errorMessage = ref(null); // Lỗi từ lần fetch gần nhất (null = không có lỗi)
+	let _debounceTimer = null; // Timer debounce — giữ ref để clearTimeout khi cần
+
+	// ─── Load dữ liệu ────────────────────────────────────────────────────────
+
+	async function load(page = 1) {
 		errorMessage.value = null;
 
-		let params = {
-			page: page,
+		const params = {
+			page,
 			limit: paginationRef.value.limit,
 			search: searchQuery.value,
 		};
 
 		const res = await fetchFn(params);
 
-		// Nếu fetch thành công, đảm bảo paginationRef có page đúng (fallback)
-		if (res && res.success !== false) {
+		/**
+		 * Đồng bộ page về paginationRef sau khi fetch thành công.
+		 * Ưu tiên page trả về từ response (res.data.page) để đảm bảo khớp
+		 * với dữ liệu thực tế từ server, fallback về page đã gửi lên nếu
+		 * response không trả về page (một số API không include pagination).
+		 */
+		if (res?.success !== false) {
 			try {
-				const respPage =
-					res.data && res.data.page ? Number(res.data.page) : Number(page);
-				if (
-					!Number.isNaN(respPage) &&
-					paginationRef &&
-					paginationRef.value
-				) {
+				const respPage = res?.data?.page
+					? Number(res.data.page)
+					: Number(page);
+				if (!Number.isNaN(respPage) && paginationRef?.value) {
 					paginationRef.value.page = respPage;
 				}
-			} catch (e) {
-				// ignore
+			} catch {
+				// Bỏ qua nếu parse page lỗi — không ảnh hưởng đến hiển thị
 			}
 		}
 
-		if (res && res.success === false) {
-			if (res.message) {
-				errorMessage.value = res.message;
-			} else {
-				errorMessage.value = "Lỗi tải dữ liệu";
-			}
+		// Ghi nhận lỗi để component có thể hiển thị thông báo
+		if (res?.success === false) {
+			errorMessage.value = res.message || "Lỗi tải dữ liệu";
 		}
 
 		return res;
 	}
 
+	// ─── Chuyển trang ────────────────────────────────────────────────────────
+
+	/**
+	 * Validate page trước khi load:
+	 * - Phải là số hợp lệ, >= 1, và không vượt quá totalPages
+	 * - Tránh gọi API thừa khi người dùng spam nút prev/next ở biên
+	 */
 	function handlePageChange(page) {
-		page = Number(page);
-		if (Number.isNaN(page) || page < 1) {
-			return;
-		}
-		if (page > paginationRef.value.totalPages) {
-			return;
-		}
-		load(page);
+		const p = Number(page);
+		if (Number.isNaN(p) || p < 1) return;
+		if (p > paginationRef.value.totalPages) return;
+		load(p);
 	}
 
-	watch(searchQuery, function () {
+	// ─── Debounce search ─────────────────────────────────────────────────────
+
+	/**
+	 * Mỗi lần searchQuery thay đổi, reset timer và đợi debounceMs
+	 * trước khi thực sự gọi load(1).
+	 * Tránh spam API khi người dùng đang gõ liên tục.
+	 */
+	watch(searchQuery, () => {
 		clearTimeout(_debounceTimer);
-		_debounceTimer = setTimeout(function () {
-			load(1);
-		}, debounceMs);
+		_debounceTimer = setTimeout(() => load(1), debounceMs);
 	});
 
+	// ─── Export ──────────────────────────────────────────────────────────────
+
 	return {
-		searchQuery: searchQuery,
-		load: load,
-		handlePageChange: handlePageChange,
-		errorMessage: errorMessage,
+		searchQuery,
+		load,
+		handlePageChange,
+		errorMessage,
 	};
 }

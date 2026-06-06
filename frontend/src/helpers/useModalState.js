@@ -8,27 +8,36 @@ import { ref } from "vue";
  *   isModalVisible: import('vue').Ref<boolean>,
  *   isEditMode: import('vue').Ref<boolean>,
  *   openAddModal: () => void,
- *   openEditModal: (record: object) => void,
+ *   openEditModal: () => void,
  *   closeModal: () => void,
  * }}
  */
 export function useModalState() {
-	const isModalVisible = ref(false);
-	const isEditMode = ref(false);
+	// ─── State ───────────────────────────────────────────────────────────────
 
+	const isModalVisible = ref(false); // Modal có đang mở không
+	const isEditMode = ref(false); // true = sửa, false = thêm mới
+
+	// ─── Actions ─────────────────────────────────────────────────────────────
+
+	// Mở modal ở chế độ thêm mới
 	function openAddModal() {
 		isEditMode.value = false;
 		isModalVisible.value = true;
 	}
 
+	// Mở modal ở chế độ chỉnh sửa
 	function openEditModal() {
 		isEditMode.value = true;
 		isModalVisible.value = true;
 	}
 
+	// Đóng modal — không reset isEditMode để tránh flash UI khi đóng có animation
 	function closeModal() {
 		isModalVisible.value = false;
 	}
+
+	// ─── Export ──────────────────────────────────────────────────────────────
 
 	return {
 		isModalVisible,

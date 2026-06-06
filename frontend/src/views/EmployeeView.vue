@@ -157,9 +157,7 @@ async function handleEdit(emp) {
 	empCopy.birth_date = empCopy.birth_date
 		? empCopy.birth_date.split("T")[0]
 		: "";
-	empCopy.join_date = empCopy.join_date
-		? empCopy.join_date.split("T")[0]
-		: "";
+	empCopy.join_date = empCopy.join_date ? empCopy.join_date.split("T")[0] : "";
 
 	editingEmployee.value = empCopy;
 	formData.value = buildFormData(empCopy);
@@ -193,7 +191,13 @@ async function confirmDelete() {
 	toast.success(res.message);
 	isDeleteModalVisible.value = false;
 	deletingEmployee.value = null;
-	await loadEmployees(pagination.value.page); // Reload lại trang hiện tại
+	await Promise.all([
+		loadEmployees(pagination.value.page),
+		departmentStore.fetchDepartments({
+			page: departmentStore.pagination.page,
+			limit: departmentStore.pagination.limit,
+		}),
+	]);
 }
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
@@ -223,11 +227,7 @@ async function handleFormSubmit() {
 					out[k] = "";
 					return;
 				}
-				if (
-					k === "user_id" ||
-					k === "department_id" ||
-					k === "salary"
-				) {
+				if (k === "user_id" || k === "department_id" || k === "salary") {
 					out[k] = String(v);
 					return;
 				}
@@ -301,7 +301,13 @@ async function handleFormSubmit() {
 	}
 
 	closeModal();
-	await loadEmployees(pagination.value.page);
+	await Promise.all([
+		loadEmployees(pagination.value.page),
+		departmentStore.fetchDepartments({
+			page: departmentStore.pagination.page,
+			limit: departmentStore.pagination.limit,
+		}),
+	]);
 }
 
 // ─── Khởi tạo trang ──────────────────────────────────────────────────────────
@@ -337,11 +343,7 @@ onMounted(async () => {
 			<!-- Thanh tìm kiếm -->
 			<div class="toolbar">
 				<div class="search-box">
-					<img
-						:src="searchIcon"
-						class="search-box__icon"
-						alt="search"
-					/>
+					<img :src="searchIcon" class="search-box__icon" alt="search" />
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -404,10 +406,7 @@ onMounted(async () => {
 								</td>
 								<td><Skeleton type="text" width="80px" /></td>
 								<td><Skeleton type="badge" /></td>
-								<td
-									v-if="hasAnyEmployeeAction"
-									class="text-right"
-								>
+								<td v-if="hasAnyEmployeeAction" class="text-right">
 									<div class="action-group">
 										<Skeleton type="btn" />
 										<Skeleton type="btn" />
@@ -424,10 +423,7 @@ onMounted(async () => {
 									<div class="user-info">
 										<div class="user-info__avatar">
 											{{
-												getInitials(
-													emp.first_name,
-													emp.last_name,
-												)
+												getInitials(emp.first_name, emp.last_name)
 											}}
 										</div>
 										<div class="user-info__details">
@@ -437,20 +433,14 @@ onMounted(async () => {
 											</h1>
 											<!-- Hiển thị email + username nếu đã liên kết tài khoản -->
 											<template v-if="emp.user">
-												<span
-													class="user-info__email"
-													>{{ emp.user.email }}</span
-												>
+												<span class="user-info__email">{{
+													emp.user.email
+												}}</span>
 												<span class="user-info__email"
-													>User:
-													{{
-														emp.user.user_name
-													}}</span
+													>User: {{ emp.user.user_name }}</span
 												>
 											</template>
-											<span
-												v-else
-												class="user-info__email"
+											<span v-else class="user-info__email"
 												>Chưa có tài khoản</span
 											>
 										</div>
@@ -490,10 +480,7 @@ onMounted(async () => {
 								</td>
 
 								<!-- Nút thao tác: xem / sửa / xoá (tuỳ quyền) -->
-								<td
-									v-if="hasAnyEmployeeAction"
-									class="text-right"
-								>
+								<td v-if="hasAnyEmployeeAction" class="text-right">
 									<div class="action-group">
 										<!-- HR/Admin xem tất cả, Employee chỉ xem được của mình -->
 										<button
@@ -519,10 +506,7 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(emp)"
 										>
-											<img
-												:src="deleteIcon"
-												alt="delete"
-											/>
+											<img :src="deleteIcon" alt="delete" />
 										</button>
 									</div>
 								</td>
@@ -631,8 +615,7 @@ onMounted(async () => {
 					<!-- Số điện thoại -->
 					<div class="form-group">
 						<label class="form-label"
-							>Số điện thoại
-							<span class="required">*</span></label
+							>Số điện thoại <span class="required">*</span></label
 						>
 						<input
 							v-model="formData.phone"

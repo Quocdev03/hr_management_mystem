@@ -18,7 +18,7 @@ import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
 // ─── Tiện ích ────────────────────────────────────────────────────────────────
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
@@ -37,7 +37,7 @@ const { canCrudDepartment } = usePermissions();
 
 // Reactive refs từ store
 const { departments, loading, pagination } = storeToRefs(departmentStore);
-const { employees } = storeToRefs(employeeStore);
+const employeeOptions = ref([]);
 
 // ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
 
@@ -81,11 +81,26 @@ const deleteLoading = ref(false); // Đang xử lý xoá
 // Lấy toàn bộ nhân viên (tối đa 100) để đổ vào dropdown chọn trưởng phòng
 async function loadEmployees() {
 	try {
-		await employeeStore.fetchEmployees({ page: 1, limit: 100 });
+		const res = await employeeStore.fetchEmployeesForSelect({
+			page: 1,
+			limit: 100,
+		});
+		if (res.success) {
+			employeeOptions.value = res.items;
+		}
 	} catch (err) {
 		console.error("Lỗi khi tải danh sách nhân viên:", err);
 	}
 }
+
+const departmentEmployees = computed(() => {
+	if (!editingDepartment.value) {
+		return [];
+	}
+	return employeeOptions.value.filter(
+		(emp) => emp.department_id === editingDepartment.value.id,
+	);
+});
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
 
@@ -259,11 +274,7 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img
-						:src="searchIcon"
-						class="search-box__icon"
-						alt="search"
-					/>
+					<img :src="searchIcon" class="search-box__icon" alt="search" />
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -290,11 +301,7 @@ onMounted(async () => {
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td class="text-main fw-500">
-									<Skeleton
-										type="text"
-										width="150px"
-										height="18px"
-									/>
+									<Skeleton type="text" width="150px" height="18px" />
 								</td>
 								<td>
 									<Skeleton
@@ -305,11 +312,7 @@ onMounted(async () => {
 									/>
 								</td>
 								<td class="text-muted">
-									<Skeleton
-										type="text"
-										width="220px"
-										height="16px"
-									/>
+									<Skeleton type="text" width="220px" height="16px" />
 								</td>
 								<td class="text-center">
 									<Skeleton
@@ -336,9 +339,7 @@ onMounted(async () => {
 									{{ dept.name }}
 								</td>
 								<td>
-									<span class="dept-code">{{
-										dept.code
-									}}</span>
+									<span class="dept-code">{{ dept.code }}</span>
 								</td>
 								<td class="text-muted">
 									{{ dept.description || "—" }}
@@ -368,10 +369,7 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(dept)"
 										>
-											<img
-												:src="deleteIcon"
-												alt="delete"
-											/>
+											<img :src="deleteIcon" alt="delete" />
 										</button>
 									</div>
 								</td>
@@ -429,8 +427,7 @@ onMounted(async () => {
 				<div class="form-grid">
 					<div class="form-group">
 						<label class="form-label"
-							>Tên phòng ban
-							<span class="required">*</span></label
+							>Tên phòng ban <span class="required">*</span></label
 						>
 						<input
 							v-model="formData.name"
@@ -455,13 +452,10 @@ onMounted(async () => {
 					</div>
 					<div v-if="isEditMode" class="form-group">
 						<label class="form-label">Trưởng phòng</label>
-						<select
-							v-model="formData.manager_id"
-							class="form-control"
-						>
+						<select v-model="formData.manager_id" class="form-control">
 							<option :value="null">Chọn trưởng phòng</option>
 							<option
-								v-for="employee in employees"
+								v-for="employee in departmentEmployees"
 								:key="employee.id"
 								:value="employee.id"
 							>

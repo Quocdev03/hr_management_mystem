@@ -97,14 +97,25 @@ func SetupRouter(
 			middleware.RequireRole("admin", "hr"),
 			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
 			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
 			empHandler.CreateEmployee,
 		)
 
-		// PUT /employees/:id — Cập nhật nhân viên (admin, hr)
+		// PUT /employees/:id — Cập nhật nhân viên đầy đủ (admin, hr)
 		employees.PUT("/:id",
 			middleware.RequireRole("admin", "hr"),
 			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
 			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			empHandler.UpdateEmployee,
+		)
+
+		// PATCH /employees/:id — Cập nhật nhân viên (admin, hr)
+		employees.PATCH("/:id",
+			middleware.RequireRole("admin", "hr"),
+			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
+			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
 			empHandler.UpdateEmployee,
 		)
 
@@ -113,6 +124,7 @@ func SetupRouter(
 			middleware.RequireRole("admin"),
 			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
 			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
 			empHandler.DeleteEmployee,
 		)
 	}
@@ -149,8 +161,15 @@ func SetupRouter(
 			userHandler.CreateUser,
 		)
 
-		// PUT /users/:id      — Cập nhật tài khoản (admin)
+		// PUT /users/:id      — Cập nhật tài khoản đầy đủ (admin)
 		users.PUT("/:id",
+			middleware.RequireRole("admin"),
+			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			userHandler.UpdateUser,
+		)
+
+		// PATCH /users/:id      — Cập nhật tài khoản (admin)
+		users.PATCH("/:id",
 			middleware.RequireRole("admin"),
 			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
 			userHandler.UpdateUser,
@@ -187,8 +206,15 @@ func SetupRouter(
 			deptHandler.CreateDepartment,
 		)
 
-		// PUT /departments/:id — Cập nhật phòng ban (chỉ admin)
+		// PUT /departments/:id — Cập nhật phòng ban đầy đủ (chỉ admin)
 		departments.PUT("/:id",
+			middleware.RequireRole("admin"),
+			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			deptHandler.UpdateDepartment,
+		)
+
+		// PATCH /departments/:id — Cập nhật phòng ban (chỉ admin)
+		departments.PATCH("/:id",
 			middleware.RequireRole("admin"),
 			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
 			deptHandler.UpdateDepartment,

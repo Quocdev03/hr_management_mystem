@@ -75,7 +75,7 @@ func (h *EmployeeHandler) CreateEmployee(ctx *gin.Context) {
 }
 
 // UpdateEmployee godoc
-// PUT /api/v1/employees/:id
+// PATCH /api/v1/employees/:id
 func (h *EmployeeHandler) UpdateEmployee(ctx *gin.Context) {
 	id, ok := common.ParseAndValidateID(ctx, "nhân viên")
 	if !ok {

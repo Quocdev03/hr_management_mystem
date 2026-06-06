@@ -141,12 +141,6 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 			return fmt.Errorf("Tạo nhân viên không thành công: %w", err)
 		}
 
-		if req.IsManager {
-			if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, emp.DepartmentID, &emp.ID); err != nil {
-				return err
-			}
-		}
-
 		return nil
 	}); err != nil {
 		return nil, err
@@ -310,28 +304,9 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			return fmt.Errorf("Reload nhân viên thất bại: %w", err)
 		}
 
-		// 1. Nếu chuyển phòng ban, tự động gỡ quyền trưởng phòng ở phòng cũ (nếu đang có).
-		// Dùng biến local stillManager để tránh mutate outer scope từ trong closure.
-		stillManager := isOldManager
-		if deptChanged && stillManager {
-			if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, oldDeptID, nil); err != nil {
-				return err
-			}
-			stillManager = false
-		}
-
-		// 2. Cập nhật quyền trưởng phòng theo yêu cầu mới
-		if req.IsManager != nil {
-			if *req.IsManager {
-				// Hàm setDepartmentManager đã bao gồm các logic kiểm tra an toàn
-				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, &updatedEmp.ID); err != nil {
-					return err
-				}
-			} else if stillManager {
-				// Yêu cầu huỷ quyền trưởng phòng ở phòng hiện tại
-				if err := es.setDepartmentManager(txEmpRepo, txDeptRepo, newDeptID, nil); err != nil {
-					return err
-				}
+		if deptChanged && isOldManager {
+			if err := txDeptRepo.UpdateManager(oldDeptID, nil); err != nil {
+				return fmt.Errorf("Lỗi khi gỡ trưởng phòng ở phòng cũ: %w", err)
 			}
 		}
 
@@ -345,42 +320,6 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
 
 	return result, nil
-}
-
-func (es *employeeService) setDepartmentManager(empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, departmentID uint, managerID *uint) error {
-	if departmentID == 0 {
-		return errors.New("ID phòng ban không hợp lệ khi gán trưởng phòng")
-	}
-
-	if _, err := deptRepo.FindByID(departmentID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("Không tìm thấy phòng ban để gán trưởng phòng")
-		}
-		return fmt.Errorf("Lỗi khi tìm phòng ban: %w", err)
-	}
-
-	if managerID != nil {
-		emp, err := empRepo.FindByID(*managerID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("Không tìm thấy nhân viên để gán làm trưởng phòng")
-			}
-			return fmt.Errorf("Lỗi khi tìm nhân viên quản lý: %w", err)
-		}
-		if emp.DepartmentID != departmentID {
-			return errors.New("Trưởng phòng phải thuộc chính phòng ban này")
-		}
-
-		existingDept, err := deptRepo.FindByManagerID(*managerID)
-		if err == nil && existingDept.ID != departmentID {
-			return errors.New("Nhân viên này đã là trưởng phòng của phòng khác")
-		}
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-	}
-
-	return deptRepo.UpdateManager(departmentID, managerID)
 }
 
 func (es *employeeService) DeleteEmployee(id uint) error {

@@ -104,9 +104,16 @@ func (r *departmentRepository) Update(dept *model.Department) error {
 }
 
 func (r *departmentRepository) UpdateManager(departmentID uint, managerID *uint) error {
+	updates := map[string]interface{}{
+		"manager_id": nil,
+	}
+	if managerID != nil {
+		updates["manager_id"] = *managerID
+	}
+
 	return r.db.Model(&model.Department{}).
 		Where("id = ?", departmentID).
-		Update("manager_id", managerID).Error
+		Updates(updates).Error
 }
 
 func (r *departmentRepository) Delete(id uint) error {

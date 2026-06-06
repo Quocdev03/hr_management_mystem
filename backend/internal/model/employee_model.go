@@ -35,7 +35,6 @@ type CreateEmployeeRequest struct {
 	Gender       string  `json:"gender"`     // "male" | "female" | "other"
 	Status       string  `json:"status"`
 	UserID       *uint   `json:"user_id"`
-	IsManager    bool    `json:"is_manager"`
 }
 
 // UpdateEmployeeRequest - cập nhật thông tin nv
@@ -50,5 +49,4 @@ type UpdateEmployeeRequest struct {
 	BirthDate    *string  `json:"birth_date"`
 	Gender       *string  `json:"gender"`
 	UserID       *uint    `json:"user_id"`
-	IsManager    *bool    `json:"is_manager"`
 }

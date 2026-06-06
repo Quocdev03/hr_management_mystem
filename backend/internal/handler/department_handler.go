@@ -73,7 +73,7 @@ func (h *DepartmentHandler) CreateDepartment(ctx *gin.Context) {
 }
 
 // UpdateDepartment godoc
-// PUT /api/v1/departments/:id
+// PATCH /api/v1/departments/:id
 func (h *DepartmentHandler) UpdateDepartment(ctx *gin.Context) {
 	id, ok := common.ParseAndValidateID(ctx, "phòng ban")
 	if !ok {

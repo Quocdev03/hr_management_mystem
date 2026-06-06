@@ -65,10 +65,10 @@ func CacheResponse(rdb *redis.Client, expiration time.Duration) gin.HandlerFunc 
 	}
 }
 
-// ClearCache là middleware dùng cho POST/PUT/DELETE để xoá cache cũ
+// ClearCache là middleware dùng cho POST/PUT/PATCH/DELETE để xoá cache cũ
 func ClearCache(rdb *redis.Client, pattern string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Cho phép request POST/PUT/DELETE chạy xuống DB trước
+		// Cho phép request POST/PUT/PATCH/DELETE chạy xuống DB trước
 		ctx.Next()
 
 		// Nếu xử lý thành công (status 2xx) thì tiến hành xoá cache

@@ -25,6 +25,7 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 - **Xác Thực (Authentication):** Xác thực an toàn dựa trên JWT (JSON Web Token) với cơ chế **Refresh Token** (token rotation) — Access Token ngắn hạn, Refresh Token dài hạn lưu trong Redis.
 - **Token Blacklist:** Access token bị vô hiệu hoá sau đăng xuất và lưu vào Redis với TTL bằng thời gian hết hạn còn lại — tự động dọn dẹp, không lưu vĩnh viễn.
 - **Phân Quyền (Authorization):** Middleware Phân Quyền Dựa Trên Vai Trò (RBAC) để bảo vệ các API (`admin`, `hr`, `employee`).
+- **PUT/PATCH Update Endpoints:** Hỗ trợ cả `PUT` và `PATCH` cho cập nhật nhân viên, phòng ban và người dùng, với logic đồng bộ trạng thái và xóa cache Redis khi có thay đổi.
 - **Bộ Nhớ Đệm (Caching) & Giới Hạn Request (Rate Limiting):** Sử dụng Redis để lưu cache các API GET và giới hạn số lượt đăng nhập.
 - **Kiến Trúc Tầng (Layered Architecture):** Tuân thủ mô hình chuẩn Handler -> Service -> Repository.
 - **Cấu Hình:** Cấu hình theo môi trường sử dụng file `.env`.
@@ -110,14 +111,16 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
    - `GET /`: Lấy danh sách nhân viên có phân trang.
    - `POST /`: Tạo nhân viên mới (admin, hr).
    - `GET /:id`: Lấy thông tin một nhân viên theo ID.
-   - `PUT /:id`: Cập nhật nhân viên (admin, hr).
+   - `PUT /:id`: Cập nhật nhân viên đầy đủ (admin, hr).
+   - `PATCH /:id`: Cập nhật nhân viên một phần (admin, hr).
    - `DELETE /:id`: Xóa nhân viên (chỉ admin).
 
 - **Phòng Ban (Departments - `/departments`)**
    - `GET /`: Lấy danh sách tất cả phòng ban.
    - `POST /`: Tạo phòng ban mới (chỉ admin).
    - `GET /:id`: Lấy thông tin một phòng ban theo ID.
-   - `PUT /:id`: Cập nhật phòng ban (chỉ admin).
+   - `PUT /:id`: Cập nhật phòng ban đầy đủ (chỉ admin).
+   - `PATCH /:id`: Cập nhật phòng ban một phần (chỉ admin).
    - `DELETE /:id`: Xóa phòng ban (chỉ admin).
 
 - **Người Dùng (Users - `/users`)**
@@ -125,7 +128,8 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
    - `POST /`: Tạo người dùng mới (chỉ admin).
    - `GET /available`: Lấy các user chưa được liên kết với hồ sơ nhân viên (chỉ admin).
    - `GET /:id`: Lấy thông tin một người dùng theo ID (chỉ admin).
-   - `PUT /:id`: Cập nhật người dùng (chỉ admin).
+   - `PUT /:id`: Cập nhật người dùng đầy đủ (chỉ admin).
+   - `PATCH /:id`: Cập nhật người dùng một phần (chỉ admin).
    - `DELETE /:id`: Xóa người dùng (chỉ admin).
 
 - **Bảng Điều Khiển (Dashboard - `/dashboard`)**
@@ -137,8 +141,8 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 
 - Git
 - Docker và Docker Compose
-- Go (phiên bản 1.26.2 trở lên) - *chỉ cần khi chạy local không qua Docker*
-- Node.js (phiên bản 20 trở lên) và npm - *chỉ cần khi chạy local không qua Docker*
+- Go (phiên bản 1.26.2 trở lên) - _chỉ cần khi chạy local không qua Docker_
+- Node.js (phiên bản 20 trở lên) và npm - _chỉ cần khi chạy local không qua Docker_
 
 ---
 
@@ -166,6 +170,7 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 Nếu bạn muốn chạy và sửa đổi code trực tiếp trên máy của mình:
 
 #### 1. Clone Repository
+
 ```sh
 git clone https://github.com/quocdev03/HR_Management.git
 cd HR_Management
@@ -175,16 +180,20 @@ cd HR_Management
 
 **a. Khởi Chạy Database & Cache bằng Docker**
 Lệnh này sẽ build và chạy các dịch vụ MySQL, Redis dưới nền máy host.
+
 ```sh
 docker-compose up -d mysql redis
 ```
 
 **b. Cấu Hình Biến Môi Trường (Environment Variables)**
 Copy file cấu hình mẫu và đặt vào thư mục `backend`:
+
 ```sh
 cp .env.example backend/.env
 ```
+
 Mở file `backend/.env` và cập nhật cấu hình kết nối database/redis sử dụng `localhost` thay vì tên service của Docker:
+
 ```env
 APP_ENV=development
 

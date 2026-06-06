@@ -233,7 +233,7 @@ func (au *authService) GetProfile(id uint) (*model.Employee, error) {
 	emp, err := au.empRepo.FindByUserID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, errors.New("Không tìm thấy hồ sơ nhân viên")
 		}
 		return nil, errors.New("Không thể lấy thông tin hồ sơ nhân viên")
 	}

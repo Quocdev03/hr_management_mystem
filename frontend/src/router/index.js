@@ -24,11 +24,15 @@ const router = createRouter({
 			redirect: "/dashboard",
 			children: [
 				{ path: "dashboard", name: "dashboard", component: Dashboard },
-				{ path: "employees", name: "employees", component: EmployeeView },
 				{
 					path: "departments",
 					name: "departments",
 					component: DepartmentView,
+				},
+				{
+					path: "employees",
+					name: "employees",
+					component: EmployeeView,
 				},
 				{
 					path: "users",

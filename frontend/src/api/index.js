@@ -38,7 +38,12 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers && typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   return config;
@@ -86,7 +91,12 @@ api.interceptors.response.use(
           const token = await new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           });
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
+            originalRequest.headers.set('Authorization', `Bearer ${token}`);
+          } else {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          }
           return api(originalRequest);
         } catch (err) {
           return Promise.reject(err);
@@ -112,7 +122,12 @@ api.interceptors.response.use(
         localStorage.setItem('user', JSON.stringify(user));
 
         processQueue(null, access_token);
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
+          originalRequest.headers.set('Authorization', `Bearer ${access_token}`);
+        } else {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        }
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);

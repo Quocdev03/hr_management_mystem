@@ -1,160 +1,202 @@
 <script setup>
-import deleteIcon from '@/assets/svg/warning.svg';
-import editIcon from '@/assets/svg/edit.svg';
-import searchIcon from '@/assets/svg/search.svg';
-import plusIcon from '@/assets/svg/plus.svg';
-import prevIcon from '@/assets/svg/chevron-left.svg';
-import nextIcon from '@/assets/svg/chevron-right.svg';
-import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
-import ModalDialog from '@/components/ModalDialog.vue';
-import Skeleton from '@/components/Skeleton.vue';
+// ─── Icon SVG ────────────────────────────────────────────────────────────────
+import deleteIcon from "@/assets/svg/warning.svg";
+import editIcon from "@/assets/svg/edit.svg";
+import searchIcon from "@/assets/svg/search.svg";
+import plusIcon from "@/assets/svg/plus.svg";
+import prevIcon from "@/assets/svg/chevron-left.svg";
+import nextIcon from "@/assets/svg/chevron-right.svg";
 
-import { useUserStore } from '@/store/user';
-import { useAuthStore } from '@/store/auth';
-import { useToast } from 'vue-toastification';
-import { storeToRefs } from 'pinia';
-import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
-import { onMounted, ref } from 'vue';
+// ─── Component UI dùng chung ─────────────────────────────────────────────────
+import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+import ModalDialog from "@/components/ModalDialog.vue";
+import Skeleton from "@/components/Skeleton.vue";
+
+// ─── Store & tiện ích ────────────────────────────────────────────────────────
+import { useUserStore } from "@/store/user";
+import { useAuthStore } from "@/store/auth";
+import { useToast } from "vue-toastification";
+import { storeToRefs } from "pinia";
+import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
+import { onMounted, ref } from "vue";
+
+// ─── Khởi tạo ────────────────────────────────────────────────────────────────
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
-const currentUser = authStore.user;
-
+const currentUser = authStore.user; // Người dùng đang đăng nhập
 const toast = useToast();
 
+// Reactive refs từ store
 const { users, pagination, loading } = storeToRefs(userStore);
 
-// Search & pagination
+// ─── Tìm kiếm & phân trang ───────────────────────────────────────────────────
+
 const {
-  searchQuery,
-  load: loadUsers,
-  handlePageChange,
-} = usePaginatedSearch((params) => userStore.fetchUser(params), pagination);
+	searchQuery,
+	load: loadUsers, // Tải danh sách user
+	handlePageChange, // Xử lý chuyển trang
+} = usePaginatedSearch(
+	(params) => userStore.fetchUser(params), // Hàm gọi API
+	pagination,
+);
 
-// Delete modal state
-const isDeleteModalVisible = ref(false);
-const deletingUser = ref(null);
-const deleteMessage = ref('');
-const deleteLoading = ref(false);
+// ─── Trạng thái modal xoá ────────────────────────────────────────────────────
 
-// Modal form state
-const isModalVisible = ref(false);
-const isEditing = ref(false);
-const isRoleDisabled = ref(false);
-const isActiveDisabled = ref(false);
-const submitLoading = ref(false);
-const currentUserId = ref(null);
+const isDeleteModalVisible = ref(false); // Modal xoá có đang mở không
+const deletingUser = ref(null); // User sắp bị xoá
+const deleteMessage = ref(""); // Nội dung xác nhận xoá
+const deleteLoading = ref(false); // Đang xử lý xoá
+
+// ─── Trạng thái modal form thêm/sửa ──────────────────────────────────────────
+
+const isModalVisible = ref(false); // Modal có đang mở không
+const isEditing = ref(false); // Đang sửa hay thêm mới
+const isRoleDisabled = ref(false); // Khoá dropdown role (admin hoặc tự sửa mình)
+const isActiveDisabled = ref(false); // Khoá toggle trạng thái (không tự khoá mình)
+const submitLoading = ref(false); // Đang xử lý submit
+const currentUserId = ref(null); // ID user đang chỉnh sửa
+
+// Giá trị mặc định form
 const formData = ref({
-  user_name: '',
-  email: '',
-  password: '',
-  password_confirm: '',
-  role_id: 3,
-  is_active: true,
+	user_name: "",
+	email: "",
+	password: "",
+	password_confirm: "",
+	role_id: 3, // Mặc định: Employee
+	is_active: true,
 });
 
+// Danh sách role cố định (không lấy từ API)
 const roles = [
-  { id: 1, label: 'Admin (Quản trị viên)' },
-  { id: 2, label: 'HR (Nhân sự)' },
-  { id: 3, label: 'Employee (Nhân viên)' },
+	{ id: 1, label: "Admin (Quản trị viên)" },
+	{ id: 2, label: "HR (Nhân sự)" },
+	{ id: 3, label: "Employee (Nhân viên)" },
 ];
 
+// ─── Mở modal thêm mới ───────────────────────────────────────────────────────
+
+// Reset toàn bộ form về trạng thái ban đầu rồi mở modal
 function handleAdd() {
-  isEditing.value = false;
-  isRoleDisabled.value = false;
-  isActiveDisabled.value = false;
-  currentUserId.value = null;
-  formData.value = {
-    user_name: '',
-    email: '',
-    password: '',
-    password_confirm: '',
-    role_id: 3,
-    is_active: true,
-  };
-  isModalVisible.value = true;
+	isEditing.value = false;
+	isRoleDisabled.value = false;
+	isActiveDisabled.value = false;
+	currentUserId.value = null;
+	formData.value = {
+		user_name: "",
+		email: "",
+		password: "",
+		password_confirm: "",
+		role_id: 3,
+		is_active: true,
+	};
+	isModalVisible.value = true;
 }
 
+// ─── Mở modal sửa ────────────────────────────────────────────────────────────
+
+/**
+ * Điền thông tin user vào form và xác định các field bị khoá:
+ * - Role bị khoá nếu: user là Admin (id=1) HOẶC đang tự sửa chính mình
+ *   → Tránh tình huống admin tự hạ quyền hoặc đổi role của admin khác
+ * - is_active bị khoá nếu: đang tự sửa chính mình
+ *   → Tránh tự khoá tài khoản đang dùng
+ */
 function handleUpdate(user) {
-  isEditing.value = true;
-  isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
-  isActiveDisabled.value = currentUser?.id === user.id;
-  currentUserId.value = user.id;
-  formData.value = {
-    user_name: user.user_name,
-    email: user.email,
-    password: '', // Không hiển thị pass cũ, bỏ trống nếu ko đổi
-    password_confirm: '',
-    role_id: user.role_id,
-    is_active: user.is_active,
-  };
-  isModalVisible.value = true;
+	isEditing.value = true;
+	isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
+	isActiveDisabled.value = currentUser?.id === user.id;
+	currentUserId.value = user.id;
+
+	formData.value = {
+		user_name: user.user_name,
+		email: user.email,
+		password: "", // Bỏ trống → giữ nguyên password cũ nếu không đổi
+		password_confirm: "",
+		role_id: user.role_id,
+		is_active: user.is_active,
+	};
+	isModalVisible.value = true;
 }
+
+// ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
 
 async function submitForm() {
-  if (formData.value.password !== formData.value.password_confirm) {
-    toast.error('Mật khẩu xác nhận không khớp!');
-    return;
-  }
+	// Kiểm tra password xác nhận khớp trước khi gửi
+	if (formData.value.password !== formData.value.password_confirm) {
+		toast.error("Mật khẩu xác nhận không khớp!");
+		return;
+	}
 
-  submitLoading.value = true;
-  let res;
+	submitLoading.value = true;
+	let res;
 
-  const payload = { ...formData.value };
-  delete payload.password_confirm; // Không gửi field này lên API
+	const payload = { ...formData.value };
 
-  if (isEditing.value && !payload.password) {
-    delete payload.password;
-  }
+	// Loại bỏ password_confirm — field này chỉ dùng để validate ở FE, không gửi API
+	delete payload.password_confirm;
 
-  if (isEditing.value) {
-    res = await userStore.updateUser(currentUserId.value, payload);
-  } else {
-    res = await userStore.createUser(payload);
-  }
+	// Khi sửa mà không nhập password mới → bỏ luôn khỏi payload để giữ nguyên hash cũ
+	if (isEditing.value && !payload.password) {
+		delete payload.password;
+	}
 
-  submitLoading.value = false;
+	if (isEditing.value) {
+		res = await userStore.updateUser(currentUserId.value, payload);
+	} else {
+		res = await userStore.createUser(payload);
+	}
 
-  if (res.success === false) {
-    toast.error(res.message || 'Có lỗi xảy ra');
-    return;
-  }
+	submitLoading.value = false;
 
-  toast.success(
-    res.message ||
-      (isEditing.value ? 'Cập nhật thành công!' : 'Thêm mới thành công!'),
-  );
-  isModalVisible.value = false;
-  await loadUsers();
+	if (res.success === false) {
+		toast.error(res.message || "Có lỗi xảy ra");
+		return;
+	}
+
+	toast.success(
+		res.message ||
+			(isEditing.value ? "Cập nhật thành công!" : "Thêm mới thành công!"),
+	);
+
+	isModalVisible.value = false;
+	await loadUsers(); // Reload lại danh sách sau khi lưu
 }
 
+// ─── Xử lý xoá user ──────────────────────────────────────────────────────────
+
+// Gán user cần xoá và hiển thị modal xác nhận
 function handleDelete(user) {
-  deletingUser.value = user;
-  deleteMessage.value = `Bạn có chắc chắn muốn xoá người dùng ${user.user_name}?`;
-  isDeleteModalVisible.value = true;
+	deletingUser.value = user;
+	deleteMessage.value = `Bạn có chắc chắn muốn xoá người dùng ${user.user_name}?`;
+	isDeleteModalVisible.value = true;
 }
 
+// Thực hiện xoá sau khi người dùng xác nhận
 async function confirmDelete() {
-  const user = deletingUser.value;
-  if (!user) return;
+	const user = deletingUser.value;
+	if (!user) return;
 
-  deleteLoading.value = true;
-  const res = await userStore.deleteUser(user.id);
-  deleteLoading.value = false;
+	deleteLoading.value = true;
+	const res = await userStore.deleteUser(user.id);
+	deleteLoading.value = false;
 
-  if (res.success === false) {
-    toast.error(res.message || 'Xoá người dùng thất bại');
-    return;
-  }
+	if (res.success === false) {
+		toast.error(res.message || "Xoá người dùng thất bại");
+		return;
+	}
 
-  toast.success(res.message || 'Xoá người dùng thành công');
-  isDeleteModalVisible.value = false;
-  deletingUser.value = null;
-  await loadUsers();
+	toast.success(res.message || "Xoá người dùng thành công");
+	isDeleteModalVisible.value = false;
+	deletingUser.value = null;
+	await loadUsers(); // Reload lại danh sách sau khi xoá
 }
 
+// ─── Khởi tạo trang ──────────────────────────────────────────────────────────
+
+// Tải danh sách user ngay khi component mount
 onMounted(async () => {
-  await loadUsers();
+	await loadUsers();
 });
 </script>
 <template>
@@ -176,7 +218,11 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
+					<img
+						:src="searchIcon"
+						class="search-box__icon"
+						alt="search"
+					/>
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -200,10 +246,18 @@ onMounted(async () => {
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td class="text-main fw-500">
-									<Skeleton type="text" width="130px" height="18px" />
+									<Skeleton
+										type="text"
+										width="130px"
+										height="18px"
+									/>
 								</td>
 								<td>
-									<Skeleton type="text" width="200px" height="18px" />
+									<Skeleton
+										type="text"
+										width="200px"
+										height="18px"
+									/>
 								</td>
 								<td>
 									<Skeleton
@@ -226,7 +280,9 @@ onMounted(async () => {
 						<!-- Actual rows when loaded -->
 						<template v-else>
 							<tr v-for="user in users" :key="user.id">
-								<td class="text-main fw-500">{{ user.user_name }}</td>
+								<td class="text-main fw-500">
+									{{ user.user_name }}
+								</td>
 								<td>
 									<span class="">{{ user.email }}</span>
 								</td>
@@ -239,7 +295,11 @@ onMounted(async () => {
 												: 'status-badge--inactive',
 										]"
 									>
-										{{ user.is_active ? "Hoạt động" : "Ngưng" }}
+										{{
+											user.is_active
+												? "Hoạt động"
+												: "Ngưng"
+										}}
 									</span>
 								</td>
 								<td class="text-right">
@@ -256,7 +316,10 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(user)"
 										>
-											<img :src="deleteIcon" alt="delete" />
+											<img
+												:src="deleteIcon"
+												alt="delete"
+											/>
 										</button>
 									</div>
 								</td>
@@ -322,7 +385,8 @@ onMounted(async () => {
 				<div class="form-grid">
 					<div class="form-group">
 						<label class="form-label"
-							>Tên đăng nhập <span class="required">*</span></label
+							>Tên đăng nhập
+							<span class="required">*</span></label
 						>
 						<input
 							v-model="formData.user_name"
@@ -347,7 +411,9 @@ onMounted(async () => {
 					<div class="form-group">
 						<label class="form-label"
 							>Mật khẩu
-							<span v-if="!isEditing" class="required">*</span></label
+							<span v-if="!isEditing" class="required"
+								>*</span
+							></label
 						>
 						<input
 							v-model="formData.password"
@@ -376,7 +442,9 @@ onMounted(async () => {
 							class="form-control"
 							:required="!isEditing || !!formData.password"
 							:placeholder="
-								isEditing ? 'Nhập lại nếu đổi' : 'Nhập lại mật khẩu'
+								isEditing
+									? 'Nhập lại nếu đổi'
+									: 'Nhập lại mật khẩu'
 							"
 						/>
 					</div>
@@ -399,7 +467,8 @@ onMounted(async () => {
 							v-if="isRoleDisabled"
 							class="required"
 							style="margin-top: 4px; display: block"
-							>Không thể thay đổi quyền của bản thân/Admin khác</small
+							>Không thể thay đổi quyền của bản thân/Admin
+							khác</small
 						>
 					</div>
 					<div class="form-group">

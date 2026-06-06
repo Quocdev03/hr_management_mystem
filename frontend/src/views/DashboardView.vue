@@ -1,16 +1,22 @@
 <script setup>
+// ─── Icon SVG ────────────────────────────────────────────────────────────────
 import usersIcon from "@/assets/svg/users.svg";
 import checkIcon from "@/assets/svg/check-circle.svg";
 import buildingIcon from "@/assets/svg/building.svg";
 import keyIcon from "@/assets/svg/key.svg";
+
+// ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { useDashboardStore } from "@/store/dashboard";
-import { computed, onMounted } from "vue";
+import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import Skeleton from "@/components/Skeleton.vue";
 
+// ─── Khởi tạo ────────────────────────────────────────────────────────────────
+
 const dashboardStore = useDashboardStore();
 const { stats, loading } = storeToRefs(dashboardStore);
-const dashboardStats = computed(() => stats.value);
+
+// ─── Tải dữ liệu dashboard ───────────────────────────────────────────────────
 
 async function loadDashboard() {
 	try {
@@ -20,12 +26,15 @@ async function loadDashboard() {
 	}
 }
 
+// ─── Khởi tạo trang ──────────────────────────────────────────────────────────
+
 onMounted(loadDashboard);
 </script>
+
 <template>
 	<div class="dashboard-container">
 		<div class="stats-grid">
-			<!-- Stat Card 1 -->
+			<!-- Tổng số nhân viên -->
 			<div class="stat-card stat-card--blue">
 				<div class="stat-icon-wrapper">
 					<img :src="usersIcon" class="stat-icon" alt="users" />
@@ -42,14 +51,14 @@ onMounted(loadDashboard);
 					</template>
 					<template v-else>
 						<div class="stat-value">
-							{{ dashboardStats.total_employees }}
+							{{ stats.total_employees }}
 						</div>
 						<div class="stat-label">Tổng nhân viên</div>
 					</template>
 				</div>
 			</div>
 
-			<!-- Stat Card 2 -->
+			<!-- Nhân viên đang làm việc -->
 			<div class="stat-card stat-card--green">
 				<div class="stat-icon-wrapper">
 					<img :src="checkIcon" class="stat-icon" alt="active" />
@@ -66,14 +75,14 @@ onMounted(loadDashboard);
 					</template>
 					<template v-else>
 						<div class="stat-value">
-							{{ dashboardStats.total_employees_active }}
+							{{ stats.total_employees_active }}
 						</div>
 						<div class="stat-label">Đang làm việc</div>
 					</template>
 				</div>
 			</div>
 
-			<!-- Stat Card 3 -->
+			<!-- Tổng số phòng ban -->
 			<div class="stat-card stat-card--amber">
 				<div class="stat-icon-wrapper">
 					<img :src="buildingIcon" class="stat-icon" alt="dept" />
@@ -90,7 +99,7 @@ onMounted(loadDashboard);
 					</template>
 					<template v-else>
 						<div class="stat-value">
-							{{ dashboardStats.total_departments }}
+							{{ stats.total_departments }}
 						</div>
 						<div class="stat-label">Phòng ban</div>
 					</template>
@@ -98,12 +107,17 @@ onMounted(loadDashboard);
 			</div>
 		</div>
 
-		<!-- ===== Phân bổ nhân sự ===== -->
+		<!-- ===== Phân bổ nhân sự theo phòng ban ===== -->
 		<section class="dept-section">
 			<h2 class="section-title">Nhân viên theo phòng ban</h2>
 			<div class="dept-grid">
+				<!-- Skeleton khi đang tải -->
 				<template v-if="loading">
-					<div v-for="i in 3" :key="'skeleton-d-' + i" class="dept-card">
+					<div
+						v-for="i in 3"
+						:key="'skeleton-d-' + i"
+						class="dept-card"
+					>
 						<div class="dept-header">
 							<Skeleton type="text" width="120px" height="18px" />
 							<Skeleton type="badge" width="40px" height="22px" />
@@ -116,23 +130,33 @@ onMounted(loadDashboard);
 						</div>
 					</div>
 				</template>
+
+				<!-- Danh sách phòng ban thực -->
 				<template v-else>
 					<div
-						v-for="(dept, idx) in dashboardStats.department_stats"
+						v-for="(dept, idx) in stats.department_stats"
 						:key="dept.department_name + '-' + idx"
 						class="dept-card"
 					>
 						<div class="dept-header">
-							<span class="dept-name">{{ dept.department_name }}</span>
-							<span class="dept-count">{{ dept.employee_count }}</span>
+							<span class="dept-name">{{
+								dept.department_name
+							}}</span>
+							<span class="dept-count">{{
+								dept.employee_count
+							}}</span>
 						</div>
+						<!--
+							Độ rộng thanh = (số NV phòng ban / tổng NV) * 100%
+							Dùng || 1 để tránh chia cho 0 khi chưa có nhân viên nào
+						-->
 						<div class="progress-container">
 							<div
 								class="progress-bar"
 								:style="{
 									width:
 										(dept.employee_count /
-											(dashboardStats.total_employees || 1)) *
+											(stats.total_employees || 1)) *
 											100 +
 										'%',
 								}"

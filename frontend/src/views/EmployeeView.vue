@@ -1,260 +1,319 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useToast } from 'vue-toastification';
+// ─── Store & tiện ích ────────────────────────────────────────────────────────
+import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useToast } from "vue-toastification";
 
-import { useEmployeeStore } from '@/store/employee';
-import { useDepartmentStore } from '@/store/department';
-import { useUserStore } from '@/store/user';
+// Store quản lý nhân viên, phòng ban, người dùng
+import { useEmployeeStore } from "@/store/employee";
+import { useDepartmentStore } from "@/store/department";
+import { useUserStore } from "@/store/user";
 
-import ModalDialog from '@/components/ModalDialog.vue';
-import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
-import Skeleton from '@/components/Skeleton.vue';
+// Component UI dùng chung
+import ModalDialog from "@/components/ModalDialog.vue";
+import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+import Skeleton from "@/components/Skeleton.vue";
 
-import { getInitials, formatDate, formatStatus } from '@/helpers/formatters';
-import { useModalState } from '@/helpers/useModalState';
-import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
-import { usePermissions } from '@/helpers/usePermissions';
+// Helper tiện ích
+import {
+	getInitials, // Lấy chữ viết tắt tên
+	formatDate, // Định dạng ngày
+	formatStatus, // Định dạng trạng thái
+	formatCurrency, // Định dạng tiền tệ
+} from "@/helpers/formatters";
+import { useModalState } from "@/helpers/useModalState"; // Quản lý trạng thái modal
+import { usePaginatedSearch } from "@/helpers/usePaginatedSearch"; // Tìm kiếm + phân trang
+import { usePermissions } from "@/helpers/usePermissions"; // Kiểm tra quyền hạn
 
-import plusIcon from '@/assets/svg/plus.svg';
-import searchIcon from '@/assets/svg/search.svg';
-import editIcon from '@/assets/svg/edit.svg';
-import deleteIcon from '@/assets/svg/delete.svg';
-import prevIcon from '@/assets/svg/chevron-left.svg';
-import nextIcon from '@/assets/svg/chevron-right.svg';
+// Icon SVG
+import plusIcon from "@/assets/svg/plus.svg";
+import searchIcon from "@/assets/svg/search.svg";
+import editIcon from "@/assets/svg/edit.svg";
+import deleteIcon from "@/assets/svg/delete.svg";
+import prevIcon from "@/assets/svg/chevron-left.svg";
+import nextIcon from "@/assets/svg/chevron-right.svg";
+import eyeIcon from "@/assets/svg/eye.svg";
 
-// Stores
+// ─── Khởi tạo store & tiện ích ───────────────────────────────────────────────
+
 const employeeStore = useEmployeeStore();
 const departmentStore = useDepartmentStore();
 const userStore = useUserStore();
 const toast = useToast();
+
+// Quyền thao tác với nhân viên
 const {
-  canCreateEmployee,
-  canEditEmployee,
-  canDeleteEmployee,
-  hasAnyEmployeeAction,
+	canViewEmployeeDetail, // Hàm (id) => bool — Employee chỉ xem được của mình
+	canCreateEmployee,
+	canEditEmployee,
+	canDeleteEmployee,
+	hasAnyEmployeeAction, // Có ít nhất 1 quyền → hiện cột "Thao tác"
 } = usePermissions();
 
+// Reactive refs từ store
 const { employees, pagination, loading } = storeToRefs(employeeStore);
 const { departments } = storeToRefs(departmentStore);
-const { usersWithoutEmp } = storeToRefs(userStore);
+const { usersWithoutEmp } = storeToRefs(userStore); // User chưa gắn nhân viên
 
-// Modal state
+// ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
+
 const modalState = useModalState();
-const isModalVisible = modalState.isModalVisible;
-const isEditMode = modalState.isEditMode;
-const openAddModal = modalState.openAddModal;
-const openEditModal = modalState.openEditModal;
-const closeModal = modalState.closeModal;
+const isModalVisible = modalState.isModalVisible; // Modal có đang mở không
+const isEditMode = modalState.isEditMode; // Đang sửa hay thêm mới
+const openAddModal = modalState.openAddModal; // Mở modal thêm
+const openEditModal = modalState.openEditModal; // Mở modal sửa
+const closeModal = modalState.closeModal; // Đóng modal
 
-// Search & pagination
+// ─── Tìm kiếm & phân trang ───────────────────────────────────────────────────
+
 const paginatedSearch = usePaginatedSearch(
-  (params) => employeeStore.fetchEmployees(params),
-  pagination,
+	(params) => employeeStore.fetchEmployees(params),
+	pagination,
 );
-const searchQuery = paginatedSearch.searchQuery;
-const loadEmployees = paginatedSearch.load;
-const handlePageChange = paginatedSearch.handlePageChange;
+const searchQuery = paginatedSearch.searchQuery; // Từ khoá tìm kiếm
+const loadEmployees = paginatedSearch.load; // Tải danh sách nhân viên
+const handlePageChange = paginatedSearch.handlePageChange; // Xử lý chuyển trang
 
-// Local state
-const editingEmployee = ref(null);
-const formLoading = ref(false);
-const formData = ref(buildFormData());
-const relationsLoaded = ref(false);
+// ─── Trạng thái local ────────────────────────────────────────────────────────
 
-// Delete modal state
-const isDeleteModalVisible = ref(false);
-const deletingEmployee = ref(null);
-const deleteMessage = ref('');
-const deleteLoading = ref(false);
+const editingEmployee = ref(null); // Nhân viên đang được chỉnh sửa
+const formLoading = ref(false); // Đang xử lý submit form
+const formData = ref(buildFormData()); // Dữ liệu form hiện tại
+const relationsLoaded = ref(false); // Đã tải dropdown (phòng ban, user) chưa
 
-/** Tạo object formData từ data ban đầu, đảm bảo luôn có đủ các field */
+// Trạng thái modal xoá
+const isDeleteModalVisible = ref(false); // Modal xoá có đang mở không
+const deletingEmployee = ref(null); // Nhân viên sắp bị xoá
+const deleteMessage = ref(""); // Nội dung xác nhận xoá
+const deleteLoading = ref(false); // Đang xử lý xoá
+
+// Trạng thái modal chi tiết
+const isDetailModalVisible = ref(false); // Modal chi tiết có đang mở không
+const selectedEmployee = ref(null); // Nhân viên đang xem chi tiết
+
+// ─── Xem chi tiết ────────────────────────────────────────────────────────────
+
+// Gán nhân viên được chọn và mở modal xem chi tiết
+function handleViewDetails(emp) {
+	selectedEmployee.value = emp;
+	isDetailModalVisible.value = true;
+}
+
+// ─── Khởi tạo dữ liệu form ───────────────────────────────────────────────────
+
+// Tạo object formData với giá trị mặc định — tránh undefined/null gây lỗi binding
 function buildFormData(data = {}) {
-  const d = data ?? {};
-  return {
-    user_id: d.user_id ?? null,
-    first_name: d.first_name ?? '',
-    last_name: d.last_name ?? '',
-    phone: d.phone ?? '',
-    department_id: d.department_id ?? '',
-    position: d.position ?? '',
-    salary: d.salary ?? null,
-    join_date: d.join_date ?? '',
-    status: d.status ?? 'active',
-    gender: d.gender ?? '',
-    birth_date: d.birth_date ?? '',
-  };
+	const d = data ?? {};
+	return {
+		user_id: d.user_id ?? null,
+		first_name: d.first_name ?? "",
+		last_name: d.last_name ?? "",
+		phone: d.phone ?? "",
+		department_id: d.department_id ?? "",
+		position: d.position ?? "",
+		salary: d.salary ?? null,
+		join_date: d.join_date ?? "",
+		status: d.status ?? "active",
+		gender: d.gender ?? "",
+		birth_date: d.birth_date ?? "",
+	};
 }
 
+// ─── Tải dữ liệu liên quan cho form ─────────────────────────────────────────
+
+// Lấy phòng ban + user chưa gắn nhân viên để đổ vào dropdown
+// Có cache: bỏ qua nếu đã tải rồi, trừ khi force = true
 async function loadFormRelations(force = false) {
-  if (!force && relationsLoaded.value) {
-    return;
-  }
+	if (!force && relationsLoaded.value) return;
 
-  try {
-    await Promise.all([
-      departmentStore.fetchDepartments(),
-      userStore.fetchUsersWithoutEmployee(),
-    ]);
-    relationsLoaded.value = true;
-  } catch (err) {
-    console.error('Lỗi khi tải dữ liệu liên quan:', err);
-  }
+	try {
+		await Promise.all([
+			departmentStore.fetchDepartments(),
+			userStore.fetchUsersWithoutEmployee(),
+		]);
+		relationsLoaded.value = true;
+	} catch (err) {
+		console.error("Lỗi khi tải dữ liệu liên quan:", err);
+	}
 }
 
-// Handlers
+// ─── Thêm nhân viên ──────────────────────────────────────────────────────────
+
+// Reset form về trạng thái rỗng rồi mở modal
 async function handleAdd() {
-  editingEmployee.value = null;
-  formData.value = buildFormData();
-  openAddModal();
-  await loadFormRelations();
+	editingEmployee.value = null;
+	formData.value = buildFormData();
+	openAddModal();
+	await loadFormRelations();
 }
 
+// ─── Sửa nhân viên ───────────────────────────────────────────────────────────
+
+// Chuẩn hoá ngày (cắt phần giờ ISO 8601), điền form và mở modal sửa
 async function handleEdit(emp) {
-  const empCopy = { ...emp };
+	const empCopy = { ...emp };
 
-  if (empCopy.birth_date) {
-    const dateParts = empCopy.birth_date.split('T');
-    empCopy.birth_date = dateParts[0];
-  } else {
-    empCopy.birth_date = '';
-  }
+	// API trả ISO string (2024-01-15T00:00:00Z) → input[type=date] chỉ nhận YYYY-MM-DD
+	empCopy.birth_date = empCopy.birth_date
+		? empCopy.birth_date.split("T")[0]
+		: "";
+	empCopy.join_date = empCopy.join_date
+		? empCopy.join_date.split("T")[0]
+		: "";
 
-  if (empCopy.join_date) {
-    const dateParts = empCopy.join_date.split('T');
-    empCopy.join_date = dateParts[0];
-  } else {
-    empCopy.join_date = '';
-  }
-
-  editingEmployee.value = empCopy;
-  formData.value = buildFormData(empCopy);
-  openEditModal();
-  await loadFormRelations();
+	editingEmployee.value = empCopy;
+	formData.value = buildFormData(empCopy);
+	openEditModal();
+	await loadFormRelations();
 }
 
+// ─── Xoá nhân viên ───────────────────────────────────────────────────────────
+
+// Gán nhân viên cần xoá và hiển thị modal xác nhận
 function handleDelete(emp) {
-  deletingEmployee.value = emp;
-  deleteMessage.value = `Bạn có chắc chắn muốn xoá ${emp.first_name} ${emp.last_name}?`;
-  isDeleteModalVisible.value = true;
+	deletingEmployee.value = emp;
+	deleteMessage.value = `Bạn có chắc chắn muốn xoá ${emp.first_name} ${emp.last_name}?`;
+	isDeleteModalVisible.value = true;
 }
 
+// Thực hiện xoá sau khi người dùng xác nhận
 async function confirmDelete() {
-  const emp = deletingEmployee.value;
-  if (!emp) {
-    return;
-  }
+	const emp = deletingEmployee.value;
+	if (!emp) return;
 
-  deleteLoading.value = true;
-  const res = await employeeStore.deleteEmployee(emp.id);
-  deleteLoading.value = false;
+	deleteLoading.value = true;
+	const res = await employeeStore.deleteEmployee(emp.id);
+	deleteLoading.value = false;
 
-  if (res.success === false) {
-    toast.error(res.message);
-    return;
-  }
+	if (res.success === false) {
+		toast.error(res.message);
+		return;
+	}
 
-  toast.success(res.message);
-  isDeleteModalVisible.value = false;
-  deletingEmployee.value = null;
-  await loadEmployees(pagination.value.page);
+	toast.success(res.message);
+	isDeleteModalVisible.value = false;
+	deletingEmployee.value = null;
+	await loadEmployees(pagination.value.page); // Reload lại trang hiện tại
 }
+
+// ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
 
 async function handleFormSubmit() {
-  formLoading.value = true;
-  let res;
+	formLoading.value = true;
+	let res;
 
-  if (isEditMode.value === true) {
-    // Edit mode: build a normalized dirty-check payload to avoid false diffs
-    const original = buildFormData(editingEmployee.value);
+	if (isEditMode.value === true) {
+		// ── Chế độ SỬA: partial update — chỉ gửi field thực sự thay đổi ──
 
-    function normalizeForCompare(obj) {
-      const out = {};
-      Object.keys(obj).forEach((k) => {
-        const v = obj[k];
-        if (v === null || typeof v === 'undefined') {
-          out[k] = '';
-          return;
-        }
-        // Normalize primary numeric IDs and salary to string form
-        if (k === 'user_id' || k === 'department_id' || k === 'salary') {
-          out[k] = String(v);
-          return;
-        }
-        // Dates and other primitives -> string
-        out[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
-      });
-      return out;
-    }
+		const original = buildFormData(editingEmployee.value);
 
-    const normOriginal = normalizeForCompare(original);
-    const normForm = normalizeForCompare(formData.value);
+		/**
+		 * Chuẩn hoá toàn bộ giá trị về string trước khi so sánh,
+		 * tránh false-diff do khác kiểu (ví dụ: số 3 vs chuỗi "3").
+		 * - null/undefined  → ""
+		 * - user_id / department_id / salary → String(v)  (ID số từ API)
+		 * - object → JSON.stringify
+		 * - còn lại → String(v)
+		 */
+		function normalizeForCompare(obj) {
+			const out = {};
+			Object.keys(obj).forEach((k) => {
+				const v = obj[k];
+				if (v === null || typeof v === "undefined") {
+					out[k] = "";
+					return;
+				}
+				if (
+					k === "user_id" ||
+					k === "department_id" ||
+					k === "salary"
+				) {
+					out[k] = String(v);
+					return;
+				}
+				out[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+			});
+			return out;
+		}
 
-    const payload = Object.fromEntries(
-      Object.keys(normOriginal)
-        .filter((k) => normForm[k] !== normOriginal[k])
-        .map((k) => [k, formData.value[k]]),
-    );
+		const normOriginal = normalizeForCompare(original);
+		const normForm = normalizeForCompare(formData.value);
 
-    if (Object.keys(payload).length === 0) {
-      toast.info('Không có dữ liệu thay đổi');
-      formLoading.value = false;
-      return;
-    }
+		// Lấy những field có giá trị khác so với ban đầu → build payload
+		const payload = Object.fromEntries(
+			Object.keys(normOriginal)
+				.filter((k) => normForm[k] !== normOriginal[k])
+				.map((k) => [k, formData.value[k]]),
+		);
 
-    // Sanitize values for Go backend
-    if ('user_id' in payload) {
-      payload.user_id =
-        formData.value.user_id == null || formData.value.user_id === ''
-          ? 0
-          : Number(formData.value.user_id);
-    }
-    if ('department_id' in payload) {
-      payload.department_id = Number(payload.department_id);
-    }
+		// Không có gì thay đổi → báo và thoát sớm
+		if (Object.keys(payload).length === 0) {
+			toast.info("Không có dữ liệu thay đổi");
+			formLoading.value = false;
+			return;
+		}
 
-    res = await employeeStore.updateEmployee(
-      editingEmployee.value.id,
-      payload,
-    );
-  } else {
-    // Create mode
-    const data = { ...formData.value };
-    data.user_id =
-      data.user_id !== '' && data.user_id != null
-        ? Number(data.user_id)
-        : null;
-    data.department_id =
-      data.department_id !== '' ? Number(data.department_id) : undefined;
+		// Ép kiểu số cho backend Go — tránh gửi string gây lỗi parse
+		if ("user_id" in payload) {
+			// user_id rỗng/null → gửi 0 (sentinel "huỷ liên kết tài khoản")
+			payload.user_id =
+				formData.value.user_id == null || formData.value.user_id === ""
+					? 0
+					: Number(formData.value.user_id);
+		}
+		if ("department_id" in payload) {
+			payload.department_id = Number(payload.department_id);
+		}
 
-    res = await employeeStore.createEmployee(data);
-  }
+		res = await employeeStore.updateEmployee(
+			editingEmployee.value.id,
+			payload,
+		);
+	} else {
+		// ── Chế độ THÊM MỚI: gửi toàn bộ formData ──
 
-  formLoading.value = false;
+		const data = { ...formData.value };
 
-  if (res.success === false) {
-    toast.error(res.message);
-    return;
-  }
+		// Chuyển về number hoặc null — backend không nhận chuỗi cho ID
+		data.user_id =
+			data.user_id !== "" && data.user_id != null
+				? Number(data.user_id)
+				: null;
 
-  relationsLoaded.value = false;
+		// Bỏ hẳn field nếu rỗng (undefined → không có key trong JSON)
+		data.department_id =
+			data.department_id !== "" ? Number(data.department_id) : undefined;
 
-  if (isEditMode.value === true) {
-    toast.success(res.message);
-  }
+		res = await employeeStore.createEmployee(data);
+	}
 
-  closeModal();
-  await loadEmployees(pagination.value.page);
+	formLoading.value = false;
+
+	if (res.success === false) {
+		toast.error(res.message);
+		return;
+	}
+
+	relationsLoaded.value = false; // Buộc tải lại dropdown lần mở form tiếp theo
+
+	if (isEditMode.value === true) {
+		toast.success(res.message);
+	}
+
+	closeModal();
+	await loadEmployees(pagination.value.page);
 }
 
+// ─── Khởi tạo trang ──────────────────────────────────────────────────────────
+
 onMounted(async () => {
-  await loadEmployees();
+	await loadEmployees();
 });
 </script>
 
 <template>
 	<div class="employee-view">
-		<!-- Tiêu đề trang -->
+		<!-- ===== Tiêu đề trang ===== -->
 		<header class="page-header">
 			<div class="header-content">
 				<h1 class="page-title">Quản lý nhân sự</h1>
@@ -273,12 +332,16 @@ onMounted(async () => {
 			</button>
 		</header>
 
-		<!-- Nội dung chính -->
+		<!-- ===== Nội dung chính ===== -->
 		<main class="content-card">
-			<!-- Thanh công cụ -->
+			<!-- Thanh tìm kiếm -->
 			<div class="toolbar">
 				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
+					<img
+						:src="searchIcon"
+						class="search-box__icon"
+						alt="search"
+					/>
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -287,7 +350,7 @@ onMounted(async () => {
 				</div>
 			</div>
 
-			<!-- Bảng dữ liệu -->
+			<!-- Bảng dữ liệu nhân viên -->
 			<div class="table-responsive">
 				<table class="data-table">
 					<thead>
@@ -297,13 +360,14 @@ onMounted(async () => {
 							<th>Phòng ban / Chức vụ</th>
 							<th>Ngày vào làm</th>
 							<th>Trạng thái</th>
+							<!-- Chỉ hiện cột thao tác khi có ít nhất 1 quyền -->
 							<th v-if="hasAnyEmployeeAction" class="text-right">
 								Thao tác
 							</th>
 						</tr>
 					</thead>
 					<tbody>
-						<!-- Loading skeleton rows -->
+						<!-- Skeleton placeholder khi đang tải -->
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td>
@@ -323,9 +387,7 @@ onMounted(async () => {
 										</div>
 									</div>
 								</td>
-								<td>
-									<Skeleton type="text" width="100px" />
-								</td>
+								<td><Skeleton type="text" width="100px" /></td>
 								<td>
 									<div
 										class="job-info"
@@ -340,13 +402,12 @@ onMounted(async () => {
 										<Skeleton type="text" width="50%" />
 									</div>
 								</td>
-								<td>
-									<Skeleton type="text" width="80px" />
-								</td>
-								<td>
-									<Skeleton type="badge" />
-								</td>
-								<td v-if="hasAnyEmployeeAction" class="text-right">
+								<td><Skeleton type="text" width="80px" /></td>
+								<td><Skeleton type="badge" /></td>
+								<td
+									v-if="hasAnyEmployeeAction"
+									class="text-right"
+								>
 									<div class="action-group">
 										<Skeleton type="btn" />
 										<Skeleton type="btn" />
@@ -355,14 +416,18 @@ onMounted(async () => {
 							</tr>
 						</template>
 
-						<!-- Actual rows when loaded -->
+						<!-- Dữ liệu thực sau khi tải xong -->
 						<template v-else>
 							<tr v-for="emp in employees" :key="emp.id">
+								<!-- Thông tin nhân viên + tài khoản liên kết -->
 								<td>
 									<div class="user-info">
 										<div class="user-info__avatar">
 											{{
-												getInitials(emp.first_name, emp.last_name)
+												getInitials(
+													emp.first_name,
+													emp.last_name,
+												)
 											}}
 										</div>
 										<div class="user-info__details">
@@ -370,36 +435,49 @@ onMounted(async () => {
 												{{ emp.first_name }}
 												{{ emp.last_name }}
 											</h1>
-											<span class="user-info__email" v-if="emp.user">
-												{{ emp.user.email }}
-											</span>
-											<span class="user-info__email" v-if="emp.user">
-												User: {{ emp.user.user_name }}
-											</span>
-											<span v-else class="user-info__email">
-												Chưa có tài khoản
-											</span>
+											<!-- Hiển thị email + username nếu đã liên kết tài khoản -->
+											<template v-if="emp.user">
+												<span
+													class="user-info__email"
+													>{{ emp.user.email }}</span
+												>
+												<span class="user-info__email"
+													>User:
+													{{
+														emp.user.user_name
+													}}</span
+												>
+											</template>
+											<span
+												v-else
+												class="user-info__email"
+												>Chưa có tài khoản</span
+											>
 										</div>
 									</div>
 								</td>
+
 								<td>
-									<span class="text-main fw-500">
-										{{ emp.phone || "—" }}
-									</span>
+									<span class="text-main fw-500">{{
+										emp.phone || "—"
+									}}</span>
 								</td>
+
 								<td>
 									<div class="job-info">
 										<h1 class="job-info__dept">
 											{{ emp.department?.name || "N/A" }}
 										</h1>
-										<span class="job-info__pos">
-											{{ emp.position || "Nhân viên" }}
-										</span>
+										<span class="job-info__pos">{{
+											emp.position || "Nhân viên"
+										}}</span>
 									</div>
 								</td>
+
 								<td class="text-muted">
 									{{ formatDate(emp.join_date) }}
 								</td>
+
 								<td>
 									<span
 										:class="[
@@ -410,8 +488,23 @@ onMounted(async () => {
 										{{ formatStatus(emp.status) }}
 									</span>
 								</td>
-								<td v-if="hasAnyEmployeeAction" class="text-right">
+
+								<!-- Nút thao tác: xem / sửa / xoá (tuỳ quyền) -->
+								<td
+									v-if="hasAnyEmployeeAction"
+									class="text-right"
+								>
 									<div class="action-group">
+										<!-- HR/Admin xem tất cả, Employee chỉ xem được của mình -->
+										<button
+											v-if="canViewEmployeeDetail(emp.id)"
+											class="btn-icon btn-icon--detail"
+											title="Xem chi tiết"
+											@click="handleViewDetails(emp)"
+										>
+											<img :src="eyeIcon" alt="detail" />
+										</button>
+										<!-- Chỉ HR và Admin mới sửa/xoá được -->
 										<button
 											v-if="canEditEmployee"
 											class="btn-icon btn-icon--edit"
@@ -426,11 +519,16 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(emp)"
 										>
-											<img :src="deleteIcon" alt="delete" />
+											<img
+												:src="deleteIcon"
+												alt="delete"
+											/>
 										</button>
 									</div>
 								</td>
 							</tr>
+
+							<!-- Empty state khi không có kết quả -->
 							<tr v-if="employees.length === 0">
 								<td
 									:colspan="hasAnyEmployeeAction ? 6 : 5"
@@ -470,7 +568,7 @@ onMounted(async () => {
 			</div>
 		</main>
 
-		<!-- Modal Thêm/Sửa -->
+		<!-- ===== Modal Thêm / Sửa nhân viên ===== -->
 		<ModalDialog
 			:visible="isModalVisible"
 			:title="isEditMode ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'"
@@ -484,7 +582,7 @@ onMounted(async () => {
 		>
 			<form @submit.prevent="handleFormSubmit" class="employee-form">
 				<div class="form-grid">
-					<!-- Họ và tên -->
+					<!-- Họ & Tên -->
 					<div class="form-group">
 						<label class="form-label"
 							>Họ <span class="required">*</span></label
@@ -512,7 +610,7 @@ onMounted(async () => {
 
 					<!-- Giới tính -->
 					<div class="form-group">
-						<label class="form-label">Giới Tính</label>
+						<label class="form-label">Giới tính</label>
 						<select v-model="formData.gender" class="form-control">
 							<option value="" disabled>Chọn giới tính</option>
 							<option value="male">Nam</option>
@@ -520,7 +618,7 @@ onMounted(async () => {
 						</select>
 					</div>
 
-					<!-- Ngày tháng năm sinh -->
+					<!-- Ngày sinh -->
 					<div class="form-group">
 						<label class="form-label">Ngày sinh</label>
 						<input
@@ -530,9 +628,11 @@ onMounted(async () => {
 						/>
 					</div>
 
+					<!-- Số điện thoại -->
 					<div class="form-group">
 						<label class="form-label"
-							>Số điện thoại <span class="required">*</span></label
+							>Số điện thoại
+							<span class="required">*</span></label
 						>
 						<input
 							v-model="formData.phone"
@@ -543,7 +643,7 @@ onMounted(async () => {
 						/>
 					</div>
 
-					<!-- Công việc -->
+					<!-- Phòng ban -->
 					<div class="form-group">
 						<label class="form-label"
 							>Phòng ban <span class="required">*</span></label
@@ -564,6 +664,7 @@ onMounted(async () => {
 						</select>
 					</div>
 
+					<!-- Chức vụ -->
 					<div class="form-group">
 						<label class="form-label">Chức vụ</label>
 						<input
@@ -574,7 +675,7 @@ onMounted(async () => {
 						/>
 					</div>
 
-					<!-- Lương và Ngày vào làm -->
+					<!-- Mức lương -->
 					<div class="form-group">
 						<label class="form-label">Mức lương (VNĐ)</label>
 						<input
@@ -584,6 +685,11 @@ onMounted(async () => {
 							placeholder="0"
 						/>
 					</div>
+
+					<!--
+						Ngày vào làm bị khoá khi sửa — không cho phép thay đổi
+						ngày onboard sau khi đã tạo hồ sơ
+					-->
 					<div
 						class="form-group"
 						:class="{ 'form-group--disabled': isEditMode }"
@@ -596,7 +702,8 @@ onMounted(async () => {
 							:disabled="isEditMode"
 						/>
 					</div>
-					<!-- Trạng thái và Tài khoản -->
+
+					<!-- Trạng thái -->
 					<div class="form-group">
 						<label class="form-label">Trạng thái</label>
 						<select v-model="formData.status" class="form-control">
@@ -606,21 +713,21 @@ onMounted(async () => {
 					</div>
 				</div>
 
-				<!-- Gắn người dùng -->
+				<!--
+					Dropdown liên kết tài khoản:
+					- Khi sửa: hiển thị thêm option user hiện tại (có thể không có trong usersWithoutEmp)
+					- Khi thêm: chỉ hiện user chưa gắn nhân viên
+				-->
 				<div class="form-group">
 					<span class="form-label">Liên kết người dùng</span>
 					<select v-model="formData.user_id" class="form-control">
 						<option :value="null">Không liên kết</option>
-
-						<!-- user hiện tại (khi edit) -->
 						<option
 							v-if="editingEmployee?.user"
 							:value="editingEmployee.user.id"
 						>
 							{{ editingEmployee.user.email }} (hiện tại)
 						</option>
-
-						<!-- danh sách user chưa có employee -->
 						<option
 							v-for="u in usersWithoutEmp"
 							:key="u.id"
@@ -651,6 +758,7 @@ onMounted(async () => {
 			</form>
 		</ModalDialog>
 
+		<!-- ===== Modal Xác nhận xoá ===== -->
 		<ConfirmationDialog
 			:visible="isDeleteModalVisible"
 			title="Xác nhận xoá nhân viên"
@@ -659,6 +767,142 @@ onMounted(async () => {
 			@confirm="confirmDelete"
 			@cancel="isDeleteModalVisible = false"
 		/>
+
+		<!-- ===== Modal Chi tiết nhân viên ===== -->
+		<ModalDialog
+			:visible="isDetailModalVisible"
+			title="Chi tiết nhân viên"
+			subtitle="Thông tin hồ sơ chi tiết của nhân viên trong hệ thống"
+			size="lg"
+			@close="isDetailModalVisible = false"
+		>
+			<div v-if="selectedEmployee" class="detail-container">
+				<!-- Avatar & Tên -->
+				<div class="detail-header">
+					<div class="detail-avatar">
+						{{
+							getInitials(
+								selectedEmployee.first_name,
+								selectedEmployee.last_name,
+							)
+						}}
+					</div>
+					<div class="detail-title-info">
+						<h2 class="detail-name">
+							{{ selectedEmployee.first_name }}
+							{{ selectedEmployee.last_name }}
+						</h2>
+						<span class="detail-position">{{
+							selectedEmployee.position || "Chưa có chức vụ"
+						}}</span>
+					</div>
+				</div>
+
+				<!-- Thông tin cá nhân -->
+				<div class="detail-section">
+					<h3 class="section-title">Thông tin cá nhân</h3>
+					<div class="detail-grid">
+						<div class="detail-item">
+							<span class="detail-label">Giới tính:</span>
+							<!-- Map giá trị enum về nhãn tiếng Việt -->
+							<span class="detail-val">{{
+								selectedEmployee.gender === "male"
+									? "Nam"
+									: selectedEmployee.gender === "female"
+										? "Nữ"
+										: "Khác"
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Ngày sinh:</span>
+							<span class="detail-val">{{
+								formatDate(selectedEmployee.birth_date)
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Số điện thoại:</span>
+							<span class="detail-val">{{
+								selectedEmployee.phone || "—"
+							}}</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Thông tin công việc -->
+				<div class="detail-section">
+					<h3 class="section-title">Thông tin công việc</h3>
+					<div class="detail-grid">
+						<div class="detail-item">
+							<span class="detail-label">Phòng ban:</span>
+							<span class="detail-val">{{
+								selectedEmployee.department?.name || "N/A"
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Ngày vào làm:</span>
+							<span class="detail-val">{{
+								formatDate(selectedEmployee.join_date)
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Mức lương:</span>
+							<span class="detail-val salary-text">{{
+								formatCurrency(selectedEmployee.salary)
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Trạng thái:</span>
+							<span
+								:class="[
+									'status-badge',
+									`status-badge--${selectedEmployee.status}`,
+								]"
+							>
+								{{ formatStatus(selectedEmployee.status) }}
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Tài khoản hệ thống -->
+				<div class="detail-section">
+					<h3 class="section-title">Tài khoản hệ thống</h3>
+					<div v-if="selectedEmployee.user" class="detail-grid">
+						<div class="detail-item">
+							<span class="detail-label">Tên đăng nhập:</span>
+							<span class="detail-val">{{
+								selectedEmployee.user.user_name
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Email liên kết:</span>
+							<span class="detail-val">{{
+								selectedEmployee.user.email
+							}}</span>
+						</div>
+						<div class="detail-item">
+							<span class="detail-label">Quyền hạn:</span>
+							<span class="detail-val text-uppercase fw-600">
+								{{ selectedEmployee.user.role?.name || "N/A" }}
+							</span>
+						</div>
+					</div>
+					<div v-else class="empty-account">
+						Nhân viên này chưa liên kết với tài khoản hệ thống.
+					</div>
+				</div>
+
+				<div class="form-actions">
+					<button
+						type="button"
+						class="btn btn--secondary"
+						@click="isDetailModalVisible = false"
+					>
+						Đóng
+					</button>
+				</div>
+			</div>
+		</ModalDialog>
 	</div>
 </template>
 
@@ -1035,5 +1279,104 @@ onMounted(async () => {
 	.search-box {
 		max-width: none;
 	}
+}
+
+/* ===== Detail Modal ===== */
+.detail-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.detail-header {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding-bottom: var(--space-3);
+	border-bottom: 1px solid var(--border-color);
+}
+
+.detail-avatar {
+	width: 56px;
+	height: 56px;
+	border-radius: var(--radius-lg);
+	background: #eff6ff;
+	color: var(--primary-color);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: var(--fw-bold);
+	font-size: var(--fs-lg);
+	border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.detail-title-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.detail-name {
+	font-size: var(--fs-lg);
+	font-weight: var(--fw-bold);
+	color: var(--text-main);
+	margin: 0;
+}
+
+.detail-position {
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+}
+
+.detail-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
+.section-title {
+	font-size: var(--fs-sm);
+	font-weight: var(--fw-bold);
+	text-transform: uppercase;
+	color: var(--text-muted);
+	letter-spacing: 0.05em;
+	margin: 0;
+	padding-bottom: 4px;
+	border-bottom: 1px dashed var(--border-color);
+}
+
+.detail-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--space-2) var(--space-4);
+}
+
+.detail-item {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.detail-label {
+	font-size: var(--fs-xs);
+	color: var(--text-light);
+}
+
+.detail-val {
+	font-size: var(--fs-sm);
+	color: var(--text-main);
+	font-weight: var(--fw-medium);
+}
+
+.salary-text {
+	color: #0f766e;
+	font-weight: var(--fw-semibold);
+}
+
+.empty-account {
+	font-size: var(--fs-sm);
+	color: var(--text-light);
+	font-style: italic;
+	padding: var(--space-2) 0;
 }
 </style>

@@ -42,3 +42,22 @@
   - [user_handler.go](file:///c:/Users/ccquo/Downloads/Compressed/HR_Managerment_System/backend/internal/handler/user_handler.go)
 - **Result**: Tách biệt logic phân quyền an toàn hoàn toàn ra khỏi tầng Handler. Khai báo các lỗi sentinel (`ErrSelfRoleChange`, `ErrSelfDeactivate`) ở tầng Service. Handler bắt lỗi sentinel và trả về status `403 Forbidden` tương ứng, loại bỏ truy vấn DB dư thừa (`GetUserByID`) giúp tăng hiệu năng hệ thống.
 - **Notes**: Chạy kiểm tra biên dịch (`go build`) và phân tích tĩnh (`go vet`) thành công 100% không cảnh báo/lỗi.
+
+## Stage 5: Fix 401 Unauthorized Issue and Register Missing Employees Route (Executed)
+
+- **Task**: Sửa lỗi 401 Unauthorized cho endpoint `/api/v1/dashboard/stats` và đăng ký route bị thiếu cho view quản lý nhân viên `/employees`.
+- **Files Touched**:
+  - [index.js](file:///c:/Users/ccquo/Downloads/Compressed/HR_Managerment_System/frontend/src/api/index.js) (Modified)
+  - [index.js](file:///c:/Users/ccquo/Downloads/Compressed/HR_Managerment_System/frontend/src/router/index.js) (Modified)
+- **Result**:
+  1. Cập nhật cơ chế gán Authorization header sử dụng phương thức `.set()` của AxiosHeaders (hoặc fallback map) tương thích hoàn toàn với Axios v1.x.
+  2. Bổ sung đăng ký route `employees` liên kết đến component `EmployeeView`.
+- **Notes**: Build frontend thành công 100% bằng lệnh `npm run build`.
+
+## Stage 6: Add Employee Details Modal Feature (Executed)
+
+- **Task**: Bổ sung tính năng xem chi tiết nhân viên trên giao diện quản lý nhân viên.
+- **Files Touched**:
+  - [EmployeeView.vue](file:///c:/Users/ccquo/Downloads/Compressed/HR_Managerment_System/frontend/src/views/EmployeeView.vue) (Modified)
+- **Result**: Tích hợp thành công modal xem chi tiết nhân viên (Detail Modal), thêm nút "Xem chi tiết" sử dụng icon `eye.svg`, hiển thị chi tiết thông tin cá nhân, công việc (lương định dạng VND) và tài khoản hệ thống liên kết.
+- **Notes**: Dự án đã được build test thành công 100% không có lỗi.

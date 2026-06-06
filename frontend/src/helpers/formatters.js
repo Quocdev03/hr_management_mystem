@@ -52,3 +52,18 @@ export function formatCurrency(amount) {
 		currency: "VND",
 	}).format(amount);
 }
+
+/**
+ * Map giới tính sang tiếng Việt.
+ * @param {string} gender
+ * @returns {string}
+ */
+export function formatGender(gender) {
+	if (gender === "male") {
+		return "Nam";
+	}
+	if (gender === "female") {
+		return "Nữ";
+	}
+	return "Khác";
+}

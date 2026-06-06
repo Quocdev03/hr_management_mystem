@@ -1,40 +1,52 @@
 <script setup>
-	import mailIcon from "@/assets/svg/mail.svg";
-	import lockIcon from "@/assets/svg/lock.svg";
-	import eyeIcon from "@/assets/svg/eye.svg";
-	import eyeOffIcon from "@/assets/svg/eye-off.svg";
-	import usersIcon from "@/assets/svg/user.svg";
-	import { reactive, ref } from "vue";
-	import { useAuthStore } from "@/store/auth";
-	import { useToast } from "vue-toastification";
-	import { storeToRefs } from "pinia";
-	import { useRouter } from "vue-router";
+// ─── Icon SVG ────────────────────────────────────────────────────────────────
+import mailIcon from "@/assets/svg/mail.svg";
+import lockIcon from "@/assets/svg/lock.svg";
+import eyeIcon from "@/assets/svg/eye.svg";
+import eyeOffIcon from "@/assets/svg/eye-off.svg";
+import usersIcon from "@/assets/svg/user.svg";
 
-	const toast = useToast();
-	const router = useRouter();
-	const authStore = useAuthStore();
-	const { loading } = storeToRefs(authStore);
-	const isPasswordVisible = ref(false);
-	const credentials = reactive({ email: "", password: "" });
+// ─── Store & tiện ích ────────────────────────────────────────────────────────
+import { reactive, ref } from "vue";
+import { useAuthStore } from "@/store/auth";
+import { useToast } from "vue-toastification";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
-	async function loginHandler() {
-		const res = await authStore.login(credentials.email, credentials.password);
+// ─── Khởi tạo ────────────────────────────────────────────────────────────────
 
-		if (!res.success) {
-			toast.error(res.message);
-			return;
-		}
-		toast.success("Đăng nhập thành công!");
+const toast = useToast();
+const router = useRouter();
+const authStore = useAuthStore();
 
-		router.push("/");
+const { loading } = storeToRefs(authStore);
+
+const isPasswordVisible = ref(false); // Ẩn/hiện mật khẩu
+const credentials = reactive({ email: "", password: "" }); // Dữ liệu form đăng nhập
+
+// ─── Xử lý đăng nhập ─────────────────────────────────────────────────────────
+
+// Gọi API login, báo lỗi nếu thất bại, chuyển trang nếu thành công
+async function loginHandler() {
+	const res = await authStore.login(credentials.email, credentials.password);
+
+	if (!res.success) {
+		toast.error(res.message);
+		return;
 	}
 
-	function togglePasswordVisibility() {
-		isPasswordVisible.value = !isPasswordVisible.value;
-	}
+	toast.success("Đăng nhập thành công!");
+	router.push("/");
+}
+
+// ─── Toggle hiển thị mật khẩu ────────────────────────────────────────────────
+
+// Đổi qua lại giữa input type="password" và type="text"
+function togglePasswordVisibility() {
+	isPasswordVisible.value = !isPasswordVisible.value;
+}
 </script>
 <template>
-	<!-- ===== Container Chính ===== -->
 	<main class="login-container">
 		<!-- ===== Thẻ Đăng Nhập ===== -->
 		<section class="login-card">
@@ -81,7 +93,10 @@
 							class="toggle-password"
 							@click="togglePasswordVisibility"
 						>
-							<img :src="!isPasswordVisible ? eyeIcon : eyeOffIcon" alt="toggle" />
+							<img
+								:src="!isPasswordVisible ? eyeIcon : eyeOffIcon"
+								alt="toggle"
+							/>
 						</button>
 					</div>
 				</div>
@@ -102,221 +117,221 @@
 </template>
 
 <style scoped>
-	.login-container {
-		min-height: 100vh;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--bg-light);
-		padding: var(--space-2);
-	}
+.login-container {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--bg-light);
+	padding: var(--space-2);
+}
 
+.login-card {
+	width: 100%;
+	max-width: 450px;
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-lg);
+	padding: var(--space-5);
+	box-shadow: var(--shadow-md);
+}
+
+.logo-section {
+	text-align: center;
+	margin-bottom: var(--space-4);
+}
+
+.logo-icon {
+	margin-bottom: var(--space-2);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 60px;
+	height: 60px;
+	background-color: #eff6ff;
+	color: var(--primary-color);
+	border-radius: var(--radius-md);
+}
+
+.logo-img {
+	width: 32px;
+	height: 32px;
+	filter: invert(44%) sepia(87%) saturate(2258%) hue-rotate(200deg)
+		brightness(101%) contrast(92%); /* #3b82f6 */
+}
+
+.logo-section h2 {
+	color: var(--text-main);
+	font-size: var(--fs-2xl);
+	margin-bottom: var(--space-1);
+	letter-spacing: var(--tracking-tight);
+}
+
+.logo-section p {
+	color: var(--text-muted);
+	font-size: var(--fs-sm);
+}
+
+.login-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.login-input-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+}
+
+.login-input-group label {
+	font-size: var(--fs-sm);
+	font-weight: var(--fw-semibold);
+	color: var(--text-muted);
+}
+
+.input-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.input-icon {
+	position: absolute;
+	left: 1rem;
+	width: 18px;
+	height: 18px;
+	filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg)
+		brightness(88%) contrast(89%); /* #94a3b8 */
+	transition: all 0.2s ease;
+}
+
+.input-wrapper input {
+	width: 100%;
+	padding: 0.75rem 1rem 0.75rem 2.75rem;
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-sm);
+	font-size: var(--fs-base);
+	color: var(--text-main);
+	background: white;
+	transition: all 0.2s ease;
+	outline: none;
+}
+
+.input-wrapper input::placeholder {
+	color: var(--text-light);
+}
+
+.input-wrapper input:focus {
+	border-color: var(--primary-color);
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-wrapper input:focus ~ .input-icon {
+	filter: invert(44%) sepia(87%) saturate(2258%) hue-rotate(200deg)
+		brightness(101%) contrast(92%); /* #3b82f6 */
+}
+
+.toggle-password {
+	position: absolute;
+	right: 0.75rem;
+	background: none;
+	border: none;
+	color: var(--text-light);
+	cursor: pointer;
+	padding: 0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.2s ease;
+}
+
+.toggle-password:hover {
+	color: var(--text-muted);
+}
+
+.toggle-password img {
+	width: 18px;
+	height: 18px;
+	filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg)
+		brightness(88%) contrast(89%);
+}
+
+.form-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.forgot-password {
+	font-size: var(--fs-sm);
+	color: var(--primary-color);
+	font-weight: var(--fw-medium);
+	text-decoration: none;
+	transition: color 0.2s ease;
+}
+
+.forgot-password:hover {
+	color: var(--primary-hover);
+	text-decoration: underline;
+}
+
+.submit-btn {
+	background-color: var(--primary-color);
+	color: white;
+	border: none;
+	border-radius: var(--radius-sm);
+	padding: 0.75rem 1rem;
+	font-size: var(--fs-base);
+	font-weight: var(--fw-semibold);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 48px;
+	margin-top: var(--space-1);
+}
+
+.submit-btn:hover {
+	background-color: var(--primary-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.submit-btn:active {
+	background-color: #1d4ed8;
+	transform: translateY(0);
+}
+
+.submit-btn:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.loader {
+	width: 20px;
+	height: 20px;
+	border: 2px solid rgba(255, 255, 255, 0.4);
+	border-radius: var(--radius-full);
+	border-top-color: white;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (max-width: 480px) {
 	.login-card {
-		width: 100%;
-		max-width: 450px;
-		background: var(--bg-card);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-lg);
-		padding: var(--space-5);
-		box-shadow: var(--shadow-md);
-	}
-
-	.logo-section {
-		text-align: center;
-		margin-bottom: var(--space-4);
-	}
-
-	.logo-icon {
-		margin-bottom: var(--space-2);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 60px;
-		height: 60px;
-		background-color: #eff6ff;
-		color: var(--primary-color);
-		border-radius: var(--radius-md);
-	}
-
-	.logo-img {
-		width: 32px;
-		height: 32px;
-		filter: invert(44%) sepia(87%) saturate(2258%) hue-rotate(200deg) brightness(101%)
-			contrast(92%); /* #3b82f6 */
-	}
-
-	.logo-section h2 {
-		color: var(--text-main);
-		font-size: var(--fs-2xl);
-		margin-bottom: var(--space-1);
-		letter-spacing: var(--tracking-tight);
-	}
-
-	.logo-section p {
-		color: var(--text-muted);
-		font-size: var(--fs-sm);
-	}
-
-	.login-form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-	}
-
-	.login-input-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.login-input-group label {
-		font-size: var(--fs-sm);
-		font-weight: var(--fw-semibold);
-		color: var(--text-muted);
-	}
-
-	.input-wrapper {
-		position: relative;
-		display: flex;
-		align-items: center;
-	}
-
-	.input-icon {
-		position: absolute;
-		left: 1rem;
-		width: 18px;
-		height: 18px;
-		filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg) brightness(88%)
-			contrast(89%); /* #94a3b8 */
-		transition: all 0.2s ease;
-	}
-
-	.input-wrapper input {
-		width: 100%;
-		padding: 0.75rem 1rem 0.75rem 2.75rem;
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-sm);
-		font-size: var(--fs-base);
-		color: var(--text-main);
-		background: white;
-		transition: all 0.2s ease;
-		outline: none;
-	}
-
-	.input-wrapper input::placeholder {
-		color: var(--text-light);
-	}
-
-	.input-wrapper input:focus {
-		border-color: var(--primary-color);
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
-	.input-wrapper input:focus ~ .input-icon {
-		filter: invert(44%) sepia(87%) saturate(2258%) hue-rotate(200deg) brightness(101%)
-			contrast(92%); /* #3b82f6 */
-	}
-
-	.toggle-password {
-		position: absolute;
-		right: 0.75rem;
-		background: none;
+		padding: var(--space-4) var(--space-3);
 		border: none;
-		color: var(--text-light);
-		cursor: pointer;
-		padding: 0.25rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: color 0.2s ease;
+		border-radius: 0;
+		box-shadow: none;
+		background: transparent;
+		backdrop-filter: none;
 	}
-
-	.toggle-password:hover {
-		color: var(--text-muted);
-	}
-
-	.toggle-password img {
-		width: 18px;
-		height: 18px;
-		filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg) brightness(88%)
-			contrast(89%);
-	}
-
-	.form-actions {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-	}
-
-	.forgot-password {
-		font-size: var(--fs-sm);
-		color: var(--primary-color);
-		font-weight: var(--fw-medium);
-		text-decoration: none;
-		transition: color 0.2s ease;
-	}
-
-	.forgot-password:hover {
-		color: var(--primary-hover);
-		text-decoration: underline;
-	}
-
-	.submit-btn {
-		background-color: var(--primary-color);
-		color: white;
-		border: none;
-		border-radius: var(--radius-sm);
-		padding: 0.75rem 1rem;
-		font-size: var(--fs-base);
-		font-weight: var(--fw-semibold);
-		cursor: pointer;
-		transition: all 0.2s ease;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 48px;
-		margin-top: var(--space-1);
-	}
-
-	.submit-btn:hover {
-		background-color: var(--primary-hover);
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-	}
-
-	.submit-btn:active {
-		background-color: #1d4ed8;
-		transform: translateY(0);
-	}
-
-	.submit-btn:disabled {
-		opacity: 0.7;
-		cursor: not-allowed;
-	}
-
-	.loader {
-		width: 20px;
-		height: 20px;
-		border: 2px solid rgba(255, 255, 255, 0.4);
-		border-radius: var(--radius-full);
-		border-top-color: white;
-		animation: spin 0.8s linear infinite;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	@media (max-width: 480px) {
-		.login-card {
-			padding: var(--space-4) var(--space-3);
-			border: none;
-			border-radius: 0;
-			box-shadow: none;
-			background: transparent;
-			backdrop-filter: none;
-		}
-	}
+}
 </style>

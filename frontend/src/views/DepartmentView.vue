@@ -1,195 +1,238 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useToast } from 'vue-toastification';
+// ─── Icon SVG ────────────────────────────────────────────────────────────────
+import plusIcon from "@/assets/svg/plus.svg";
+import searchIcon from "@/assets/svg/search.svg";
+import editIcon from "@/assets/svg/edit.svg";
+import deleteIcon from "@/assets/svg/delete.svg";
+import prevIcon from "@/assets/svg/chevron-left.svg";
+import nextIcon from "@/assets/svg/chevron-right.svg";
 
-import { useDepartmentStore } from '@/store/department';
-import { useDashboardStore } from '@/store/dashboard';
-import { useEmployeeStore } from '@/store/employee';
+// ─── Store ───────────────────────────────────────────────────────────────────
+import { useDepartmentStore } from "@/store/department";
+import { useDashboardStore } from "@/store/dashboard";
+import { useEmployeeStore } from "@/store/employee";
 
-import ModalDialog from '@/components/ModalDialog.vue';
-import ConfirmationDialog from '@/components/ConfirmationDialog.vue';
-import Skeleton from '@/components/Skeleton.vue';
+// ─── Component UI dùng chung ─────────────────────────────────────────────────
+import ModalDialog from "@/components/ModalDialog.vue";
+import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
+import Skeleton from "@/components/Skeleton.vue";
 
-import { useModalState } from '@/helpers/useModalState';
-import { usePaginatedSearch } from '@/helpers/usePaginatedSearch';
-import { usePermissions } from '@/helpers/usePermissions';
+// ─── Tiện ích ────────────────────────────────────────────────────────────────
+import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useToast } from "vue-toastification";
+import { useModalState } from "@/helpers/useModalState";
+import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
+import { usePermissions } from "@/helpers/usePermissions";
 
-import plusIcon from '@/assets/svg/plus.svg';
-import searchIcon from '@/assets/svg/search.svg';
-import editIcon from '@/assets/svg/edit.svg';
-import deleteIcon from '@/assets/svg/delete.svg';
-import prevIcon from '@/assets/svg/chevron-left.svg';
-import nextIcon from '@/assets/svg/chevron-right.svg';
+// ─── Khởi tạo ────────────────────────────────────────────────────────────────
 
-// Stores
 const departmentStore = useDepartmentStore();
 const dashboardStore = useDashboardStore();
 const employeeStore = useEmployeeStore();
 const toast = useToast();
+
+// Quyền thao tác CRUD phòng ban
 const { canCrudDepartment } = usePermissions();
 
+// Reactive refs từ store
 const { departments, loading, pagination } = storeToRefs(departmentStore);
 const { employees } = storeToRefs(employeeStore);
 
-// Modal state
-const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
-  useModalState();
+// ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
 
-// Search & pagination
+const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
+	useModalState();
+
+// ─── Tìm kiếm & phân trang ───────────────────────────────────────────────────
+
 const {
-  searchQuery,
-  load: loadDepartments,
-  handlePageChange,
+	searchQuery,
+	load: loadDepartments, // Tải danh sách phòng ban
+	handlePageChange, // Xử lý chuyển trang
 } = usePaginatedSearch(
-  (params) => departmentStore.fetchDepartments(params),
-  pagination,
+	(params) => departmentStore.fetchDepartments(params),
+	pagination,
 );
 
-// Local state
-const editingDepartment = ref(null);
-const formLoading = ref(false);
+// ─── Trạng thái local ────────────────────────────────────────────────────────
+
+const editingDepartment = ref(null); // Phòng ban đang được chỉnh sửa
+const formLoading = ref(false); // Đang xử lý submit form
+
+// Giá trị mặc định form — dùng hàm để tránh tái sử dụng cùng một object reference
 const initialFormData = () => ({
-  name: '',
-  code: '',
-  description: '',
-  manager_id: null,
+	name: "",
+	code: "",
+	description: "",
+	manager_id: null,
 });
 const formData = ref(initialFormData());
 
-// Delete modal state
-const isDeleteModalVisible = ref(false);
-const deletingDepartment = ref(null);
-const deleteMessage = ref('');
-const deleteLoading = ref(false);
+// ─── Trạng thái modal xoá ────────────────────────────────────────────────────
 
-// Fetch lists
+const isDeleteModalVisible = ref(false); // Modal xoá có đang mở không
+const deletingDepartment = ref(null); // Phòng ban sắp bị xoá
+const deleteMessage = ref(""); // Nội dung xác nhận xoá
+const deleteLoading = ref(false); // Đang xử lý xoá
+
+// ─── Tải danh sách nhân viên ─────────────────────────────────────────────────
+
+// Lấy toàn bộ nhân viên (tối đa 100) để đổ vào dropdown chọn trưởng phòng
 async function loadEmployees() {
-  try {
-    await employeeStore.fetchEmployees({ page: 1, limit: 100 });
-  } catch (err) {
-    console.error('Lỗi khi tải danh sách nhân viên:', err);
-  }
+	try {
+		await employeeStore.fetchEmployees({ page: 1, limit: 100 });
+	} catch (err) {
+		console.error("Lỗi khi tải danh sách nhân viên:", err);
+	}
 }
 
-// Handlers
+// ─── Mở modal thêm mới ───────────────────────────────────────────────────────
+
+// Reset form về trạng thái rỗng rồi mở modal
 function handleAdd() {
-  editingDepartment.value = null;
-  formData.value = initialFormData();
-  openAddModal();
+	editingDepartment.value = null;
+	formData.value = initialFormData();
+	openAddModal();
 }
 
+// ─── Mở modal sửa ────────────────────────────────────────────────────────────
+
+/**
+ * Điền dữ liệu phòng ban vào form.
+ * manager_id ưu tiên lấy từ field trực tiếp, fallback về manager?.id
+ * (API có thể trả về dạng nested object thay vì flat id).
+ */
 async function handleEdit(department) {
-  editingDepartment.value = { ...department };
-  formData.value = {
-    name: department.name ?? '',
-    code: department.code ?? '',
-    description: department.description ?? '',
-    manager_id: department.manager_id ?? department.manager?.id ?? null,
-  };
-  openEditModal();
-  await loadEmployees();
+	editingDepartment.value = { ...department };
+	formData.value = {
+		name: department.name ?? "",
+		code: department.code ?? "",
+		description: department.description ?? "",
+		manager_id: department.manager_id ?? department.manager?.id ?? null,
+	};
+	openEditModal();
+	await loadEmployees(); // Tải nhân viên để dropdown có dữ liệu
 }
 
+// ─── Mở modal xoá ────────────────────────────────────────────────────────────
+
+// Gán phòng ban cần xoá và hiển thị modal xác nhận
 function handleDelete(department) {
-  deletingDepartment.value = department;
-  deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
-  isDeleteModalVisible.value = true;
+	deletingDepartment.value = department;
+	deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
+	isDeleteModalVisible.value = true;
 }
 
+// ─── Xác nhận xoá ────────────────────────────────────────────────────────────
+
+// Thực hiện xoá sau khi người dùng xác nhận
 async function confirmDelete() {
-  const department = deletingDepartment.value;
-  if (!department) {
-    return;
-  }
+	const department = deletingDepartment.value;
+	if (!department) return;
 
-  deleteLoading.value = true;
-  try {
-    const res = await departmentStore.deleteDepartment(department.id);
+	deleteLoading.value = true;
+	try {
+		const res = await departmentStore.deleteDepartment(department.id);
 
-    if (!res.success) {
-      toast.error(res.message);
-      return;
-    }
+		if (!res.success) {
+			toast.error(res.message);
+			return;
+		}
 
-    toast.success('Xoá phòng ban thành công');
-    isDeleteModalVisible.value = false;
-    deletingDepartment.value = null;
-    await loadDepartments();
-  } catch (err) {
-    toast.error(err?.message || 'Đã xảy ra lỗi khi xoá phòng ban');
-    console.error('confirmDelete error:', err);
-  } finally {
-    deleteLoading.value = false;
-  }
+		toast.success("Xoá phòng ban thành công");
+		isDeleteModalVisible.value = false;
+		deletingDepartment.value = null;
+		await loadDepartments();
+	} catch (err) {
+		toast.error(err?.message || "Đã xảy ra lỗi khi xoá phòng ban");
+		console.error("confirmDelete error:", err);
+	} finally {
+		deleteLoading.value = false; // Luôn tắt loading dù thành công hay lỗi
+	}
 }
+
+// ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
 
 async function handleFormSubmit() {
-  formLoading.value = true;
-  try {
-    let res;
+	formLoading.value = true;
+	try {
+		let res;
 
-    if (isEditMode.value) {
-      // Chỉ gửi các field đã thay đổi so với dữ liệu gốc (partial update)
-      const original = editingDepartment.value ?? {};
-      const payload = {};
+		if (isEditMode.value) {
+			// ── Chế độ SỬA: partial update — chỉ gửi field thực sự thay đổi ──
 
-      if (formData.value.name !== (original.name ?? '')) {
-        payload.name = formData.value.name;
-      }
-      if (formData.value.description !== (original.description ?? '')) {
-        payload.description = formData.value.description;
-      }
+			const original = editingDepartment.value ?? {};
+			const payload = {};
 
-      const originalManagerId =
-        original.manager_id ?? original.manager?.id ?? null;
-      const currentManagerId = formData.value.manager_id || null;
-      if (currentManagerId !== originalManagerId) {
-        // Gửi 0 khi xoá manager (backend dùng 0 làm sentinel "xoá trưởng phòng")
-        payload.manager_id =
-          currentManagerId === null ? 0 : currentManagerId;
-      }
+			if (formData.value.name !== (original.name ?? "")) {
+				payload.name = formData.value.name;
+			}
 
-      if (Object.keys(payload).length === 0) {
-        toast.info('Không có dữ liệu thay đổi');
-        return;
-      }
+			if (formData.value.description !== (original.description ?? "")) {
+				payload.description = formData.value.description;
+			}
 
-      res = await departmentStore.updateDepartment(
-        editingDepartment.value.id,
-        payload,
-      );
-    } else {
-      // Tạo mới: gửi đủ các field cần thiết
-      res = await departmentStore.createDepartment({
-        name: formData.value.name,
-        code: formData.value.code,
-        description: formData.value.description,
-        manager_id: formData.value.manager_id || null,
-      });
-    }
+			/**
+			 * So sánh manager_id cẩn thận vì API có thể trả dạng flat (manager_id)
+			 * hoặc nested (manager.id). Chuẩn hoá cả hai về null trước khi so sánh.
+			 *
+			 * Khi xoá manager: gửi 0 thay vì null vì backend dùng 0 làm sentinel
+			 * để phân biệt "không truyền field" vs "chủ động xoá trưởng phòng".
+			 */
+			const originalManagerId =
+				original.manager_id ?? original.manager?.id ?? null;
+			const currentManagerId = formData.value.manager_id || null;
 
-    if (!res.success) {
-      toast.error(res.message);
-      return;
-    }
+			if (currentManagerId !== originalManagerId) {
+				payload.manager_id =
+					currentManagerId === null ? 0 : currentManagerId;
+			}
 
-    if (isEditMode.value) {
-      toast.success(res.message);
-    }
+			// Không có field nào thay đổi → báo và thoát sớm
+			if (Object.keys(payload).length === 0) {
+				toast.info("Không có dữ liệu thay đổi");
+				return;
+			}
 
-    closeModal();
-    await loadDepartments();
-  } catch (err) {
-    toast.error(err?.message || 'Đã xảy ra lỗi khi lưu phòng ban');
-    console.error('handleFormSubmit error:', err);
-  } finally {
-    formLoading.value = false;
-  }
+			res = await departmentStore.updateDepartment(
+				editingDepartment.value.id,
+				payload,
+			);
+		} else {
+			// ── Chế độ THÊM MỚI: gửi đủ các field ──
+			res = await departmentStore.createDepartment({
+				name: formData.value.name,
+				code: formData.value.code,
+				description: formData.value.description,
+				manager_id: formData.value.manager_id || null,
+			});
+		}
+
+		if (!res.success) {
+			toast.error(res.message);
+			return;
+		}
+
+		if (isEditMode.value) {
+			toast.success(res.message);
+		}
+
+		closeModal();
+		await loadDepartments();
+	} catch (err) {
+		toast.error(err?.message || "Đã xảy ra lỗi khi lưu phòng ban");
+		console.error("handleFormSubmit error:", err);
+	} finally {
+		formLoading.value = false; // Luôn tắt loading dù thành công hay lỗi
+	}
 }
 
+// ─── Khởi tạo trang ──────────────────────────────────────────────────────────
+
+// Tải song song phòng ban + dashboard để giảm thời gian chờ
 onMounted(async () => {
-  await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
+	await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
 });
 </script>
 
@@ -216,7 +259,11 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
+					<img
+						:src="searchIcon"
+						class="search-box__icon"
+						alt="search"
+					/>
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -243,7 +290,11 @@ onMounted(async () => {
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td class="text-main fw-500">
-									<Skeleton type="text" width="150px" height="18px" />
+									<Skeleton
+										type="text"
+										width="150px"
+										height="18px"
+									/>
 								</td>
 								<td>
 									<Skeleton
@@ -254,7 +305,11 @@ onMounted(async () => {
 									/>
 								</td>
 								<td class="text-muted">
-									<Skeleton type="text" width="220px" height="16px" />
+									<Skeleton
+										type="text"
+										width="220px"
+										height="16px"
+									/>
 								</td>
 								<td class="text-center">
 									<Skeleton
@@ -277,9 +332,13 @@ onMounted(async () => {
 						<!-- Actual rows when loaded -->
 						<template v-else>
 							<tr v-for="dept in departments" :key="dept.id">
-								<td class="text-main fw-500">{{ dept.name }}</td>
+								<td class="text-main fw-500">
+									{{ dept.name }}
+								</td>
 								<td>
-									<span class="dept-code">{{ dept.code }}</span>
+									<span class="dept-code">{{
+										dept.code
+									}}</span>
 								</td>
 								<td class="text-muted">
 									{{ dept.description || "—" }}
@@ -309,7 +368,10 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(dept)"
 										>
-											<img :src="deleteIcon" alt="delete" />
+											<img
+												:src="deleteIcon"
+												alt="delete"
+											/>
 										</button>
 									</div>
 								</td>
@@ -367,7 +429,8 @@ onMounted(async () => {
 				<div class="form-grid">
 					<div class="form-group">
 						<label class="form-label"
-							>Tên phòng ban <span class="required">*</span></label
+							>Tên phòng ban
+							<span class="required">*</span></label
 						>
 						<input
 							v-model="formData.name"
@@ -392,7 +455,10 @@ onMounted(async () => {
 					</div>
 					<div v-if="isEditMode" class="form-group">
 						<label class="form-label">Trưởng phòng</label>
-						<select v-model="formData.manager_id" class="form-control">
+						<select
+							v-model="formData.manager_id"
+							class="form-control"
+						>
 							<option :value="null">Chọn trưởng phòng</option>
 							<option
 								v-for="employee in employees"

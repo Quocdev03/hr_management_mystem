@@ -94,9 +94,9 @@ func SeedData(db *gorm.DB) {
 	log.Println("Chèn dữ liệu thành công")
 	log.Println("=================================================================")
 	log.Println("🔑 DANH SÁCH TÀI KHOẢN MẪU ĐÃ ĐƯỢC KHỞI TẠO:")
-	log.Println("   1. [Admin]      Username: chiquoc23AD   | Password: chiquoc23AD")
-	log.Println("   2. [HR]         Username: chiquoc23HR   | Password: chiquoc23HR")
-	log.Println("   3. [Employee]   Username: chiquoc23EMP  | Password: chiquoc23EMP")
+	log.Println("   1. [Admin]      Email: chiquoc23AD@company.vn   | Password: chiquoc23AD")
+	log.Println("   2. [HR]         Email: chiquoc23HR@company.vn   | Password: chiquoc23HR")
+	log.Println("   3. [Employee]   Email: chiquoc23EMP@company.vn  | Password: chiquoc23EMP")
 	log.Println("=================================================================")
 }
 
@@ -245,7 +245,7 @@ func seedEmployees(ctx *gorm.DB) error {
 			} else {
 				username = buildUserName(item.Employee.FirstName, item.Employee.LastName, *item.Employee.BirthDate)
 			}
-			
+
 			var user model.User
 			if err := ctx.Where("user_name = ?", username).First(&user).Error; err == nil {
 				item.Employee.UserID = &user.ID

@@ -63,7 +63,7 @@ func Load() *Config {
 	return &Config{
 		App: AppConfig{
 			Port: getEnv("APP_PORT", "8080"),
-			Env:  getEnv("APP_ENV", "development"),
+			Env:  getEnv("APP_ENV", "production"),
 			Seed: getEnv("APP_SEED", "false") == "true",
 		},
 		Database: DatabaseConfig{

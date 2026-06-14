@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
 
 // AuthService interface - contract cho authentication.
 type AuthService interface {
@@ -49,29 +49,23 @@ func (au *authService) Logout(tokenString string, remainingTime time.Duration, r
 	}
 	ctx := context.Background()
 
-	// Blacklist access token.
+	// 1. Blacklist access token.
 	if err := au.rdb.Set(ctx, "blacklist:"+tokenString, "true", remainingTime).Err(); err != nil {
-		return err
+		utils.Error("Failed to blacklist token: %v", err)
+		return fmt.Errorf("failed to blacklist token: %w", err)
 	}
 
-	var userID uint
+	// 2. Xóa refresh token CHỈ KHI refresh token hợp lệ (đã được verify).
+	// Không dùng ParseUnverified fallback vì có thể bị exploit với unverified claims.
 	if refreshToken != "" {
 		claims, err := utils.ValidateToken(refreshToken, au.jwtCfg.SecretKey)
 		if err == nil && claims.TokenType == "refresh" {
-			userID = claims.UserID
+			key := fmt.Sprintf("refresh_token:%d", claims.UserID)
+			if delErr := au.rdb.Del(ctx, key).Err(); delErr != nil {
+				utils.Warn("Failed to delete refresh token for user %d: %v", claims.UserID, delErr)
+				// Không thất bại logout chỉ vì cleanup refresh token lỗi
+			}
 		}
-	}
-
-	if userID == 0 && tokenString != "" {
-		claims := &model.Claims{}
-		token, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-		if err == nil && token != nil {
-			userID = claims.UserID
-		}
-	}
-
-	if userID != 0 {
-		_ = au.rdb.Del(ctx, fmt.Sprintf("refresh_token:%d", userID)).Err()
 	}
 
 	return nil

@@ -1,0 +1,355 @@
+name: 🚀 CI/CD Pipeline - Build & Deploy
+
+on:
+   push:
+      branches: [main, develop, staging]
+   pull_request:
+      branches: [main, develop]
+
+env:
+   REGISTRY: ghcr.io
+   IMAGE_NAME_BACKEND: ${{ github.repository }}/hrm-backend
+   IMAGE_NAME_FRONTEND: ${{ github.repository }}/hrm-frontend
+
+jobs:
+   # ============================================================================
+   # Stage 1: LINT & TEST (Linting & Unit Tests)
+   # ============================================================================
+   lint-and-test:
+      name: Lint & Test Backend
+      runs-on: ubuntu-latest
+      steps:
+         - name: 📥 Checkout code
+           uses: actions/checkout@v4
+
+         - name: 🔧 Setup Go
+           uses: actions/setup-go@v4
+           with:
+              go-version: "1.26"
+
+         - name: 📦 Download Go modules
+           run: |
+              cd backend
+              go mod download
+              go mod verify
+
+         - name: 🔍 Run linting (golangci-lint)
+           uses: golangci/golangci-lint-action@v3
+           with:
+              version: latest
+              working-directory: backend
+
+         - name: 🧪 Run unit tests
+           run: |
+              cd backend
+              go test -v -race -coverprofile=coverage.out ./...
+
+         - name: 📊 Upload coverage to Codecov
+           uses: codecov/codecov-action@v3
+           with:
+              files: ./backend/coverage.out
+              flags: unittests
+              name: codecov-umbrella
+
+   # ============================================================================
+   # Stage 2: BUILD & SCAN (Build Docker Images & Security Scan)
+   # ============================================================================
+   build-backend:
+      name: Build Backend Image
+      runs-on: ubuntu-latest
+      needs: lint-and-test
+      if: github.event_name == 'push' # Chỉ build khi push, không PR
+      permissions:
+         contents: read
+         packages: write
+
+      steps:
+         - name: 📥 Checkout code
+           uses: actions/checkout@v4
+
+         - name: 🔐 Log in to Container Registry
+           uses: docker/login-action@v2
+           with:
+              registry: ${{ env.REGISTRY }}
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+         - name: 📝 Extract metadata
+           id: meta
+           uses: docker/metadata-action@v4
+           with:
+              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+              tags: |
+                 type=ref,event=branch
+                 type=semver,pattern={{version}}
+                 type=semver,pattern={{major}}.{{minor}}
+                 type=sha,prefix={{branch}}-
+
+         - name: 🐳 Build & Push Backend Image
+           uses: docker/build-push-action@v4
+           with:
+              context: ./backend
+              push: true
+              tags: ${{ steps.meta.outputs.tags }}
+              labels: ${{ steps.meta.outputs.labels }}
+              cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
+              cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+
+         - name: 🔒 Security Scan - Trivy
+           uses: aquasecurity/trivy-action@master
+           with:
+              image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+              format: sarif
+              output: trivy-backend.sarif
+              severity: "HIGH,CRITICAL"
+
+         - name: 📤 Upload Trivy results
+           uses: github/codeql-action/upload-sarif@v2
+           with:
+              sarif_file: trivy-backend.sarif
+
+   build-frontend:
+      name: Build Frontend Image
+      runs-on: ubuntu-latest
+      needs: lint-and-test
+      if: github.event_name == 'push'
+      permissions:
+         contents: read
+         packages: write
+
+      steps:
+         - name: 📥 Checkout code
+           uses: actions/checkout@v4
+
+         - name: 🔐 Log in to Container Registry
+           uses: docker/login-action@v2
+           with:
+              registry: ${{ env.REGISTRY }}
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+
+         - name: 📝 Extract metadata
+           id: meta
+           uses: docker/metadata-action@v4
+           with:
+              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+              tags: |
+                 type=ref,event=branch
+                 type=semver,pattern={{version}}
+                 type=sha,prefix={{branch}}-
+
+         - name: 🐳 Build & Push Frontend Image
+           uses: docker/build-push-action@v4
+           with:
+              context: ./frontend
+              push: true
+              tags: ${{ steps.meta.outputs.tags }}
+              labels: ${{ steps.meta.outputs.labels }}
+
+   # ============================================================================
+   # Stage 3: DEPLOY (Deploy to Staging/Production)
+   # ============================================================================
+   deploy-staging:
+      name: 🌐 Deploy to Staging
+      runs-on: ubuntu-latest
+      needs: [build-backend, build-frontend]
+      if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+      environment:
+         name: staging
+         url: https://staging.example.com
+
+      steps:
+         - name: 📥 Checkout code
+           uses: actions/checkout@v4
+
+         - name: 🚀 Deploy to Staging Server
+           run: |
+              echo "Deploying to Staging..."
+
+              # SSH vào server staging
+              mkdir -p ~/.ssh
+              echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key
+              chmod 600 ~/.ssh/staging_key
+
+              ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no \
+                ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+                cd /app/hrm
+                
+                # Pull latest images
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:staging
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:staging
+                
+                # Deploy
+                docker-compose -f docker-compose.staging.yml up -d
+                
+                # Health check
+                sleep 5
+                curl -f http://localhost:8080/health || exit 1
+              EOF
+
+         - name: 🧪 Smoke Tests - Staging
+           run: |
+              echo "Running smoke tests..."
+
+              # Tunggu hingga server siap
+              for i in {1..30}; do
+                if curl -f https://staging.example.com/health; then
+                  echo "✅ Staging is healthy"
+                  exit 0
+                fi
+                echo "Waiting... ($i/30)"
+                sleep 2
+              done
+              echo "❌ Health check failed"
+              exit 1
+
+   deploy-production:
+      name: 🎯 Deploy to Production
+      runs-on: ubuntu-latest
+      needs: [build-backend, build-frontend]
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      environment:
+         name: production
+         url: https://api.example.com
+      concurrency:
+         group: production
+         cancel-in-progress: false
+
+      steps:
+         - name: 📥 Checkout code
+           uses: actions/checkout@v4
+
+         - name: 📢 Slack Notification - Deployment Starting
+           uses: slackapi/slack-github-action@v1.24.0
+           with:
+              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+              payload: |
+                 {
+                   "text": "🚀 Production Deployment Starting",
+                   "blocks": [
+                     {
+                       "type": "section",
+                       "text": {
+                         "type": "mrkdwn",
+                         "text": "*Deployment Started*\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}"
+                       }
+                     }
+                   ]
+                 }
+
+         - name: 🚀 Deploy to Production Server
+           run: |
+              echo "🎯 Deploying to Production..."
+
+              mkdir -p ~/.ssh
+              echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/prod_key
+              chmod 600 ~/.ssh/prod_key
+
+              ssh -i ~/.ssh/prod_key -o StrictHostKeyChecking=no \
+                ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} << 'EOF'
+                cd /app/hrm
+                
+                # Backup current state
+                docker-compose -f docker-compose.prod.yml ps > /tmp/deployment_backup_$(date +%s).log
+                
+                # Pull latest images
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:main
+                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:main
+                
+                # Graceful deployment
+                docker-compose -f docker-compose.prod.yml up -d
+                
+                # Health check
+                sleep 10
+                curl -f https://localhost:8443/health || exit 1
+              EOF
+
+         - name: 🧪 Smoke Tests - Production
+           run: |
+              echo "Running production smoke tests..."
+
+              for i in {1..60}; do
+                if curl -f https://api.example.com/health; then
+                  echo "✅ Production is healthy"
+                  exit 0
+                fi
+                echo "Waiting... ($i/60)"
+                sleep 2
+              done
+              echo "❌ Production health check failed"
+              exit 1
+
+         - name: 📊 Notify Monitoring
+           run: |
+              # Notify monitoring system (DataDog, NewRelic, etc.)
+              curl -X POST https://api.datadoghq.com/api/v1/events \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "title": "HR Management System - Production Deployment",
+                  "text": "Version ${{ github.sha }} deployed to production",
+                  "priority": "low",
+                  "tags": ["deployment", "production", "hrm"]
+                }' \
+                -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
+
+         - name: 📢 Slack Notification - Deployment Success
+           if: success()
+           uses: slackapi/slack-github-action@v1.24.0
+           with:
+              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+              payload: |
+                 {
+                   "text": "✅ Production Deployment Successful",
+                   "blocks": [
+                     {
+                       "type": "section",
+                       "text": {
+                         "type": "mrkdwn",
+                         "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: $(date)"
+                       }
+                     }
+                   ]
+                 }
+
+         - name: 📢 Slack Notification - Deployment Failed
+           if: failure()
+           uses: slackapi/slack-github-action@v1.24.0
+           with:
+              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+              payload: |
+                 {
+                   "text": "❌ Production Deployment Failed",
+                   "blocks": [
+                     {
+                       "type": "section",
+                       "text": {
+                         "type": "mrkdwn",
+                         "text": "*❌ Deployment Failed*\nVersion: ${{ github.sha }}\nAuthor: ${{ github.actor }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                       }
+                     }
+                   ]
+                 }
+
+   # ============================================================================
+   # Stage 4: CLEANUP & REPORTING
+   # ============================================================================
+   cleanup:
+      name: 🧹 Cleanup & Reporting
+      runs-on: ubuntu-latest
+      needs: [lint-and-test, build-backend, build-frontend]
+      if: always()
+
+      steps:
+         - name: 📊 Report Status
+           run: |
+              echo "Build Status: ${{ job.status }}"
+              echo "Workflow completed at $(date)"
+
+         - name: 📤 Generate Report
+           run: |
+              echo "# CI/CD Pipeline Report" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "- Build Status: **${{ job.status }}**" >> $GITHUB_STEP_SUMMARY
+              echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+              echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+              echo "- Timestamp: $(date)" >> $GITHUB_STEP_SUMMARY

@@ -69,62 +69,55 @@ func SetupRouter(
 	protected.Use(middleware.AuthJWT(&cfg.JWT, rdb))
 
 	// ── Dashboard (/dashboard) ──────────────────────────────────────────
-	// Thống kê tổng quan hệ thống
+	// Thống kê tổng quan hệ thống — cache 1 giờ (hit rate cao, key cố định)
 	dashboard := protected.Group("/dashboard")
 	{
-		// GET /dashboard/stats — Lấy thống kê (tất cả role)
-		dashboard.GET("/stats", dashB.GetStats)
+		// GET /dashboard/stats — Lấy thống kê (tất cả role), cache 1 giờ
+		dashboard.GET("/stats",
+			middleware.CacheResponse(rdb, 1*time.Hour),
+			dashB.GetStats,
+		)
 	}
 
 	// ── Employees (/employees) ──────────────────────────────────────────
 	// Quản lý nhân viên: CRUD + phân quyền
 	employees := protected.Group("/employees")
 	{
-		// GET /employees     — Danh sách nhân viên (tất cả role, có cache 15 phút)
+		// GET /employees — Danh sách nhân viên (tất cả role, không cache — DB đủ nhanh)
 		employees.GET("",
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			empHandler.GetEmployees,
 		)
 
-		// GET /employees/:id — Chi tiết nhân viên (tất cả role, có cache 15 phút)
+		// GET /employees/:id — Chi tiết nhân viên (tất cả role, không cache)
 		employees.GET("/:id",
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			empHandler.GetEmployee,
 		)
 
-		// POST /employees    — Tạo nhân viên mới (admin, hr)
+		// POST /employees — Tạo nhân viên mới (admin, hr)
 		employees.POST("",
 			middleware.RequireRole("admin", "hr"),
-			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.CreateEmployee,
 		)
 
 		// PUT /employees/:id — Cập nhật nhân viên đầy đủ (admin, hr)
 		employees.PUT("/:id",
 			middleware.RequireRole("admin", "hr"),
-			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.UpdateEmployee,
 		)
 
 		// PATCH /employees/:id — Cập nhật nhân viên (admin, hr)
 		employees.PATCH("/:id",
 			middleware.RequireRole("admin", "hr"),
-			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.UpdateEmployee,
 		)
 
 		// DELETE /employees/:id — Xóa nhân viên (chỉ admin)
 		employees.DELETE("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/employees*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.DeleteEmployee,
 		)
 	}
@@ -133,52 +126,49 @@ func SetupRouter(
 	// Quản lý tài khoản: chỉ admin được phép truy cập
 	users := protected.Group("/users")
 	{
-		// GET /users           — Danh sách tài khoản (admin, có cache 15 phút)
+		// GET /users — Danh sách tài khoản (admin, không cache)
 		users.GET("",
 			middleware.RequireRole("admin"),
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			userHandler.GetUsers,
 		)
 
-		// GET /users/available — Tài khoản chưa liên kết nhân viên (admin, có cache 15 phút)
+		// GET /users/available — Tài khoản chưa liên kết nhân viên (admin, không cache)
 		users.GET("/available",
 			middleware.RequireRole("admin"),
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			userHandler.GetUsersWithoutEmployee,
 		)
 
-		// GET /users/:id      — Chi tiết tài khoản (admin, có cache 15 phút)
+		// GET /users/:id — Chi tiết tài khoản (admin, không cache)
 		users.GET("/:id",
 			middleware.RequireRole("admin"),
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			userHandler.GetUser,
 		)
 
-		// POST /users         — Tạo tài khoản mới (admin)
+		// POST /users — Tạo tài khoản mới (admin)
 		users.POST("",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.CreateUser,
 		)
 
-		// PUT /users/:id      — Cập nhật tài khoản đầy đủ (admin)
+		// PUT /users/:id — Cập nhật tài khoản đầy đủ (admin)
 		users.PUT("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.UpdateUser,
 		)
 
-		// PATCH /users/:id      — Cập nhật tài khoản (admin)
+		// PATCH /users/:id — Cập nhật tài khoản (admin)
 		users.PATCH("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.UpdateUser,
 		)
 
-		// DELETE /users/:id   — Xóa tài khoản (admin)
+		// DELETE /users/:id — Xóa tài khoản (admin)
 		users.DELETE("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/users*"),
+			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.DeleteUser,
 		)
 	}
@@ -187,43 +177,41 @@ func SetupRouter(
 	// Quản lý phòng ban: đọc tất cả role, ghi chỉ admin
 	departments := protected.Group("/departments")
 	{
-		// GET /departments     — Danh sách phòng ban (tất cả role, có cache 15 phút)
+		// GET /departments — Danh sách phòng ban (tất cả role, không cache)
 		departments.GET("",
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			deptHandler.GetDepartments,
 		)
 
-		// GET /departments/:id — Chi tiết phòng ban (tất cả role, có cache 15 phút)
+		// GET /departments/:id — Chi tiết phòng ban (tất cả role, không cache)
 		departments.GET("/:id",
-			middleware.CacheResponse(rdb, 15*time.Minute),
 			deptHandler.GetDepartment,
 		)
 
-		// POST /departments    — Tạo phòng ban mới (chỉ admin)
+		// POST /departments — Tạo phòng ban mới (chỉ admin)
 		departments.POST("",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.CreateDepartment,
 		)
 
 		// PUT /departments/:id — Cập nhật phòng ban đầy đủ (chỉ admin)
 		departments.PUT("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.UpdateDepartment,
 		)
 
 		// PATCH /departments/:id — Cập nhật phòng ban (chỉ admin)
 		departments.PATCH("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.UpdateDepartment,
 		)
 
 		// DELETE /departments/:id — Xóa phòng ban (chỉ admin)
 		departments.DELETE("/:id",
 			middleware.RequireRole("admin"),
-			middleware.ClearCache(rdb, "cache:/api/v1/departments*"),
+			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.DeleteDepartment,
 		)
 	}

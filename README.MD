@@ -1,11 +1,14 @@
 # Hệ Thống Quản Lý Nhân Sự (HR Management System)
 
-[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Quocdev03/HR_Management)
 ![Go Version](https://img.shields.io/badge/Go-1.26.2+-00ADD8?logo=go)
 ![Vue Version](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vuedotjs)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) được xây dựng với Backend bằng Go và Frontend bằng Vue.js 3. Hệ thống này cung cấp các chức năng cốt lõi để quản lý nhân viên, phòng ban và tài khoản người dùng cùng với phân quyền truy cập.
+
+> 📖 **Hướng dẫn Setup:** Xem [GETTING_STARTED.md](/docs/GETTING_STARTED.md)
+
+---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
@@ -19,33 +22,19 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 
 ### Backend (Go)
 
-- **RESTful API:** Xây dựng với web framework Gin.
-- **ORM:** Tương tác cơ sở dữ liệu hiệu quả bằng GORM.
-- **Database:** Hỗ trợ MySQL.
-- **Xác Thực (Authentication):** Xác thực an toàn dựa trên JWT (JSON Web Token) với cơ chế **Refresh Token** (token rotation) — Access Token ngắn hạn, Refresh Token dài hạn lưu trong Redis.
-- **Token Blacklist:** Access token bị vô hiệu hoá sau đăng xuất và lưu vào Redis với TTL bằng thời gian hết hạn còn lại — tự động dọn dẹp, không lưu vĩnh viễn.
-- **Phân Quyền (Authorization):** Middleware Phân Quyền Dựa Trên Vai Trò (RBAC) để bảo vệ các API (`admin`, `hr`, `employee`).
-- **PUT/PATCH Update Endpoints:** Hỗ trợ cả `PUT` và `PATCH` cho cập nhật nhân viên, phòng ban và người dùng, với logic đồng bộ trạng thái và xóa cache Redis khi có thay đổi.
-- **Bộ Nhớ Đệm (Caching) & Giới Hạn Request (Rate Limiting):** Sử dụng Redis để lưu cache các API GET và giới hạn số lượt đăng nhập.
-- **Kiến Trúc Tầng (Layered Architecture):** Tuân thủ mô hình chuẩn Handler -> Service -> Repository.
-- **Cấu Hình:** Cấu hình theo môi trường sử dụng file `.env`.
-- **Container Hóa (Containerization):** Toàn bộ các dịch vụ (API, MySQL, Redis) được đóng gói bằng Docker và `docker-compose`.
-- **Quản Lý Cơ Sở Dữ Liệu:** Bao gồm các script để khởi tạo, migration và chèn dữ liệu mẫu (seeding).
-- **Graceful Shutdown:** Server xử lý các tín hiệu tắt một cách an toàn, đảm bảo các yêu cầu đang thực thi được hoàn tất trước khi dừng hẳn.
+- **RESTful API:** Xây dựng với Gin, GORM ORM cho tương tác MySQL hiệu quả.
+- **Xác Thực JWT:** Refresh Token rotation + Token Blacklist lưu Redis với TTL tự động dọn dẹp.
+- **Phân Quyền (RBAC):** Role-based access control cho `admin`, `hr`, `employee` roles.
+- **Caching & Rate Limiting:** Redis caching cho GET endpoints + rate limiting login.
+- **Docker & Environment Config:** Multi-environment support với `.env`, dịch vụ containerize hoàn toàn.
 
 ### Frontend (Vue.js)
 
-- **Framework Hiện Đại:** Xây dựng bằng Vue 3 sử dụng Composition API.
-- **Công Cụ Build:** Phát triển cực nhanh và tối ưu hóa file build bằng Vite.
-- **Quản Lý Trạng Thái (State Management):** Quản lý trạng thái tập trung với Pinia.
-- **Định Tuyến (Routing):** Xử lý định tuyến SPA bằng Vue Router, bao gồm các route bảo mật và điều hướng theo vai trò.
-- **Giao Diện CRUD:** Giao diện người dùng trực quan để quản lý Nhân Viên, Phòng Ban và Người Dùng.
-- **Bảng Điều Khiển (Dashboard):** Bảng thống kê tập trung hiển thị các thông số chính của hệ thống.
-- **HTTP Client:** Giao tiếp API qua instance Axios đã được cấu hình sẵn với các interceptor để quản lý token và xử lý lỗi.
-- **Silent Refresh:** Khi Access Token hết hạn (401), Axios interceptor tự động gọi `/auth/refresh`, xếp hàng các request đang chờ và retry tất cả sau khi có token mới — minh bạch với người dùng.
-- **API Interceptor Refactor:** Đã tối ưu logic xử lý token refresh, tách helper (`processQueue`, `clearAuthData`), áp dụng `async/await` và chuẩn hoá code theo JavaScript Style Guide.
-- **Giao Diện Đáp Ứng (Responsive UI):** Thiết kế hiển thị tốt trên nhiều kích thước màn hình.
-- **Thành Phần UI Hiện Đại:** Bao gồm các component dùng lại như modal, hộp thoại xác nhận và skeleton loader giúp cải thiện trải nghiệm người dùng.
+- **Vue 3 + Composition API:** Framework hiện đại với Vite build tool cho development cực nhanh.
+- **State Management & Routing:** Pinia quản lý trạng thái + Vue Router với role-based route guards.
+- **Giao Diện CRUD & Dashboard:** Quản lý Nhân Viên, Phòng Ban, Người Dùng + bảng thống kê tập trung.
+- **Token Management:** Axios interceptor + Silent Refresh (tự động retry 401) + Responsive UI đa kích thước.
+- **Reusable Components:** Modal, Dialog, Skeleton loader, UI components để tối ưu UX.
 
 ## 📸 Ảnh Chụp Màn Hình (Screenshots)
 
@@ -135,143 +124,19 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
 - **Bảng Điều Khiển (Dashboard - `/dashboard`)**
    - `GET /stats`: Lấy thống kê hệ thống (số lượng nhân viên, phòng ban, v.v.).
 
-## 🚀 Hướng Dẫn Cài Đặt (Getting Started)
+## 🚀 Bắt Đầu
 
-### Yêu Cầu Cài Đặt (Prerequisites)
+👉 **[Hướng dẫn setup chi tiết tại: docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**
 
-- Git
-- Docker và Docker Compose
-- Go (phiên bản 1.26.2 trở lên) - _chỉ cần khi chạy local không qua Docker_
-- Node.js (phiên bản 20 trở lên) và npm - _chỉ cần khi chạy local không qua Docker_
+**Quick 3-step (3 phút):**
 
----
-
-### 🐳 Cách 1: Chạy Nhanh Bằng Docker (Khuyên Dùng)
-
-Đây là cách nhanh nhất và đơn giản nhất để khởi động toàn bộ dự án. Bạn **không cần** cài đặt Go, Node.js hay cơ sở dữ liệu trên máy tính cá nhân của mình.
-
-1. **Khởi động Docker Desktop** trên máy tính của bạn.
-2. **Khởi chạy container** bằng cách chạy lệnh sau tại thư mục gốc của dự án:
-   ```sh
-   docker-compose up --build -d
-   ```
-3. **Kiểm tra logs**:
-   ```sh
-   docker-compose logs -f backend
-   ```
-4. **Truy cập ứng dụng**:
-   - Giao diện Web (Frontend): [http://localhost](http://localhost) (cổng 80)
-   - API Backend: [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
-
----
-
-### 💻 Cách 2: Chạy Thủ Công (Local Development)
-
-Nếu bạn muốn chạy và sửa đổi code trực tiếp trên máy của mình:
-
-#### 1. Clone Repository
-
-```sh
-git clone https://github.com/quocdev03/HR_Management.git
-cd HR_Management
+```bash
+cp .env.example .env          # Setup environment
+chmod +x scripts/generate-certs.sh && ./scripts/generate-certs.sh  # SSL
+docker-compose -f docker-compose.prod.yml up -d  # Run
 ```
 
-#### 2. Cài Đặt Backend
+**Xem thêm:**
 
-**a. Khởi Chạy Database & Cache bằng Docker**
-Lệnh này sẽ build và chạy các dịch vụ MySQL, Redis dưới nền máy host.
-
-```sh
-docker-compose up -d mysql redis
-```
-
-**b. Cấu Hình Biến Môi Trường (Environment Variables)**
-Copy file cấu hình mẫu và đặt vào thư mục `backend`:
-
-```sh
-cp .env.example backend/.env
-```
-
-Mở file `backend/.env` và cập nhật cấu hình kết nối database/redis sử dụng `localhost` thay vì tên service của Docker:
-
-```env
-APP_ENV=development
-
-# Database (MySQL) - dùng tên service của Docker
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=password123
-DB_NAME=hrm_db
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRE_HOUR=1
-REFRESH_EXPIRE_DAY=7
-
-# ... các biến khác
-
-# Redis - dùng tên service của Docker
-REDIS_HOST=redis
-REDIS_PORT=6379
-# ... các biến khác
-```
-
-> **Lưu ý:** Khi chạy backend **trong Docker container**, giá trị `DB_HOST` và `REDIS_HOST` phải là tên service Docker (`mysql`, `redis`). Khi chạy backend **trực tiếp trên máy host** (không qua Docker), dùng `localhost`.
-
-**c. Thiết Lập Cơ Sở Dữ Liệu**
-Lệnh này sẽ tạo cấu trúc bảng, chạy migration và chèn dữ liệu khởi tạo ban đầu, tài khoản mặc định (người dùng, phòng ban, v.v.).
-
-```sh
-go run backend/cmd/setup/main.go
-```
-
-**d. Chạy Server Backend**
-Bạn có thể chạy server trực tiếp bằng lệnh go hoặc dùng Makefile.
-
-```sh
-# Cách 1: Dùng Go
-go run backend/cmd/server/main.go
-
-# Cách 2: Dùng Makefile
-make run
-```
-
-API server sẽ chạy tại `http://localhost:8080`.
-
-### 3. Cài Đặt Frontend
-
-**a. Cấu Hình Biến Môi Trường**
-Tạo file `.env` trong thư mục `frontend` cho máy chủ phát triển Vite.
-
-```sh
-# Ở thư mục gốc của dự án
-echo "VITE_API_URL=http://localhost:8080/api/v1" > frontend/.env
-```
-
-**b. Cài Đặt Thư Viện (Dependencies)**
-
-```sh
-cd frontend
-npm install
-```
-
-**c. Khởi Chạy Môi Trường Phát Triển Frontend**
-
-```sh
-npm run dev
-```
-
-Ứng dụng frontend sẽ chạy tại `http://localhost:3000`.
-
-## 📜 Các Lệnh Makefile
-
-File `Makefile` cung cấp các lệnh phím tắt tiện dụng cho quá trình code.
-
-- `make docker-up`: Khởi chạy container MySQL và Redis.
-- `make docker-down`: Dừng tất cả các container đang chạy.
-- `make docker-logs`: Xem log từ container `app`.
-- `make run`: Chạy API server nội bộ.
-- `make build`: Biên dịch (build) file thực thi Go.
-- `make clean`: Xóa file build thực thi.
-- `make tidy`: Dọn dẹp và cập nhật các module Go.
+- 📖 [docs/SETUP_FOR_NEWCOMERS.md](docs/SETUP_FOR_NEWCOMERS.md) - Chi tiết từng bước
+- 🚀 [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) - Deploy production

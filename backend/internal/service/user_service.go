@@ -3,6 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"chiquoc_hocgolang/internal/utils"
 	"context"
 
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -28,13 +30,13 @@ type UserService interface {
 
 type userService struct {
 	userRepo repository.UserRepository
-	cacheSvc CacheService
+	rdb      *redis.Client
 }
 
-func NewUserService(userRepo repository.UserRepository, cacheSvc CacheService) UserService {
+func NewUserService(userRepo repository.UserRepository, rdb *redis.Client) UserService {
 	return &userService{
 		userRepo: userRepo,
-		cacheSvc: cacheSvc,
+		rdb:      rdb,
 	}
 }
 
@@ -77,7 +79,7 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	}
 
 	// Invalidate dashboard stats cache
-	_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
 
 	return us.userRepo.FindByID(user.ID)
 }
@@ -205,7 +207,7 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	}
 
 	// Invalidate dashboard stats cache
-	_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
 
 	return us.userRepo.FindByID(id)
 }
@@ -225,7 +227,7 @@ func (us *userService) DeleteUser(id uint) error {
 	err := us.userRepo.Delete(id)
 	if err == nil {
 		// Invalidate dashboard stats cache
-		_ = us.cacheSvc.Delete(context.Background(), "dashboard:stats")
+		_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
 	}
 	return err
 }

@@ -103,3 +103,45 @@ func ClearCache(rdb *redis.Client, pattern string) gin.HandlerFunc {
 		}
 	}
 }
+
+// ClearMultipleCaches là middleware gộp nhiều cache pattern invalidation thành 1 call.
+// Thay thế cho việc chồng nhiều ClearCache() middleware trong router.
+// Chỉ xóa cache sau khi handler trả về HTTP 2xx thành công.
+func ClearMultipleCaches(rdb *redis.Client, patterns ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// Cho phép handler chạy trước
+		ctx.Next()
+
+		// Chỉ xóa cache khi thành công (2xx)
+		status := ctx.Writer.Status()
+		if status < http.StatusOK || status >= http.StatusMultipleChoices {
+			return
+		}
+
+		redisCtx := ctx.Request.Context()
+		for _, pattern := range patterns {
+			var cursor uint64
+			for {
+				keys, nextCursor, err := rdb.Scan(redisCtx, cursor, pattern, 100).Result()
+				if err != nil {
+					utils.Error("Lỗi khi scan cache pattern %s: %v", pattern, err)
+					break
+				}
+
+				if len(keys) > 0 {
+					if err = rdb.Del(redisCtx, keys...).Err(); err != nil {
+						utils.Error("Lỗi khi xoá cache keys cho pattern %s: %v", pattern, err)
+					} else {
+						utils.Info("Đã xoá %d key cache cho pattern: %s", len(keys), pattern)
+					}
+				}
+
+				cursor = nextCursor
+				if cursor == 0 {
+					break
+				}
+			}
+		}
+	}
+}
+

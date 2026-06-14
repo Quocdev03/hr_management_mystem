@@ -4,6 +4,7 @@ import (
 	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"chiquoc_hocgolang/internal/utils"
 	"context"
 
 	"errors"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -31,16 +33,16 @@ type employeeService struct {
 	empRepo  repository.EmployeeRepository
 	deptRepo repository.DepartmentRepository
 	userRepo repository.UserRepository
-	cacheSvc CacheService
+	rdb      *redis.Client
 }
 
-func NewEmployeeService(db *gorm.DB, empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository, cacheSvc CacheService) EmployeeService {
+func NewEmployeeService(db *gorm.DB, empRepo repository.EmployeeRepository, deptRepo repository.DepartmentRepository, userRepo repository.UserRepository, rdb *redis.Client) EmployeeService {
 	return &employeeService{
 		db:       db,
 		empRepo:  empRepo,
 		deptRepo: deptRepo,
 		userRepo: userRepo,
-		cacheSvc: cacheSvc,
+		rdb:      rdb,
 	}
 }
 
@@ -147,7 +149,7 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	}
 
 	// Invalidate dashboard stats cache
-	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
 
 	return es.empRepo.FindByID(emp.ID)
 }
@@ -317,7 +319,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 	}
 
 	// Invalidate dashboard stats cache
-	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
 
 	return result, nil
 }
@@ -358,7 +360,7 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 		return err
 	}
 	// Invalidate dashboard stats cache
-	_ = es.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
 
 	return nil
 }

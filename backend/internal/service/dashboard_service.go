@@ -5,8 +5,11 @@ import (
 	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/utils"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type DashboardService interface {
@@ -15,28 +18,32 @@ type DashboardService interface {
 
 type dashboardService struct {
 	dashRepo repository.DashboardsRepository
-	cacheSvc CacheService
+	rdb      *redis.Client
 }
 
-func NewDashboardService(dashRepo repository.DashboardsRepository, cacheSvc CacheService) DashboardService {
+func NewDashboardService(dashRepo repository.DashboardsRepository, rdb *redis.Client) DashboardService {
 	return &dashboardService{
 		dashRepo: dashRepo,
-		cacheSvc: cacheSvc,
+		rdb:      rdb,
 	}
 }
 
 func (s *dashboardService) GetStats() (*model.Dashboards, error) {
 	ctx := context.Background()
-	var stats model.Dashboards
+	const cacheKey = "dashboard:stats"
 
 	// Thử lấy dữ liệu từ Redis cache
-	err := s.cacheSvc.Get(ctx, "dashboard:stats", &stats)
-	if err == nil {
-		utils.Info("Lấy dữ liệu dashboard từ Redis cache thành công!")
-		return &stats, nil
+	if s.rdb != nil {
+		val, err := s.rdb.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var stats model.Dashboards
+			if jsonErr := json.Unmarshal([]byte(val), &stats); jsonErr == nil {
+				utils.Info("Lấy dữ liệu dashboard từ Redis cache thành công!")
+				return &stats, nil
+			}
+		}
+		utils.Info("Cache miss hoặc Redis lỗi (%v). Tiến hành lấy dữ liệu từ MySQL database...", err)
 	}
-
-	utils.Info("Cache miss hoặc Redis lỗi (%v). Tiến hành lấy dữ liệu từ MySQL database...", err)
 
 	// Lấy dữ liệu trực tiếp từ database
 	totalUsers, err := s.dashRepo.CountUser()
@@ -72,8 +79,17 @@ func (s *dashboardService) GetStats() (*model.Dashboards, error) {
 		DepartmentStats:      deptStats,
 	}
 
-	// Lưu kết quả vào Redis cache, đặt TTL là 1 giờ. Bỏ qua lỗi nếu lưu cache thất bại.
-	_ = s.cacheSvc.Set(ctx, "dashboard:stats", dbStats, 1*time.Hour)
+	// Lưu kết quả vào Redis cache, TTL 1 giờ. Bỏ qua lỗi nếu Redis không khả dụng.
+	if s.rdb != nil {
+		bytes, marshalErr := json.Marshal(dbStats)
+		if marshalErr == nil {
+			if setErr := s.rdb.Set(ctx, cacheKey, bytes, time.Hour).Err(); setErr != nil {
+				utils.Error("Không thể lưu dashboard cache: %v", setErr)
+			}
+		} else {
+			utils.Error("Không thể marshal dashboard stats: %v", marshalErr)
+		}
+	}
 
 	return dbStats, nil
 }

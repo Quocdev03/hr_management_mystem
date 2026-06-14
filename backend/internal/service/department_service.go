@@ -3,6 +3,7 @@ package service
 import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
+	"chiquoc_hocgolang/internal/utils"
 	"context"
 
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -28,15 +30,15 @@ type departmentService struct {
 	db       *gorm.DB
 	deptRepo repository.DepartmentRepository
 	empRepo  repository.EmployeeRepository
-	cacheSvc CacheService
+	rdb      *redis.Client
 }
 
-func NewDepartmentService(db *gorm.DB, deptRepo repository.DepartmentRepository, empRepo repository.EmployeeRepository, cacheSvc CacheService) DepartmentService {
+func NewDepartmentService(db *gorm.DB, deptRepo repository.DepartmentRepository, empRepo repository.EmployeeRepository, rdb *redis.Client) DepartmentService {
 	return &departmentService{
 		db:       db,
 		deptRepo: deptRepo,
 		empRepo:  empRepo,
-		cacheSvc: cacheSvc,
+		rdb:      rdb,
 	}
 }
 
@@ -79,7 +81,7 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	}
 
 	// Invalidate dashboard stats cache
-	_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
 
 	return dept, nil
 }
@@ -220,7 +222,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 	}
 
 	// Invalidate dashboard stats cache
-	_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
+	_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
 
 	return updatedDept, nil
 }
@@ -266,7 +268,7 @@ func (ds *departmentService) DeleteDepartment(id uint) error {
 
 	if err == nil {
 		// Invalidate dashboard stats cache
-		_ = ds.cacheSvc.Delete(context.Background(), "dashboard:stats")
+		_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
 	}
 
 	return err

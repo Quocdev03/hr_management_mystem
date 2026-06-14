@@ -31,8 +31,7 @@ func main() {
 	fmt.Printf("[REDIS-info] Địa chỉ         : %s:%s (DB: %d)\n", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
 	fmt.Printf("[REDIS-info] Dashboard cache  : TTL 1 giờ  | Key: dashboard:stats\n")
 	fmt.Printf("[REDIS-info] Login rate limit  : 5 lượt / 1 phút / IP\n")
-	fmt.Printf("[REDIS-info] API GET Cache     : TTL 15 phút | Key: cache:{URL}\n")
-	fmt.Printf("[REDIS-info] API Invalidation  : Xóa tự động khi POST/PUT/DELETE\n")
+	fmt.Printf("[REDIS-info] Token blacklist   : TTL theo token | Key: blacklist:{token}\n")
 
 	// Kết nối các layer của
 	// Handler -> Service -> Repository
@@ -44,12 +43,11 @@ func main() {
 	dashRepo := repository.NewDashboardsRepository(db)
 
 	// Services - chứa business logic
-	cacheSvc := service.NewCacheService(rdb)
 	authScv := service.NewAuthService(userRepo, empRepo, &cfg.JWT, rdb)
-	userScv := service.NewUserService(userRepo, cacheSvc)
-	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, cacheSvc)
-	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, cacheSvc)
-	dashScv := service.NewDashboardService(dashRepo, cacheSvc)
+	userScv := service.NewUserService(userRepo, rdb)
+	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, rdb)
+	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, rdb)
+	dashScv := service.NewDashboardService(dashRepo, rdb)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
 	authHandler := handler.NewAuthHandler(authScv)

@@ -1,8 +1,0 @@
-- [ ] Remove unused imports in `EmployeeView.vue`.
-- [ ] Delete empty or redundant CSS selectors (e.g., stray `.btn-icon--detail:hover` block).
-- [ ] Consolidate icon hover styles into a single rule.
-- [ ] Refactor `EmployeeView.vue` template: extract detail modal, add/edit modal, and table into separate components.
-- [ ] Simplify gender display logic using a computed property.
-- [ ] Remove any commented-out or dead HTML sections.
-- [ ] Run lint and format scripts; ensure no lint errors.
-- [ ] Verify build passes (`npm run build`).

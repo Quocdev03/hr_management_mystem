@@ -1,19 +1,18 @@
 # 📚 Cấu Trúc Tài Liệu Project
 
-**Sau khi sắp xếp lại - Chỉ 6 file MD chính**
+**4 file MD chính** — gọn gàng, đủ dùng
 
 ---
 
 ## 📋 Các File MD
 
-| File                          | Mục Đích                        | Khi Nào Dùng               |
-| ----------------------------- | ------------------------------- | -------------------------- |
-| **README.md**                 | Giới thiệu project + tech stack | Lần đầu tiên hiểu project  |
-| **GETTING_STARTED.md**        | Entry point + quick 3-step      | Vừa tải source về          |
-| **SETUP_FOR_NEWCOMERS.md**    | Setup chi tiết từng bước        | Muốn setup đúng cách       |
-| **DEPLOYMENT_GUIDE.md**       | Production deployment           | Chuẩn bị deploy lên server |
-| **SECURITY_FIXES_SUMMARY.md** | Bảo mật + cải thiện             | Hiểu về bảo mật project    |
-| **PRODUCTION_READINESS.md**   | Audit gốc (tham khảo)           | Hiểu vấn đề gốc            |
+| File                       | Mục Đích                        | Khi Nào Dùng               |
+| -------------------------- | ------------------------------- | -------------------------- |
+| **README.md**              | Giới thiệu + tech stack + Redis | Lần đầu tiên hiểu project   |
+| **GETTING_STARTED.md**     | Entry point + quick 3-step      | Vừa tải source về          |
+| **SETUP_FOR_NEWCOMERS.md** | Setup chi tiết từng bước        | Muốn setup đúng cách       |
+| **DEPLOYMENT_GUIDE.md**    | Production deployment           | Chuẩn bị deploy lên server |
+| **DOCS_STRUCTURE.md**      | Index tài liệu                  | Hiểu cấu trúc docs          |
 
 ---
 
@@ -47,30 +46,18 @@
 
 ## 📊 Thống Kê
 
-**Trước:** 11 file MD (nhiều trùng lặp)
+**Trước:** nhiều file MD (nhiều trùng lặp)
 
-- GETTING_STARTED.md
-- CHEAT_SHEET.md
-- QUICK_START.md
-- SETUP_FOR_NEWCOMERS.md
-- DOCUMENTATION_INDEX.md
-- IMPLEMENTATION_STATUS.md
-- README.md
-- DEPLOYMENT_GUIDE.md
-- SECURITY_FIXES_SUMMARY.md
-- PRODUCTION_READINESS.md
-- ... và others
+**Sau:** 4 file MD (sạch gọn, thực tế hiện tại)
 
-**Sau:** 6 file MD (sạch gọn)
-
-- README.md (giới thiệu)
+- README.md (giới thiệu + Redis strategy)
 - GETTING_STARTED.md (entry point)
 - SETUP_FOR_NEWCOMERS.md (chi tiết)
 - DEPLOYMENT_GUIDE.md (production)
-- SECURITY_FIXES_SUMMARY.md (bảo mật)
-- PRODUCTION_READINESS.md (tham khảo)
 
-**Kết quả:** -45% số file, 0% mất thông tin
+**Ghi chú:** SECURITY_FIXES_SUMMARY.md và PRODUCTION_READINESS.md chưa được tạo. Thông tin bảo mật tạm được dồn vào phần **"🗄️ Chiến Lược Redis"** trong `README.MD`.
+
+**Kết quả:** Gọn gàng, dễ maintain
 
 ---
 
@@ -217,5 +204,5 @@ Nhưng hiện tại **6 file** là đủ và sạch gọn.
 ---
 
 **Cập nhật:** 2026-06-14  
-**Phiên bản:** 1.0  
+**Phiên bản:** 1.1  
 **Trạng thái:** ✅ Hoàn chỉnh

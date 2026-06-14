@@ -89,9 +89,14 @@ Bao gồm:
 
 ### 🔐 "Tôi muốn biết về bảo mật"
 
-⏱️ **Mất 30 phút**
+⏱️ **Mất 5 phút**
 
-👉 **[Đọc: SECURITY_FIXES_SUMMARY.md](SECURITY_FIXES_SUMMARY.md)**
+👉 **Xem phần "🗄️ Chiến Lược Redis"** trong [README.md](../README.MD)
+
+Bao gồm:
+- Fix `ParseUnverified` vulnerability (JWT)
+- Caching strategy (Dashboard cache 1h, loại bỏ GET cache 95% miss rate)
+- Rate limiting và Token Blacklist
 
 ---
 
@@ -114,9 +119,8 @@ Lần 2: Hiểu chi tiết (20 phút)
 ├─ SETUP_FOR_NEWCOMERS.md
 └─ ✅ Hiểu rõ
 
-Lần 3: Nâng cao (30 phút)
-├─ README.md
-├─ SECURITY_FIXES_SUMMARY.md
+Lần 3: Nâng cao (15 phút)
+├─ README.md (Tech stack + API + Redis strategy)
 └─ ✅ Hiểu sâu
 
 Lần 4: Production (60 phút)
@@ -132,7 +136,7 @@ Lần 4: Production (60 phút)
 | ---------------------------------------------------------- | ------------------------ | --------- |
 | **[SETUP_FOR_NEWCOMERS.md](SETUP_FOR_NEWCOMERS.md)**       | Setup chi tiết từng bước | 20 min    |
 | **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**             | Deploy lên production    | 60 min    |
-| **[SECURITY_FIXES_SUMMARY.md](SECURITY_FIXES_SUMMARY.md)** | Hiểu bảo mật & cải thiện | 30 min    |
+| **[README.md](../README.MD)**                              | Tổng quan + Redis strategy | 10 min  |
 
 ---
 
@@ -170,4 +174,4 @@ docker-compose --version
 
 ---
 
-**Cập nhật:** 2026-06-14 | **Phiên bản:** 1.0 | **Trạng thái:** ✅
+**Cập nhật:** 2026-06-14 | **Phiên bản:** 1.1 | **Trạng thái:** ✅

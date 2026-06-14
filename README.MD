@@ -23,9 +23,10 @@ Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) đượ
 ### Backend (Go)
 
 - **RESTful API:** Xây dựng với Gin, GORM ORM cho tương tác MySQL hiệu quả.
-- **Xác Thực JWT:** Refresh Token rotation + Token Blacklist lưu Redis với TTL tự động dọn dẹp.
+- **Xác Thực JWT:** Refresh Token rotation + Token Blacklist lưu Redis với TTL tự động. Logout an toàn — chỉ dùng verified claims, không dùng `ParseUnverified`.
 - **Phân Quyền (RBAC):** Role-based access control cho `admin`, `hr`, `employee` roles.
-- **Caching & Rate Limiting:** Redis caching cho GET endpoints + rate limiting login.
+- **Caching thông minh:** Dashboard stats cache TTL 1h (hit rate ~99%). GET endpoints truy vấn DB trực tiếp (index tốt, <100ms). Tránh URL-based cache với 95% miss rate.
+- **Rate Limiting:** Redis rate limit login — 5 lượt/phút/IP (Fixed Window Counter).
 - **Docker & Environment Config:** Multi-environment support với `.env`, dịch vụ containerize hoàn toàn.
 
 ### Frontend (Vue.js)
@@ -122,7 +123,17 @@ API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu
    - `DELETE /:id`: Xóa người dùng (chỉ admin).
 
 - **Bảng Điều Khiển (Dashboard - `/dashboard`)**
-   - `GET /stats`: Lấy thống kê hệ thống (số lượng nhân viên, phòng ban, v.v.).
+   - `GET /stats`: Lấy thống kê hệ thống (số lượng nhân viên, phòng ban, v.v.). **Cache Redis 1h**, tự động invalidate khi dữ liệu thay đổi.
+
+## 🗄️ Chiến Lược Redis
+
+| Tính Năng             | Key Format                    | TTL       | Ghi Chú                           |
+| --------------------- | ----------------------------- | --------- | --------------------------------- |
+| Token Blacklist       | `blacklist:{token}`           | Tự động   | Bắt buộc — bảo mật logout        |
+| Rate Limit Login      | `rate_limit:login:{IP}`       | 1 phút    | Bắt buộc — chống brute-force     |
+| Refresh Token Storage | `refresh_token:{userID}`      | 7 ngày    | Bắt buộc — token rotation        |
+| Dashboard Stats Cache | `dashboard:stats`             | 1 giờ     | Tốt — hit rate ~99%, key cố định |
+| ~~GET Response Cache~~| ~~`cache:{URL+params}`~~      | ~~Đã xóa~~| Xấu — 95% cache miss rate        |
 
 ## 🚀 Bắt Đầu
 

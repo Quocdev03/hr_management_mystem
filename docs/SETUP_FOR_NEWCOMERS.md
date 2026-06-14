@@ -431,10 +431,9 @@ docker-compose -f docker-compose.prod.yml logs
 
 ## 📚 Tài Liệu Thêm
 
-1. **[QUICK_START.md](QUICK_START.md)** - Hướng dẫn nhanh (5 phút)
+1. **[GETTING_STARTED.md](GETTING_STARTED.md)** - Hướng dẫn nhanh (3 phút)
 2. **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Hướng dẫn chi tiết (production)
-3. **[SECURITY_FIXES_SUMMARY.md](SECURITY_FIXES_SUMMARY.md)** - Các cải thiện bảo mật
-4. **[README.md](README.md)** - Tổng quan project
+3. **[README.md](../README.MD)** - Tổng quan project + Chiến lược Redis
 
 ---
 

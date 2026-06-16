@@ -11,6 +11,9 @@ env:
    IMAGE_NAME_BACKEND: ${{ github.repository }}/hrm-backend
    IMAGE_NAME_FRONTEND: ${{ github.repository }}/hrm-frontend
 
+permissions:
+   contents: read
+
 jobs:
    # ============================================================================
    # Stage 1: LINT & TEST (Linting & Unit Tests)
@@ -20,12 +23,13 @@ jobs:
       runs-on: ubuntu-latest
       steps:
          - name: 📥 Checkout code
-           uses: actions/checkout@v4
+           uses: actions/checkout@v6
 
          - name: 🔧 Setup Go
-           uses: actions/setup-go@v4
+           uses: actions/setup-go@v6
            with:
               go-version: "1.26"
+              cache-dependency-path: backend/go.sum
 
          - name: 📦 Download Go modules
            run: |
@@ -34,9 +38,9 @@ jobs:
               go mod verify
 
          - name: 🔍 Run linting (golangci-lint)
-           uses: golangci/golangci-lint-action@v3
+           uses: golangci/golangci-lint-action@v9
            with:
-              version: latest
+              version: v2.12
               working-directory: backend
 
          - name: 🧪 Run unit tests
@@ -45,11 +49,12 @@ jobs:
               go test -v -race -coverprofile=coverage.out ./...
 
          - name: 📊 Upload coverage to Codecov
-           uses: codecov/codecov-action@v3
+           uses: codecov/codecov-action@v5
            with:
               files: ./backend/coverage.out
               flags: unittests
               name: codecov-umbrella
+              token: ${{ secrets.CODECOV_TOKEN }}
 
    # ============================================================================
    # Stage 2: BUILD & SCAN (Build Docker Images & Security Scan)
@@ -62,13 +67,14 @@ jobs:
       permissions:
          contents: read
          packages: write
+         security-events: write # required by codeql-action/upload-sarif
 
       steps:
          - name: 📥 Checkout code
-           uses: actions/checkout@v4
+           uses: actions/checkout@v6
 
          - name: 🔐 Log in to Container Registry
-           uses: docker/login-action@v2
+           uses: docker/login-action@v4
            with:
               registry: ${{ env.REGISTRY }}
               username: ${{ github.actor }}
@@ -76,7 +82,7 @@ jobs:
 
          - name: 📝 Extract metadata
            id: meta
-           uses: docker/metadata-action@v4
+           uses: docker/metadata-action@v6
            with:
               images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
               tags: |
@@ -85,8 +91,14 @@ jobs:
                  type=semver,pattern={{major}}.{{minor}}
                  type=sha,prefix={{branch}}-
 
+         - name: 🛠️ Set up Docker Buildx
+           uses: docker/setup-buildx-action@v3
+           # required for cache-to/cache-from with type=registry; the default
+           # "docker" driver cannot export cache, only docker-container can.
+
          - name: 🐳 Build & Push Backend Image
-           uses: docker/build-push-action@v4
+           id: build
+           uses: docker/build-push-action@v7
            with:
               context: ./backend
               push: true
@@ -96,15 +108,17 @@ jobs:
               cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
 
          - name: 🔒 Security Scan - Trivy
-           uses: aquasecurity/trivy-action@master
+           uses: aquasecurity/trivy-action@v0.36.0
            with:
-              image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+              # scan the exact image just built/pushed via its digest, not a
+              # ":latest" tag that this job never actually creates
+              image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}@${{ steps.build.outputs.digest }}
               format: sarif
               output: trivy-backend.sarif
               severity: "HIGH,CRITICAL"
 
          - name: 📤 Upload Trivy results
-           uses: github/codeql-action/upload-sarif@v2
+           uses: github/codeql-action/upload-sarif@v4
            with:
               sarif_file: trivy-backend.sarif
 
@@ -119,10 +133,10 @@ jobs:
 
       steps:
          - name: 📥 Checkout code
-           uses: actions/checkout@v4
+           uses: actions/checkout@v6
 
          - name: 🔐 Log in to Container Registry
-           uses: docker/login-action@v2
+           uses: docker/login-action@v4
            with:
               registry: ${{ env.REGISTRY }}
               username: ${{ github.actor }}
@@ -130,7 +144,7 @@ jobs:
 
          - name: 📝 Extract metadata
            id: meta
-           uses: docker/metadata-action@v4
+           uses: docker/metadata-action@v6
            with:
               images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
               tags: |
@@ -138,8 +152,11 @@ jobs:
                  type=semver,pattern={{version}}
                  type=sha,prefix={{branch}}-
 
+         - name: 🛠️ Set up Docker Buildx
+           uses: docker/setup-buildx-action@v3
+
          - name: 🐳 Build & Push Frontend Image
-           uses: docker/build-push-action@v4
+           uses: docker/build-push-action@v7
            with:
               context: ./frontend
               push: true
@@ -160,7 +177,7 @@ jobs:
 
       steps:
          - name: 📥 Checkout code
-           uses: actions/checkout@v4
+           uses: actions/checkout@v6
 
          - name: 🚀 Deploy to Staging Server
            run: |
@@ -174,14 +191,14 @@ jobs:
               ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no \
                 ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
                 cd /app/hrm
-                
+
                 # Pull latest images
                 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:staging
                 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:staging
-                
+
                 # Deploy
                 docker-compose -f docker-compose.staging.yml up -d
-                
+
                 # Health check
                 sleep 5
                 curl -f http://localhost:8080/health || exit 1
@@ -191,7 +208,6 @@ jobs:
            run: |
               echo "Running smoke tests..."
 
-              # Tunggu hingga server siap
               for i in {1..30}; do
                 if curl -f https://staging.example.com/health; then
                   echo "✅ Staging is healthy"
@@ -217,10 +233,14 @@ jobs:
 
       steps:
          - name: 📥 Checkout code
-           uses: actions/checkout@v4
+           uses: actions/checkout@v6
+
+         - name: 🕒 Compute deployment timestamp
+           id: now
+           run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
          - name: 📢 Slack Notification - Deployment Starting
-           uses: slackapi/slack-github-action@v1.24.0
+           uses: slackapi/slack-github-action@v1.27.0
            with:
               webhook-url: ${{ secrets.SLACK_WEBHOOK }}
               payload: |
@@ -248,17 +268,17 @@ jobs:
               ssh -i ~/.ssh/prod_key -o StrictHostKeyChecking=no \
                 ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} << 'EOF'
                 cd /app/hrm
-                
+
                 # Backup current state
                 docker-compose -f docker-compose.prod.yml ps > /tmp/deployment_backup_$(date +%s).log
-                
+
                 # Pull latest images
                 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:main
                 docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:main
-                
+
                 # Graceful deployment
                 docker-compose -f docker-compose.prod.yml up -d
-                
+
                 # Health check
                 sleep 10
                 curl -f https://localhost:8443/health || exit 1
@@ -294,7 +314,7 @@ jobs:
 
          - name: 📢 Slack Notification - Deployment Success
            if: success()
-           uses: slackapi/slack-github-action@v1.24.0
+           uses: slackapi/slack-github-action@v1.27.0
            with:
               webhook-url: ${{ secrets.SLACK_WEBHOOK }}
               payload: |
@@ -305,7 +325,7 @@ jobs:
                        "type": "section",
                        "text": {
                          "type": "mrkdwn",
-                         "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: $(date)"
+                         "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: ${{ steps.now.outputs.value }}"
                        }
                      }
                    ]
@@ -313,7 +333,7 @@ jobs:
 
          - name: 📢 Slack Notification - Deployment Failed
            if: failure()
-           uses: slackapi/slack-github-action@v1.24.0
+           uses: slackapi/slack-github-action@v1.27.0
            with:
               webhook-url: ${{ secrets.SLACK_WEBHOOK }}
               payload: |
@@ -342,14 +362,18 @@ jobs:
       steps:
          - name: 📊 Report Status
            run: |
-              echo "Build Status: ${{ job.status }}"
-              echo "Workflow completed at $(date)"
+              echo "Lint & Test: ${{ needs.lint-and-test.result }}"
+              echo "Build Backend: ${{ needs.build-backend.result }}"
+              echo "Build Frontend: ${{ needs.build-frontend.result }}"
+              echo "Workflow completed at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
          - name: 📤 Generate Report
            run: |
-              echo "# CI/CD Pipeline Report" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "- Build Status: **${{ job.status }}**" >> $GITHUB_STEP_SUMMARY
-              echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-              echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-              echo "- Timestamp: $(date)" >> $GITHUB_STEP_SUMMARY
+              echo "# CI/CD Pipeline Report" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Lint & Test: **${{ needs.lint-and-test.result }}**" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Build Backend: **${{ needs.build-backend.result }}**" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Build Frontend: **${{ needs.build-frontend.result }}**" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"

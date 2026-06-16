@@ -53,7 +53,7 @@ func (au *authService) Logout(tokenString string, remainingTime time.Duration, r
 
 	// 1. Blacklist access token.
 	if err := au.rdb.Set(ctx, "blacklist:"+tokenString, "true", remainingTime).Err(); err != nil {
-		utils.Error("Failed to blacklist token: %v", err)
+		utils.Error("failed to blacklist token: %v", err)
 		return fmt.Errorf("failed to blacklist token: %w", err)
 	}
 
@@ -64,7 +64,7 @@ func (au *authService) Logout(tokenString string, remainingTime time.Duration, r
 		if err == nil && claims.TokenType == "refresh" {
 			key := fmt.Sprintf("refresh_token:%d", claims.UserID)
 			if delErr := au.rdb.Del(ctx, key).Err(); delErr != nil {
-				utils.Warn("Failed to delete refresh token for user %d: %v", claims.UserID, delErr)
+				utils.Warn("failed to delete refresh token for user %d: %v", claims.UserID, delErr)
 				// Không thất bại logout chỉ vì cleanup refresh token lỗi
 			}
 		}
@@ -93,7 +93,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 
 	// Kiểm tra xem tài khoản có bị khoá không.
 	if !user.IsActive {
-		return nil, errors.New("Tài khoản đã bị vô hiệu hoá!")
+		return nil, errors.New("tài khoản đã bị vô hiệu hoá")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
@@ -139,7 +139,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		redisKey := fmt.Sprintf("refresh_token:%d", user.ID)
 		ttl := time.Duration(au.jwtCfg.RefreshExpireDay) * 24 * time.Hour
 		if err := au.rdb.Set(ctx, redisKey, refreshToken, ttl).Err(); err != nil {
-			return nil, fmt.Errorf("Không thể lưu refresh token vào cache: %w", err)
+			return nil, fmt.Errorf("không thể lưu refresh token vào cache: %w", err)
 		}
 	}
 
@@ -160,12 +160,12 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 	// 1. Validate refresh token.
 	claims, err := utils.ValidateToken(refreshTokenString, au.jwtCfg.SecretKey)
 	if err != nil {
-		return nil, fmt.Errorf("Refresh token không hợp lệ: %w", err)
+		return nil, fmt.Errorf("refresh token không hợp lệ: %w", err)
 	}
 
 	// 2. Phải đúng loại token refresh.
 	if claims.TokenType != "refresh" {
-		return nil, errors.New("Token không phải là refresh token")
+		return nil, errors.New("token không phải là refresh token")
 	}
 
 	// 3. Lấy refresh token trong Redis.
@@ -173,23 +173,23 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 	storedToken, err := au.rdb.Get(ctx, redisKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, errors.New("Refresh token đã hết hạn hoặc không tồn tại")
+			return nil, errors.New("refresh token đã hết hạn hoặc không tồn tại")
 		}
-		return nil, fmt.Errorf("Lỗi hệ thống khi kiểm tra token: %w", err)
+		return nil, fmt.Errorf("lỗi hệ thống khi kiểm tra token: %w", err)
 	}
 
 	// 4. So khớp token gửi lên với token trong Redis.
 	if storedToken != refreshTokenString {
-		return nil, errors.New("Refresh token không khớp hoặc đã bị vô hiệu hóa")
+		return nil, errors.New("refresh token không khớp hoặc đã bị vô hiệu hóa")
 	}
 
 	// 5. Tìm user để lấy thông tin mới nhất.
 	user, err := au.useRepo.FindByID(claims.UserID)
 	if err != nil {
-		return nil, errors.New("Người dùng không tồn tại hoặc đã bị xóa")
+		return nil, errors.New("người dùng không tồn tại hoặc đã bị xóa")
 	}
 	if !user.IsActive {
-		return nil, errors.New("Tài khoản người dùng đã bị khóa")
+		return nil, errors.New("tài khoản người dùng đã bị khóa")
 	}
 
 	permissions, err := au.permRepo.GetPermissionCodes(user.ID)
@@ -208,7 +208,7 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 		au.jwtCfg.ExpireHour,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Không thể tạo access token mới: %w", err)
+		return nil, fmt.Errorf("không thể tạo access token mới: %w", err)
 	}
 
 	// 7. Tạo refresh token mới (Rotation để tăng bảo mật).
@@ -221,13 +221,13 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 		au.jwtCfg.RefreshExpireDay,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Không thể tạo refresh token mới: %w", err)
+		return nil, fmt.Errorf("không thể tạo refresh token mới: %w", err)
 	}
 
 	// 8. Lưu refresh token mới vào Redis.
 	ttl := time.Duration(au.jwtCfg.RefreshExpireDay) * 24 * time.Hour
 	if err := au.rdb.Set(ctx, redisKey, newRefreshToken, ttl).Err(); err != nil {
-		return nil, fmt.Errorf("Không thể lưu refresh token mới: %w", err)
+		return nil, fmt.Errorf("không thể lưu refresh token mới: %w", err)
 	}
 
 	return &model.LoginResponse{
@@ -246,9 +246,9 @@ func (au *authService) GetProfile(id uint) (*model.Employee, error) {
 	emp, err := au.empRepo.FindByUserID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy hồ sơ nhân viên")
+			return nil, errors.New("không tìm thấy hồ sơ nhân viên")
 		}
-		return nil, errors.New("Không thể lấy thông tin hồ sơ nhân viên")
+		return nil, errors.New("không thể lấy thông tin hồ sơ nhân viên")
 	}
 
 	return emp, nil

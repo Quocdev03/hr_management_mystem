@@ -23,9 +23,9 @@ func InitRedis(cfg *RedisConfig) *redis.Client {
 
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		utils.Warn("Không thể kết nối đến Redis (%s:%s): %v. Cache sẽ tạm thời không khả dụng.", cfg.Host, cfg.Port, err)
+		utils.Warn("không thể kết nối đến Redis (%s:%s): %v. Cache sẽ tạm thời không khả dụng.", cfg.Host, cfg.Port, err)
 	} else {
-		utils.Info("Kết nối thành công đến Redis tại %s:%s!", cfg.Host, cfg.Port)
+		utils.Info("kết nối thành công đến Redis tại %s:%s!", cfg.Host, cfg.Port)
 	}
 
 	return rdb

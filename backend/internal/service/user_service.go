@@ -50,24 +50,24 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	req.Password = strings.TrimSpace(req.Password)
 
 	if req.RoleID == 0 {
-		return nil, errors.New("RoleID là bắt buộc")
+		return nil, errors.New("roleID là bắt buộc")
 	}
 
 	if existing, err := us.userRepo.FindByUsername(req.UserName); err == nil && existing != nil {
-		return nil, errors.New("Tên đăng nhập đã tồn tại")
+		return nil, errors.New("tên đăng nhập đã tồn tại")
 	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("Lỗi kiểm tra tên đăng nhập: %w", err)
+		return nil, fmt.Errorf("lỗi kiểm tra tên đăng nhập: %w", err)
 	}
 
 	if existing, err := us.userRepo.FindByEmail(req.Email); err == nil && existing != nil {
-		return nil, errors.New("Email đã tồn tại")
+		return nil, errors.New("email đã tồn tại")
 	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("Lỗi kiểm tra email: %w", err)
+		return nil, fmt.Errorf("lỗi kiểm tra email: %w", err)
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("Lỗi mã hoá mật khẩu: %w", err)
+		return nil, fmt.Errorf("lỗi mã hoá mật khẩu: %w", err)
 	}
 
 	user := &model.User{
@@ -79,7 +79,7 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	}
 
 	if err := us.userRepo.Create(user); err != nil {
-		return nil, fmt.Errorf("Tạo user không thành công: %w", err)
+		return nil, fmt.Errorf("tạo user không thành công: %w", err)
 	}
 
 	// Invalidate dashboard stats cache
@@ -101,7 +101,7 @@ func (us *userService) GetUsers(query model.PaginationQuery) (*model.PaginatedRe
 
 	users, total, err := us.userRepo.FindAll(query)
 	if err != nil {
-		return nil, fmt.Errorf("Lấy danh sách user bị lỗi: %w", err)
+		return nil, fmt.Errorf("lấy danh sách user bị lỗi: %w", err)
 	}
 
 	totalPage := int(math.Ceil(float64(total) / float64(query.Limit)))
@@ -117,13 +117,13 @@ func (us *userService) GetUsers(query model.PaginationQuery) (*model.PaginatedRe
 
 func (us *userService) GetUserByID(id uint) (*model.User, error) {
 	if id == 0 {
-		return nil, errors.New("ID user phải lớn hơn 0")
+		return nil, errors.New("id user phải lớn hơn 0")
 	}
 
 	user, err := us.userRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy user")
+			return nil, errors.New("không tìm thấy user")
 		}
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (us *userService) GetUserByID(id uint) (*model.User, error) {
 
 func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requesterID uint) (*model.User, error) {
 	if id == 0 {
-		return nil, errors.New("ID user phải lớn hơn 0")
+		return nil, errors.New("id user phải lớn hơn 0")
 	}
 
 	if req.UserName != nil {
@@ -152,7 +152,7 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	user, err := us.userRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy user")
+			return nil, errors.New("không tìm thấy user")
 		}
 		return nil, err
 	}
@@ -161,37 +161,37 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	// 1. Ngăn tự đổi quyền bản thân HOẶC đổi quyền của Admin khác.
 	if req.RoleID != nil && *req.RoleID != user.RoleID {
 		if user.RoleID == 1 || user.ID == requesterID {
-			return nil, errors.New("Không thể tự thay đổi quyền của mình hoặc của Admin khác")
+			return nil, errors.New("không thể tự thay đổi quyền của mình hoặc của Admin khác")
 		}
 	}
 
 	// 2. Ngăn tự khoá tài khoản của chính mình.
 	if user.ID == requesterID && req.IsActive != nil && !*req.IsActive {
-		return nil, errors.New("Không thể tự vô hiệu hoá tài khoản của chính mình")
+		return nil, errors.New("không thể tự vô hiệu hoá tài khoản của chính mình")
 	}
 
 	updateData := make(map[string]interface{})
 
 	if req.UserName != nil && *req.UserName != user.UserName {
 		if existing, err := us.userRepo.FindByUsername(*req.UserName); err == nil && existing != nil && existing.ID != user.ID {
-			return nil, errors.New("Tên đăng nhập đã tồn tại")
+			return nil, errors.New("tên đăng nhập đã tồn tại")
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("Lỗi kiểm tra tên đăng nhập: %w", err)
+			return nil, fmt.Errorf("lỗi kiểm tra tên đăng nhập: %w", err)
 		}
 		updateData["user_name"] = *req.UserName
 	}
 	if req.Email != nil && *req.Email != user.Email {
 		if existing, err := us.userRepo.FindByEmail(*req.Email); err == nil && existing != nil && existing.ID != user.ID {
-			return nil, errors.New("Email đã tồn tại")
+			return nil, errors.New("email đã tồn tại")
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, fmt.Errorf("Lỗi kiểm tra email: %w", err)
+			return nil, fmt.Errorf("lỗi kiểm tra email: %w", err)
 		}
 		updateData["email"] = *req.Email
 	}
 	if req.Password != nil {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
 		if err != nil {
-			return nil, fmt.Errorf("Lỗi mã hoá mật khẩu: %w", err)
+			return nil, fmt.Errorf("lỗi mã hoá mật khẩu: %w", err)
 		}
 		updateData["password"] = string(hashed)
 	}
@@ -207,7 +207,7 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	}
 
 	if err := us.userRepo.UpdateFields(id, updateData); err != nil {
-		return nil, fmt.Errorf("Cập nhật user bị lỗi: %w", err)
+		return nil, fmt.Errorf("cập nhật user bị lỗi: %w", err)
 	}
 
 	// Invalidate dashboard stats cache
@@ -218,12 +218,12 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 
 func (us *userService) DeleteUser(id uint) error {
 	if id == 0 {
-		return errors.New("ID user phải lớn hơn 0")
+		return errors.New("id user phải lớn hơn 0")
 	}
 
 	if _, err := us.userRepo.FindByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("Không tìm thấy user")
+			return errors.New("không tìm thấy user")
 		}
 		return err
 	}
@@ -239,7 +239,7 @@ func (us *userService) DeleteUser(id uint) error {
 func (us *userService) GetUsersWithoutEmployee() ([]model.User, error) {
 	users, err := us.userRepo.FindUsersWithoutEmployee()
 	if err != nil {
-		return nil, fmt.Errorf("Lấy danh sách user chưa gắn employee bị lỗi: %w", err)
+		return nil, fmt.Errorf("lấy danh sách user chưa gắn employee bị lỗi: %w", err)
 	}
 
 	return users, nil
@@ -251,23 +251,23 @@ func (us *userService) GetAvailablePermissions() ([]model.Permission, error) {
 
 func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string) ([]string, error) {
 	if id == 0 {
-		return nil, errors.New("ID user phải lớn hơn 0")
+		return nil, errors.New("id user phải lớn hơn 0")
 	}
 
 	if _, err := us.userRepo.FindByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy user")
+			return nil, errors.New("không tìm thấy user")
 		}
 		return nil, err
 	}
 
 	if err := us.permRepo.SetUserPermissions(id, permissionCodes); err != nil {
-		return nil, fmt.Errorf("Cập nhật quyền user bị lỗi: %w", err)
+		return nil, fmt.Errorf("cập nhật quyền user bị lỗi: %w", err)
 	}
 
 	codes, err := us.permRepo.GetPermissionCodes(id)
 	if err != nil {
-		return nil, fmt.Errorf("Không thể lấy quyền sau khi cập nhật: %w", err)
+		return nil, fmt.Errorf("không thể lấy quyền sau khi cập nhật: %w", err)
 	}
 	return codes, nil
 }

@@ -26,11 +26,11 @@ func parseUintParam(c *gin.Context, param string) (uint, error) {
 func ParseAndValidateID(ctx *gin.Context, entityName string) (uint, bool) {
 	id, err := parseUintParam(ctx, "id")
 	if err != nil {
-		utils.BadRequest(ctx, "ID "+entityName+" không hợp lệ, phải là số nguyên dương!")
+		utils.BadRequest(ctx, "ID "+entityName+" không hợp lệ, phải là số nguyên dương")
 		return 0, false
 	}
 	if id == 0 {
-		utils.BadRequest(ctx, "ID "+entityName+" phải lớn hơn 0!")
+		utils.BadRequest(ctx, "ID "+entityName+" phải lớn hơn 0")
 		return 0, false
 	}
 	return id, true

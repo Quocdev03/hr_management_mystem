@@ -61,10 +61,10 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	if req.JoinDate != "" {
 		parsed, err := time.Parse("2006-01-02", req.JoinDate)
 		if err != nil {
-			return nil, errors.New("Ngày vào làm không đúng định dạng, sử dụng YYYY-MM-DD")
+			return nil, errors.New("ngày vào làm không đúng định dạng, sử dụng YYYY-MM-DD")
 		}
 		if parsed.After(time.Now()) {
-			return nil, errors.New("Ngày vào làm không được là ngày trong tương lai")
+			return nil, errors.New("ngày vào làm không được là ngày trong tương lai")
 		}
 		joinDate = parsed
 	}
@@ -74,7 +74,7 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	if req.BirthDate != "" {
 		parsed, err := time.Parse("2006-01-02", req.BirthDate)
 		if err != nil {
-			return nil, errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
+			return nil, errors.New("ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
 		}
 		birthDate = &parsed
 	}
@@ -115,32 +115,32 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 			user, err := txUserRepo.FindByID(*userID)
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return errors.New("Không tìm thấy tài khoản người dùng này")
+					return errors.New("không tìm thấy tài khoản người dùng này")
 				}
-				return fmt.Errorf("Lỗi kiểm tra user: %w", err)
+				return fmt.Errorf("lỗi kiểm tra user: %w", err)
 			}
 
 			if !user.IsActive {
-				return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+				return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
 			}
 
 			existingEmp, err := txEmpRepo.FindByUserID(user.ID)
 			if err == nil && existingEmp != nil {
-				return errors.New("Tài khoản này đã được gắn cho một nhân viên khác")
+				return errors.New("tài khoản này đã được gắn cho một nhân viên khác")
 			} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("Lỗi kiểm tra user: %w", err)
+				return fmt.Errorf("lỗi kiểm tra user: %w", err)
 			}
 		}
 
 		if _, err := txDeptRepo.FindByID(req.DepartmentID); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("Không tìm thấy phòng ban này")
+				return errors.New("không tìm thấy phòng ban này")
 			}
-			return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+			return fmt.Errorf("lỗi kiểm tra phòng ban: %w", err)
 		}
 
 		if err := txEmpRepo.Create(emp); err != nil {
-			return fmt.Errorf("Tạo nhân viên không thành công: %w", err)
+			return fmt.Errorf("tạo nhân viên không thành công: %w", err)
 		}
 
 		return nil
@@ -160,7 +160,7 @@ func (es *employeeService) GetEmployees(query model.PaginationQuery) (*model.Pag
 
 	employees, total, err := es.empRepo.FindAll(query)
 	if err != nil {
-		return nil, fmt.Errorf("Lấy danh sách nhân viên bị lỗi: %w", err)
+		return nil, fmt.Errorf("lấy danh sách nhân viên bị lỗi: %w", err)
 	}
 	totalPage := int(math.Ceil(float64(total) / float64(query.Limit)))
 
@@ -175,13 +175,13 @@ func (es *employeeService) GetEmployees(query model.PaginationQuery) (*model.Pag
 
 func (es *employeeService) GetEmployeeByID(id uint) (*model.Employee, error) {
 	if id == 0 {
-		return nil, errors.New("ID nhân viên phải lớn hơn 0")
+		return nil, errors.New("id nhân viên phải lớn hơn 0")
 	}
 
 	emp, err := es.empRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy nhân viên này")
+			return nil, errors.New("không tìm thấy nhân viên này")
 		}
 		return nil, err
 	}
@@ -190,15 +190,15 @@ func (es *employeeService) GetEmployeeByID(id uint) (*model.Employee, error) {
 
 func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeRequest) (*model.Employee, error) {
 	if id == 0 {
-		return nil, errors.New("ID nhân viên phải lớn hơn 0")
+		return nil, errors.New("id nhân viên phải lớn hơn 0")
 	}
 
 	_, err := es.empRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("Không tìm thấy nhân viên này")
+			return nil, errors.New("không tìm thấy nhân viên này")
 		}
-		return nil, fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
+		return nil, fmt.Errorf("lỗi khi tìm nhân viên: %w", err)
 	}
 
 	var result *model.Employee
@@ -211,7 +211,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		// Lấy lại dữ liệu nhân viên trong transaction để tính toán trạng thái chính xác nhất
 		empTx, err := txEmpRepo.FindByID(id)
 		if err != nil {
-			return fmt.Errorf("Lỗi khi tìm nhân viên trong transaction: %w", err)
+			return fmt.Errorf("lỗi khi tìm nhân viên trong transaction: %w", err)
 		}
 
 		oldDeptID := empTx.DepartmentID
@@ -251,7 +251,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		}
 		if req.Salary != nil {
 			if *req.Salary < 0 {
-				return errors.New("Lương không được âm")
+				return errors.New("lương không được âm")
 			}
 			if *req.Salary != empTx.Salary {
 				updateData["salary"] = *req.Salary
@@ -272,7 +272,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		if req.BirthDate != nil {
 			parsed, err := time.Parse("2006-01-02", *req.BirthDate)
 			if err != nil {
-				return errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
+				return errors.New("ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
 			}
 			if empTx.BirthDate == nil || !empTx.BirthDate.Equal(parsed) {
 				updateData["birth_date"] = parsed
@@ -287,18 +287,18 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 					user, err := txUserRepo.FindByID(newUserID)
 					if err != nil {
 						if errors.Is(err, gorm.ErrRecordNotFound) {
-							return errors.New("Không tìm thấy tài khoản người dùng này")
+							return errors.New("không tìm thấy tài khoản người dùng này")
 						}
 						return err
 					}
 
 					if !user.IsActive {
-						return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+						return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
 					}
 
 					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
 					if err == nil && existingEmp.ID != id {
-						return errors.New("User đã gắn cho nhân viên khác")
+						return errors.New("user đã gắn cho nhân viên khác")
 					}
 					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 						return err
@@ -313,18 +313,18 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 					user, err := txUserRepo.FindByID(newUserID)
 					if err != nil {
 						if errors.Is(err, gorm.ErrRecordNotFound) {
-							return errors.New("Không tìm thấy tài khoản người dùng này")
+							return errors.New("không tìm thấy tài khoản người dùng này")
 						}
 						return err
 					}
 
 					if !user.IsActive {
-						return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+						return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
 					}
 
 					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
 					if err == nil && existingEmp.ID != id {
-						return errors.New("User đã gắn cho nhân viên khác")
+						return errors.New("user đã gắn cho nhân viên khác")
 					}
 					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 						return err
@@ -339,9 +339,9 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 			if *req.DepartmentID != empTx.DepartmentID {
 				if _, err := txDeptRepo.FindByID(*req.DepartmentID); err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
-						return errors.New("Không tìm thấy phòng ban này")
+						return errors.New("không tìm thấy phòng ban này")
 					}
-					return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+					return fmt.Errorf("lỗi kiểm tra phòng ban: %w", err)
 				}
 				updateData["department_id"] = *req.DepartmentID
 			}
@@ -349,18 +349,18 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 
 		if len(updateData) > 0 {
 			if err := txEmpRepo.UpdateFields(id, updateData); err != nil {
-				return fmt.Errorf("Cập nhật nhân viên thất bại: %w", err)
+				return fmt.Errorf("cập nhật nhân viên thất bại: %w", err)
 			}
 		}
 
 		updatedEmp, err := txEmpRepo.FindByID(id)
 		if err != nil {
-			return fmt.Errorf("Reload nhân viên thất bại: %w", err)
+			return fmt.Errorf("reload nhân viên thất bại: %w", err)
 		}
 
 		if deptChanged && isOldManager {
 			if err := txDeptRepo.UpdateManager(oldDeptID, nil); err != nil {
-				return fmt.Errorf("Lỗi khi gỡ trưởng phòng ở phòng cũ: %w", err)
+				return fmt.Errorf("lỗi khi gỡ trưởng phòng ở phòng cũ: %w", err)
 			}
 		}
 
@@ -378,14 +378,14 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 
 func (es *employeeService) DeleteEmployee(id uint) error {
 	if id == 0 {
-		return errors.New("ID nhân viên phải lớn hơn 0")
+		return errors.New("id nhân viên phải lớn hơn 0")
 	}
 
 	if _, err := es.empRepo.FindByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("Không tìm thấy nhân viên này!")
+			return errors.New("không tìm thấy nhân viên này!")
 		}
-		return fmt.Errorf("Lỗi khi tìm nhân viên: %w", err)
+		return fmt.Errorf("lỗi khi tìm nhân viên: %w", err)
 	}
 	err := es.db.Transaction(func(tx *gorm.DB) error {
 		txEmpRepo := es.empRepo.WithTx(tx)
@@ -395,14 +395,14 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 		if dept, err := txDeptRepo.FindByManagerID(id); err == nil {
 			// Tự động gỡ quyền trưởng phòng
 			if updateErr := txDeptRepo.UpdateManager(dept.ID, nil); updateErr != nil {
-				return fmt.Errorf("Lỗi khi gỡ quyền trưởng phòng trước khi xoá nhân viên: %w", updateErr)
+				return fmt.Errorf("lỗi khi gỡ quyền trưởng phòng trước khi xoá nhân viên: %w", updateErr)
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("Lỗi khi kiểm tra quyền trưởng phòng: %w", err)
+			return fmt.Errorf("lỗi khi kiểm tra quyền trưởng phòng: %w", err)
 		}
 
 		if err := txEmpRepo.Delete(id); err != nil {
-			return fmt.Errorf("Lỗi khi xoá nhân viên này: %w", err)
+			return fmt.Errorf("lỗi khi xoá nhân viên này: %w", err)
 		}
 
 		return nil

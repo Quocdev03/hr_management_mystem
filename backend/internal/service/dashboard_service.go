@@ -38,11 +38,11 @@ func (s *dashboardService) GetStats() (*model.Dashboards, error) {
 		if err == nil {
 			var stats model.Dashboards
 			if jsonErr := json.Unmarshal([]byte(val), &stats); jsonErr == nil {
-				utils.Info("Lấy dữ liệu dashboard từ Redis cache thành công!")
+				utils.Info("lấy dữ liệu dashboard từ Redis cache thành công")
 				return &stats, nil
 			}
 		}
-		utils.Info("Cache miss hoặc Redis lỗi (%v). Tiến hành lấy dữ liệu từ MySQL database...", err)
+		utils.Info("cache miss hoặc Redis lỗi (%v). Tiến hành lấy dữ liệu từ MySQL database...", err)
 	}
 
 	// Lấy dữ liệu trực tiếp từ database
@@ -84,10 +84,10 @@ func (s *dashboardService) GetStats() (*model.Dashboards, error) {
 		bytes, marshalErr := json.Marshal(dbStats)
 		if marshalErr == nil {
 			if setErr := s.rdb.Set(ctx, cacheKey, bytes, time.Hour).Err(); setErr != nil {
-				utils.Error("Không thể lưu dashboard cache: %v", setErr)
+				utils.Error("không thể lưu dashboard cache: %v", setErr)
 			}
 		} else {
-			utils.Error("Không thể marshal dashboard stats: %v", marshalErr)
+			utils.Error("không thể marshal dashboard stats: %v", marshalErr)
 		}
 	}
 

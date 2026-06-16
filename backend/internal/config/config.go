@@ -53,7 +53,7 @@ type RedisConfig struct {
 func Load() *Config {
 	// Chỉ load .env khi đang chạy local
 	if err := godotenv.Load(); err != nil {
-		log.Println("Không tìm thấy file .env, đang dùng biến môi trường!")
+		log.Println("không tìm thấy file .env, đang dùng biến môi trường")
 	}
 	// Chuyển string -> int vì env chỉ chứa string
 	expireHour, _ := strconv.Atoi(getEnv("JWT_EXPIRE_HOUR", "24"))

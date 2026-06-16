@@ -21,7 +21,7 @@ func CreateDatabase(cfg *DatabaseConfig) {
 		Logger: glogger.Default.LogMode(glogger.Silent),
 	})
 	if err != nil {
-		log.Fatalf("Không thể kết nối MySQL server: %v", err)
+		log.Fatalf("không thể kết nối MySQL server: %v", err)
 	}
 
 	createDBQuery := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", cfg.DBName)
@@ -38,7 +38,7 @@ func CreateDatabase(cfg *DatabaseConfig) {
 
 func RunMigrations(db *gorm.DB) {
 	if err := db.AutoMigrate(&model.Role{}, &model.Permission{}, &model.RolePermission{}, &model.UserPermission{}, &model.User{}); err != nil {
-		log.Fatalf("Tạo bảng thất bại: %v", err)
+		log.Fatalf("tạo bảng thất bại: %v", err)
 	}
 
 	origDisableFK := false

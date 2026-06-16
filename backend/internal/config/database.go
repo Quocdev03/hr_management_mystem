@@ -28,13 +28,13 @@ func InitDB(cfg *DatabaseConfig) *gorm.DB {
 		Logger: glogger.Default.LogMode(logLevel),
 	})
 	if err != nil {
-		log.Fatalf("Kết nối cơ sở dữ liệu bị lỗi: %v", err)
+		log.Fatalf("kết nối cơ sở dữ liệu bị lỗi: %v", err)
 	}
 
 	// Cấu hình connection pool
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Fatalf("Không thể lấy sql.DB: %v", err)
+		log.Fatalf("không thể lấy sql.DB: %v", err)
 	}
 
 	// Tối đa 10 kết nối cùng lúc, giữ 5 kết nối, không hết hạn
@@ -42,6 +42,6 @@ func InitDB(cfg *DatabaseConfig) *gorm.DB {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(1)
 
-	log.Println("Kết nối database và tạo các bảng thành công!")
+	log.Println("kết nối database và tạo các bảng thành công")
 	return db
 }

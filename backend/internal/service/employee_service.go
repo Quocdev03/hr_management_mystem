@@ -383,7 +383,7 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 
 	if _, err := es.empRepo.FindByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("không tìm thấy nhân viên này!")
+			return errors.New("không tìm thấy nhân viên này")
 		}
 		return fmt.Errorf("lỗi khi tìm nhân viên: %w", err)
 	}

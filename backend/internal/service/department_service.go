@@ -170,34 +170,44 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 		}
 
 		if req.Description != nil {
-			updates["description"] = strings.TrimSpace(*req.Description)
+			value := strings.TrimSpace(*req.Description)
+			if value != dept.Description {
+				updates["description"] = value
+			}
 		}
 
 		if req.ManagerID != nil {
-			if *req.ManagerID == 0 {
-				updates["manager_id"] = gorm.Expr("NULL")
-			} else {
-				emp, err := txEmpRepo.FindByID(*req.ManagerID)
-				if err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						return errors.New("Không tìm thấy nhân viên được chỉ định làm quản lý!")
+			currentManagerID := uint(0)
+			if dept.ManagerID != nil {
+				currentManagerID = *dept.ManagerID
+			}
+			newManagerID := *req.ManagerID
+			if newManagerID != currentManagerID {
+				if newManagerID == 0 {
+					updates["manager_id"] = gorm.Expr("NULL")
+				} else {
+					emp, err := txEmpRepo.FindByID(*req.ManagerID)
+					if err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+							return errors.New("Không tìm thấy nhân viên được chỉ định làm quản lý!")
+						}
+						return fmt.Errorf("Lỗi khi tìm nhân viên quản lý: %w", err)
 					}
-					return fmt.Errorf("Lỗi khi tìm nhân viên quản lý: %w", err)
-				}
 
-				if emp.DepartmentID != id {
-					return errors.New("Trưởng phòng phải thuộc chính phòng ban này")
-				}
+					if emp.DepartmentID != id {
+						return errors.New("Trưởng phòng phải thuộc chính phòng ban này")
+					}
 
-				existingDept, err := txDeptRepo.FindByManagerID(*req.ManagerID)
-				if err == nil && existingDept.ID != id {
-					return errors.New("Nhân viên này đã là trưởng phòng của phòng khác")
-				}
-				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-					return err
-				}
+					existingDept, err := txDeptRepo.FindByManagerID(newManagerID)
+					if err == nil && existingDept.ID != id {
+						return errors.New("Nhân viên này đã là trưởng phòng của phòng khác")
+					}
+					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+						return err
+					}
 
-				updates["manager_id"] = *req.ManagerID
+					updates["manager_id"] = newManagerID
+				}
 			}
 		}
 
@@ -226,7 +236,6 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 
 	return updatedDept, nil
 }
-
 
 func (ds *departmentService) DeleteDepartment(id uint) error {
 	if id == 0 {

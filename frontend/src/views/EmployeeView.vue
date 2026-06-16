@@ -24,6 +24,7 @@ import {
 import { useModalState } from "@/helpers/useModalState"; // Quản lý trạng thái modal
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch"; // Tìm kiếm + phân trang
 import { usePermissions } from "@/helpers/usePermissions"; // Kiểm tra quyền hạn
+import { buildPatchPayload } from "@/helpers/buildPatchPayload";
 
 // Icon SVG
 import plusIcon from "@/assets/svg/plus.svg";
@@ -210,59 +211,24 @@ async function handleFormSubmit() {
 		// ── Chế độ SỬA: partial update — chỉ gửi field thực sự thay đổi ──
 
 		const original = buildFormData(editingEmployee.value);
-
-		/**
-		 * Chuẩn hoá toàn bộ giá trị về string trước khi so sánh,
-		 * tránh false-diff do khác kiểu (ví dụ: số 3 vs chuỗi "3").
-		 * - null/undefined  → ""
-		 * - user_id / department_id / salary → String(v)  (ID số từ API)
-		 * - object → JSON.stringify
-		 * - còn lại → String(v)
-		 */
-		function normalizeForCompare(obj) {
-			const out = {};
-			Object.keys(obj).forEach((k) => {
-				const v = obj[k];
-				if (v === null || typeof v === "undefined") {
-					out[k] = "";
-					return;
+		const payload = buildPatchPayload(original, formData.value, {
+			fields: Object.keys(original),
+			transformValue: (key, value) => {
+				if (key === "user_id") {
+					return value == null || value === "" ? 0 : Number(value);
 				}
-				if (k === "user_id" || k === "department_id" || k === "salary") {
-					out[k] = String(v);
-					return;
+				if (key === "department_id") {
+					return Number(value);
 				}
-				out[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
-			});
-			return out;
-		}
-
-		const normOriginal = normalizeForCompare(original);
-		const normForm = normalizeForCompare(formData.value);
-
-		// Lấy những field có giá trị khác so với ban đầu → build payload
-		const payload = Object.fromEntries(
-			Object.keys(normOriginal)
-				.filter((k) => normForm[k] !== normOriginal[k])
-				.map((k) => [k, formData.value[k]]),
-		);
+				return value;
+			},
+		});
 
 		// Không có gì thay đổi → báo và thoát sớm
 		if (Object.keys(payload).length === 0) {
 			toast.info("Không có dữ liệu thay đổi");
 			formLoading.value = false;
 			return;
-		}
-
-		// Ép kiểu số cho backend Go — tránh gửi string gây lỗi parse
-		if ("user_id" in payload) {
-			// user_id rỗng/null → gửi 0 (sentinel "huỷ liên kết tài khoản")
-			payload.user_id =
-				formData.value.user_id == null || formData.value.user_id === ""
-					? 0
-					: Number(formData.value.user_id);
-		}
-		if ("department_id" in payload) {
-			payload.department_id = Number(payload.department_id);
 		}
 
 		res = await employeeStore.updateEmployee(

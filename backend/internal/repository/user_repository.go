@@ -14,7 +14,6 @@ type UserRepository interface {
 	FindByID(id uint) (*model.User, error)
 	FindByUsername(username string) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
-	Update(user *model.User) error
 	UpdateFields(id uint, fields map[string]interface{}) error
 	FindUsersWithoutEmployee() ([]model.User, error)
 	Delete(id uint) error
@@ -89,10 +88,6 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 		return nil, err
 	}
 	return &user, nil
-}
-
-func (r *userRepository) Update(user *model.User) error {
-	return r.db.Save(user).Error
 }
 
 func (r *userRepository) UpdateFields(id uint, fields map[string]interface{}) error {

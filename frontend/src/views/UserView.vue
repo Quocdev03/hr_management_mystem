@@ -18,6 +18,8 @@ import { useAuthStore } from "@/store/auth";
 import { useToast } from "vue-toastification";
 import { storeToRefs } from "pinia";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
+import { buildPatchPayload } from "@/helpers/buildPatchPayload";
+import { usePermissions } from "@/helpers/usePermissions";
 import { onMounted, ref } from "vue";
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
@@ -26,6 +28,7 @@ const userStore = useUserStore();
 const authStore = useAuthStore();
 const currentUser = authStore.user; // Người dùng đang đăng nhập
 const toast = useToast();
+const { canManageUsers } = usePermissions();
 
 // Reactive refs từ store
 const { users, pagination, loading } = storeToRefs(userStore);
@@ -47,6 +50,7 @@ const isDeleteModalVisible = ref(false); // Modal xoá có đang mở không
 const deletingUser = ref(null); // User sắp bị xoá
 const deleteMessage = ref(""); // Nội dung xác nhận xoá
 const deleteLoading = ref(false); // Đang xử lý xoá
+const originalUser = ref(null); // Snapshot ban đầu để so sánh patch
 
 // ─── Trạng thái modal form thêm/sửa ──────────────────────────────────────────
 
@@ -82,6 +86,7 @@ function handleAdd() {
 	isRoleDisabled.value = false;
 	isActiveDisabled.value = false;
 	currentUserId.value = null;
+	originalUser.value = null;
 	formData.value = {
 		user_name: "",
 		email: "",
@@ -107,11 +112,12 @@ function handleUpdate(user) {
 	isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
 	isActiveDisabled.value = currentUser?.id === user.id;
 	currentUserId.value = user.id;
+	originalUser.value = { ...user };
 
 	formData.value = {
 		user_name: user.user_name,
 		email: user.email,
-		password: "", // Bỏ trống → giữ nguyên password cũ nếu không đổi
+		password: "",
 		password_confirm: "",
 		role_id: user.role_id,
 		is_active: user.is_active,
@@ -122,31 +128,61 @@ function handleUpdate(user) {
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
 
 async function submitForm() {
-	// Kiểm tra password xác nhận khớp trước khi gửi
 	if (formData.value.password !== formData.value.password_confirm) {
 		toast.error("Mật khẩu xác nhận không khớp!");
+		return;
+	}
+
+	let payload = {};
+
+	if (!isEditing.value) {
+		payload = {
+			user_name: formData.value.user_name.trim(),
+			email: formData.value.email.trim(),
+			password: formData.value.password,
+			role_id: Number(formData.value.role_id),
+			is_active: Boolean(formData.value.is_active),
+		};
+	} else {
+		payload = buildPatchPayload(
+			{
+				user_name: originalUser.value?.user_name ?? "",
+				email: originalUser.value?.email ?? "",
+				password: "",
+				role_id: originalUser.value?.role_id ?? null,
+				is_active: originalUser.value?.is_active ?? true,
+			},
+			{
+				user_name: formData.value.user_name.trim(),
+				email: formData.value.email.trim(),
+				password: formData.value.password,
+				role_id: Number(formData.value.role_id),
+				is_active: Boolean(formData.value.is_active),
+			},
+			{
+				fields: ["user_name", "email", "password", "role_id", "is_active"],
+				transformValue: (key, value) => {
+					if (key === "role_id") return Number(value);
+					if (key === "is_active") return Boolean(value);
+					return value;
+				},
+			},
+		);
+	}
+
+	if (Object.keys(payload).length === 0) {
+		toast.info("Không có thay đổi nào được thực hiện.");
 		return;
 	}
 
 	submitLoading.value = true;
 	let res;
 
-	const payload = { ...formData.value };
-
-	// Loại bỏ password_confirm — field này chỉ dùng để validate ở FE, không gửi API
-	delete payload.password_confirm;
-
-	// Khi sửa mà không nhập password mới → bỏ luôn khỏi payload để giữ nguyên hash cũ
-	if (isEditing.value && !payload.password) {
-		delete payload.password;
-	}
-
 	if (isEditing.value) {
 		res = await userStore.updateUser(currentUserId.value, payload);
 	} else {
 		res = await userStore.createUser(payload);
 	}
-
 	submitLoading.value = false;
 
 	if (res.success === false) {
@@ -160,7 +196,7 @@ async function submitForm() {
 	);
 
 	isModalVisible.value = false;
-	await loadUsers(); // Reload lại danh sách sau khi lưu
+	await loadUsers();
 }
 
 // ─── Xử lý xoá user ──────────────────────────────────────────────────────────
@@ -209,7 +245,11 @@ onMounted(async () => {
 					<span>{{ pagination.total }}</span> người dùng
 				</p>
 			</div>
-			<button class="btn btn--primary" @click="handleAdd">
+			<button
+				v-if="canManageUsers"
+				class="btn btn--primary"
+				@click="handleAdd"
+			>
 				<img :src="plusIcon" alt="add" class="btn__icon" />
 				Thêm người dùng
 			</button>
@@ -218,11 +258,7 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img
-						:src="searchIcon"
-						class="search-box__icon"
-						alt="search"
-					/>
+					<img :src="searchIcon" class="search-box__icon" alt="search" />
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -246,18 +282,10 @@ onMounted(async () => {
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td class="text-main fw-500">
-									<Skeleton
-										type="text"
-										width="130px"
-										height="18px"
-									/>
+									<Skeleton type="text" width="130px" height="18px" />
 								</td>
 								<td>
-									<Skeleton
-										type="text"
-										width="200px"
-										height="18px"
-									/>
+									<Skeleton type="text" width="200px" height="18px" />
 								</td>
 								<td>
 									<Skeleton
@@ -295,16 +323,13 @@ onMounted(async () => {
 												: 'status-badge--inactive',
 										]"
 									>
-										{{
-											user.is_active
-												? "Hoạt động"
-												: "Ngưng"
-										}}
+										{{ user.is_active ? "Hoạt động" : "Ngưng" }}
 									</span>
 								</td>
 								<td class="text-right">
 									<div class="action-group">
 										<button
+											v-if="canManageUsers"
 											class="btn-icon btn-icon--edit"
 											title="Chỉnh sửa"
 											@click="handleUpdate(user)"
@@ -312,14 +337,12 @@ onMounted(async () => {
 											<img :src="editIcon" alt="edit" />
 										</button>
 										<button
+											v-if="canManageUsers"
 											class="btn-icon btn-icon--delete"
 											title="Xoá"
 											@click="handleDelete(user)"
 										>
-											<img
-												:src="deleteIcon"
-												alt="delete"
-											/>
+											<img :src="deleteIcon" alt="delete" />
 										</button>
 									</div>
 								</td>
@@ -385,8 +408,7 @@ onMounted(async () => {
 				<div class="form-grid">
 					<div class="form-group">
 						<label class="form-label"
-							>Tên đăng nhập
-							<span class="required">*</span></label
+							>Tên đăng nhập <span class="required">*</span></label
 						>
 						<input
 							v-model="formData.user_name"
@@ -411,9 +433,7 @@ onMounted(async () => {
 					<div class="form-group">
 						<label class="form-label"
 							>Mật khẩu
-							<span v-if="!isEditing" class="required"
-								>*</span
-							></label
+							<span v-if="!isEditing" class="required">*</span></label
 						>
 						<input
 							v-model="formData.password"
@@ -442,9 +462,7 @@ onMounted(async () => {
 							class="form-control"
 							:required="!isEditing || !!formData.password"
 							:placeholder="
-								isEditing
-									? 'Nhập lại nếu đổi'
-									: 'Nhập lại mật khẩu'
+								isEditing ? 'Nhập lại nếu đổi' : 'Nhập lại mật khẩu'
 							"
 						/>
 					</div>
@@ -467,8 +485,7 @@ onMounted(async () => {
 							v-if="isRoleDisabled"
 							class="required"
 							style="margin-top: 4px; display: block"
-							>Không thể thay đổi quyền của bản thân/Admin
-							khác</small
+							>Không thể thay đổi quyền của bản thân/Admin khác</small
 						>
 					</div>
 					<div class="form-group">

@@ -4,6 +4,7 @@ import (
 	"chiquoc_hocgolang/internal/config"
 	"chiquoc_hocgolang/internal/handler"
 	"chiquoc_hocgolang/internal/middleware"
+	"chiquoc_hocgolang/internal/repository"
 	"net/http"
 	"time"
 
@@ -21,6 +22,7 @@ func SetupRouter(
 	deptHandler *handler.DepartmentHandler,
 	dashB *handler.DashboardHandler,
 	userHandler *handler.UserHandler,
+	permRepo repository.PermissionRepository,
 ) *gin.Engine {
 
 	// Tắt debug log trong production
@@ -93,30 +95,23 @@ func SetupRouter(
 			empHandler.GetEmployee,
 		)
 
-		// POST /employees — Tạo nhân viên mới (admin, hr)
+		// POST /employees — Tạo nhân viên mới (permission-based)
 		employees.POST("",
-			middleware.RequireRole("admin", "hr"),
+			middleware.RequirePermission(permRepo, "employee.create"),
 			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.CreateEmployee,
 		)
 
-		// PUT /employees/:id — Cập nhật nhân viên đầy đủ (admin, hr)
-		employees.PUT("/:id",
-			middleware.RequireRole("admin", "hr"),
-			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
-			empHandler.UpdateEmployee,
-		)
-
-		// PATCH /employees/:id — Cập nhật nhân viên (admin, hr)
+		// PATCH /employees/:id — Cập nhật nhân viên (permission-based)
 		employees.PATCH("/:id",
-			middleware.RequireRole("admin", "hr"),
+			middleware.RequirePermission(permRepo, "employee.update"),
 			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.UpdateEmployee,
 		)
 
-		// DELETE /employees/:id — Xóa nhân viên (chỉ admin)
+		// DELETE /employees/:id — Xóa nhân viên (permission-based)
 		employees.DELETE("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "employee.delete"),
 			middleware.ClearMultipleCaches(rdb, middleware.EmployeeRelatedCachePatterns...),
 			empHandler.DeleteEmployee,
 		)
@@ -126,48 +121,53 @@ func SetupRouter(
 	// Quản lý tài khoản: chỉ admin được phép truy cập
 	users := protected.Group("/users")
 	{
-		// GET /users — Danh sách tài khoản (admin, không cache)
+		// GET /users — Danh sách tài khoản (permission-based)
 		users.GET("",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.read"),
 			userHandler.GetUsers,
 		)
 
-		// GET /users/available — Tài khoản chưa liên kết nhân viên (admin, không cache)
+		// GET /users/available — Tài khoản chưa liên kết nhân viên (permission-based)
 		users.GET("/available",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.read"),
 			userHandler.GetUsersWithoutEmployee,
 		)
 
-		// GET /users/:id — Chi tiết tài khoản (admin, không cache)
+		// GET /users/:id — Chi tiết tài khoản (permission-based)
 		users.GET("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.read"),
 			userHandler.GetUser,
 		)
 
-		// POST /users — Tạo tài khoản mới (admin)
+		// POST /users — Tạo tài khoản mới (permission-based)
 		users.POST("",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.create"),
 			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.CreateUser,
 		)
 
-		// PUT /users/:id — Cập nhật tài khoản đầy đủ (admin)
-		users.PUT("/:id",
-			middleware.RequireRole("admin"),
-			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
-			userHandler.UpdateUser,
-		)
-
-		// PATCH /users/:id — Cập nhật tài khoản (admin)
+		// PATCH /users/:id — Cập nhật tài khoản (permission-based)
 		users.PATCH("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.update"),
 			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.UpdateUser,
 		)
 
-		// DELETE /users/:id — Xóa tài khoản (admin)
+		// GET /users/permissions — Danh sách permission có thể gán
+		users.GET("/permissions",
+			middleware.RequirePermission(permRepo, "user.update"),
+			userHandler.GetAvailablePermissions,
+		)
+
+		// PATCH /users/:id/permissions — Cập nhật quyền cho user
+		users.PATCH("/:id/permissions",
+			middleware.RequirePermission(permRepo, "user.update"),
+			userHandler.UpdatePermissions,
+		)
+
+		// DELETE /users/:id — Xóa tài khoản (permission-based)
 		users.DELETE("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "user.delete"),
 			middleware.ClearMultipleCaches(rdb, middleware.UserRelatedCachePatterns...),
 			userHandler.DeleteUser,
 		)
@@ -187,30 +187,23 @@ func SetupRouter(
 			deptHandler.GetDepartment,
 		)
 
-		// POST /departments — Tạo phòng ban mới (chỉ admin)
+		// POST /departments — Tạo phòng ban mới (permission-based)
 		departments.POST("",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "department.create"),
 			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.CreateDepartment,
 		)
 
-		// PUT /departments/:id — Cập nhật phòng ban đầy đủ (chỉ admin)
-		departments.PUT("/:id",
-			middleware.RequireRole("admin"),
-			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
-			deptHandler.UpdateDepartment,
-		)
-
-		// PATCH /departments/:id — Cập nhật phòng ban (chỉ admin)
+		// PATCH /departments/:id — Cập nhật phòng ban (permission-based)
 		departments.PATCH("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "department.update"),
 			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.UpdateDepartment,
 		)
 
-		// DELETE /departments/:id — Xóa phòng ban (chỉ admin)
+		// DELETE /departments/:id — Xóa phòng ban (permission-based)
 		departments.DELETE("/:id",
-			middleware.RequireRole("admin"),
+			middleware.RequirePermission(permRepo, "department.delete"),
 			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.DeleteDepartment,
 		)

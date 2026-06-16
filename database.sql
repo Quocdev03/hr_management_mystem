@@ -63,7 +63,43 @@ CREATE TABLE users (
 );
 
 -- ============================================================
--- 5. BẢNG employees
+-- 5. BẢNG permissions
+-- Quản lý quyền theo hành động (RBAC)
+-- ============================================================
+
+CREATE TABLE permissions (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    code        VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255),
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME NULL
+);
+
+CREATE TABLE role_permissions (
+    role_id       INT NOT NULL,
+    permission_id INT NOT NULL,
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    DATETIME NULL,
+    PRIMARY KEY (role_id, permission_id),
+    CONSTRAINT FK_role_permissions_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT FK_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_permissions (
+    user_id       INT NOT NULL,
+    permission_id INT NOT NULL,
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    DATETIME NULL,
+    PRIMARY KEY (user_id, permission_id),
+    CONSTRAINT FK_user_permissions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT FK_user_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- 6. BẢNG employees
 -- Thông tin chi tiết nhân viên
 -- ============================================================
 
@@ -95,7 +131,7 @@ CREATE TABLE employees (
 );
 
 -- ============================================================
--- 6. FK: departments.manager_id → employees.id
+-- 7. FK: departments.manager_id → employees.id
 -- Thêm sau khi bảng employees đã tồn tại
 -- ============================================================
 
@@ -104,7 +140,7 @@ ALTER TABLE departments
         FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL;
 
 -- ============================================================
--- 7. INDEX CƠ BẢN VÀ COMPOSITE
+-- 8. INDEX CƠ BẢN VÀ COMPOSITE
 -- ============================================================
 
 CREATE INDEX IX_employees_department_id ON employees (department_id);

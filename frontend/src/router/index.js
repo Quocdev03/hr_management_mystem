@@ -38,7 +38,7 @@ const router = createRouter({
 					path: "users",
 					name: "users",
 					component: UserView,
-					meta: { roles: ["admin"] },
+					meta: { roles: ["admin"], permissions: ["user.read"] },
 				},
 				{ path: "me", name: "me", component: ProfileView },
 			],
@@ -59,16 +59,33 @@ router.beforeEach((to) => {
 		return { name: "login" };
 	}
 
-	// Kiểm tra phân quyền theo role (nếu route có meta.roles)
-	if (to.meta.roles && to.meta.roles.length > 0) {
-		const user = JSON.parse(localStorage.getItem("user") || "null");
-		const roleName = user?.role?.name || "";
-		if (!to.meta.roles.includes(roleName)) {
-			return { name: "dashboard" };
-		}
+	let user = null;
+	try {
+		user = JSON.parse(localStorage.getItem("user") || "null");
+	} catch (error) {
+		user = null;
 	}
 
-	// Hợp lệ -> cho phép đi tiếp
+	const roleName = user?.role?.name || "";
+	const permissions = user?.permissions || [];
+
+	const hasRequiredRole =
+		!to.meta.roles ||
+		to.meta.roles.length === 0 ||
+		to.meta.roles.includes(roleName) ||
+		to.meta.roles.includes("*");
+
+	const hasRequiredPermission =
+		!to.meta.permissions ||
+		to.meta.permissions.length === 0 ||
+		to.meta.permissions.some((code) => permissions.includes(code));
+
+	// Cho phép khi thỏa mãn role HOẶC permission.
+	// Điều này đảm bảo route không bị khóa bởi role-name cứng nếu quyền đã được gán riêng.
+	if (!hasRequiredRole && !hasRequiredPermission) {
+		return { name: "dashboard" };
+	}
+
 	return true;
 });
 

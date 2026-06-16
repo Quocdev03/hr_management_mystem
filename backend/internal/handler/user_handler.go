@@ -119,3 +119,35 @@ func (h *UserHandler) GetUsersWithoutEmployee(ctx *gin.Context) {
 	}
 	utils.Success(ctx, "Lấy danh sách user chưa gắn nhân viên thành công", users)
 }
+
+func (h *UserHandler) GetAvailablePermissions(ctx *gin.Context) {
+	perms, err := h.userSvc.GetAvailablePermissions()
+	if err != nil {
+		utils.InternalServerError(ctx, err.Error())
+		return
+	}
+	utils.Success(ctx, "Lấy danh sách quyền thành công", perms)
+}
+
+func (h *UserHandler) UpdatePermissions(ctx *gin.Context) {
+	id, ok := common.ParseAndValidateID(ctx, "user")
+	if !ok {
+		return
+	}
+
+	var req struct {
+		Permissions []string `json:"permissions"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.BadRequest(ctx, "Dữ liệu không đúng định dạng JSON")
+		return
+	}
+
+	codes, err := h.userSvc.UpdateUserPermissions(id, req.Permissions)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
+	utils.Success(ctx, "Cập nhật quyền thành công", gin.H{"permissions": codes})
+}

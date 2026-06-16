@@ -24,6 +24,7 @@ import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 import { usePermissions } from "@/helpers/usePermissions";
+import { buildPatchPayload } from "@/helpers/buildPatchPayload";
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
 
@@ -177,32 +178,23 @@ async function handleFormSubmit() {
 		if (isEditMode.value) {
 			// ── Chế độ SỬA: partial update — chỉ gửi field thực sự thay đổi ──
 
-			const original = editingDepartment.value ?? {};
-			const payload = {};
-
-			if (formData.value.name !== (original.name ?? "")) {
-				payload.name = formData.value.name;
-			}
-
-			if (formData.value.description !== (original.description ?? "")) {
-				payload.description = formData.value.description;
-			}
-
-			/**
-			 * So sánh manager_id cẩn thận vì API có thể trả dạng flat (manager_id)
-			 * hoặc nested (manager.id). Chuẩn hoá cả hai về null trước khi so sánh.
-			 *
-			 * Khi xoá manager: gửi 0 thay vì null vì backend dùng 0 làm sentinel
-			 * để phân biệt "không truyền field" vs "chủ động xoá trưởng phòng".
-			 */
-			const originalManagerId =
-				original.manager_id ?? original.manager?.id ?? null;
-			const currentManagerId = formData.value.manager_id || null;
-
-			if (currentManagerId !== originalManagerId) {
-				payload.manager_id =
-					currentManagerId === null ? 0 : currentManagerId;
-			}
+			const original = {
+				name: editingDepartment.value?.name ?? "",
+				description: editingDepartment.value?.description ?? "",
+				manager_id:
+					editingDepartment.value?.manager_id ??
+					editingDepartment.value?.manager?.id ??
+					null,
+			};
+			const payload = buildPatchPayload(original, formData.value, {
+				fields: ["name", "description", "manager_id"],
+				transformValue: (key, value) => {
+					if (key === "manager_id") {
+						return value == null || value === "" ? 0 : Number(value);
+					}
+					return value;
+				},
+			});
 
 			// Không có field nào thay đổi → báo và thoát sớm
 			if (Object.keys(payload).length === 0) {

@@ -12,13 +12,14 @@ type Role struct {
 // USER Model
 // Tài khoản đăng nhập
 type User struct {
-	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserName string `gorm:"size:100;not null;index" json:"user_name"`
-	Email    string `gorm:"size:150;not null;index" json:"email"`
-	Password string `gorm:"size:255;not null" json:"-"`
-	RoleID   uint   `gorm:"not null" json:"role_id"`
-	Role     Role   `gorm:"foreignKey:RoleID" json:"role,omitempty"`
-	IsActive bool   `gorm:"default:true" json:"is_active"`
+	ID          uint     `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserName    string   `gorm:"size:100;not null;index" json:"user_name"`
+	Email       string   `gorm:"size:150;not null;index" json:"email"`
+	Password    string   `gorm:"size:255;not null" json:"-"`
+	RoleID      uint     `gorm:"not null" json:"role_id"`
+	Role        Role     `gorm:"foreignKey:RoleID" json:"role,omitempty"`
+	Permissions []string `gorm:"-" json:"permissions,omitempty"`
+	IsActive    bool     `gorm:"default:true" json:"is_active"`
 	TimestampModel
 }
 

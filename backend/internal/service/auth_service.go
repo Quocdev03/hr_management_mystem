@@ -16,29 +16,31 @@ import (
 	"gorm.io/gorm"
 )
 
-
 // AuthService interface - contract cho authentication.
 type AuthService interface {
 	Login(req model.LoginRequest) (*model.LoginResponse, error)
 	GetProfile(ID uint) (*model.Employee, error)
+	GetPermissions(userID uint) ([]string, error)
 	Logout(tokenString string, remainingTime time.Duration, refreshToken string) error
 	RefreshToken(refreshTokenString string) (*model.LoginResponse, error)
 }
 
 // --- Auth Service Implementation ---
 type authService struct {
-	useRepo repository.UserRepository
-	empRepo repository.EmployeeRepository
-	jwtCfg  *config.JWTConfig
-	rdb     *redis.Client
+	useRepo   repository.UserRepository
+	empRepo   repository.EmployeeRepository
+	permRepo  repository.PermissionRepository
+	jwtCfg    *config.JWTConfig
+	rdb       *redis.Client
 }
 
-func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, jwtCfg *config.JWTConfig, rdb *redis.Client) AuthService {
+func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, permRepo repository.PermissionRepository, jwtCfg *config.JWTConfig, rdb *redis.Client) AuthService {
 	return &authService{
-		useRepo: userRepo,
-		empRepo: empRepo,
-		jwtCfg:  jwtCfg,
-		rdb:     rdb,
+		useRepo:  userRepo,
+		empRepo:  empRepo,
+		permRepo: permRepo,
+		jwtCfg:   jwtCfg,
+		rdb:      rdb,
 	}
 }
 
@@ -97,6 +99,12 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("Email hoặc mật khẩu không hợp lệ!")
 	}
+
+	permissions, err := au.permRepo.GetPermissionCodes(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Không thể lấy quyền người dùng: %w", err)
+	}
+	user.Permissions = permissions
 
 	// Tạo jwt token chứa thông tin user và role.
 	token, err := utils.GenerateToken(
@@ -183,6 +191,12 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 		return nil, errors.New("Tài khoản người dùng đã bị khóa")
 	}
 
+	permissions, err := au.permRepo.GetPermissionCodes(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("Không thể lấy quyền người dùng: %w", err)
+	}
+	user.Permissions = permissions
+
 	// 6. Tạo access token mới.
 	newAccessToken, err := utils.GenerateToken(
 		user.ID,
@@ -220,6 +234,10 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 		RefreshToken: newRefreshToken,
 		User:         *user,
 	}, nil
+}
+
+func (au *authService) GetPermissions(userID uint) ([]string, error) {
+	return au.permRepo.GetPermissionCodes(userID)
 }
 
 func (au *authService) GetProfile(id uint) (*model.Employee, error) {

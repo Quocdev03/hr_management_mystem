@@ -77,11 +77,18 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 		return
 	}
 
+	permissions, err := h.authSvc.GetPermissions(userID)
+	if err != nil {
+		utils.BadRequest(ctx, err.Error())
+		return
+	}
+
 	utils.Success(ctx, "Lấy thông tin hồ sơ thành công!", gin.H{
-		"user_id":   userID,
-		"email":     email,
-		"role_name": roleName,
-		"employee":  emp,
+		"user_id":     userID,
+		"email":       email,
+		"role_name":   roleName,
+		"permissions": permissions,
+		"employee":    emp,
 	})
 }
 

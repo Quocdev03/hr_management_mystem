@@ -24,18 +24,22 @@ type UserService interface {
 	UpdateUser(id uint, req model.UpdateUserRequest, requesterID uint) (*model.User, error)
 	DeleteUser(id uint) error
 	GetUsersWithoutEmployee() ([]model.User, error)
+	GetAvailablePermissions() ([]model.Permission, error)
+	UpdateUserPermissions(id uint, permissionCodes []string) ([]string, error)
 }
 
 // --- User Service Implementation ---
 
 type userService struct {
-	userRepo repository.UserRepository
-	rdb      *redis.Client
+	userRepo   repository.UserRepository
+	permRepo   repository.PermissionRepository
+	rdb        *redis.Client
 }
 
-func NewUserService(userRepo repository.UserRepository, rdb *redis.Client) UserService {
+func NewUserService(userRepo repository.UserRepository, permRepo repository.PermissionRepository, rdb *redis.Client) UserService {
 	return &userService{
 		userRepo: userRepo,
+		permRepo: permRepo,
 		rdb:      rdb,
 	}
 }
@@ -191,10 +195,10 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 		}
 		updateData["password"] = string(hashed)
 	}
-	if req.RoleID != nil {
+	if req.RoleID != nil && *req.RoleID != user.RoleID {
 		updateData["role_id"] = *req.RoleID
 	}
-	if req.IsActive != nil {
+	if req.IsActive != nil && *req.IsActive != user.IsActive {
 		updateData["is_active"] = *req.IsActive
 	}
 
@@ -239,4 +243,31 @@ func (us *userService) GetUsersWithoutEmployee() ([]model.User, error) {
 	}
 
 	return users, nil
+}
+
+func (us *userService) GetAvailablePermissions() ([]model.Permission, error) {
+	return us.permRepo.GetAllPermissions()
+}
+
+func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string) ([]string, error) {
+	if id == 0 {
+		return nil, errors.New("ID user phải lớn hơn 0")
+	}
+
+	if _, err := us.userRepo.FindByID(id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("Không tìm thấy user")
+		}
+		return nil, err
+	}
+
+	if err := us.permRepo.SetUserPermissions(id, permissionCodes); err != nil {
+		return nil, fmt.Errorf("Cập nhật quyền user bị lỗi: %w", err)
+	}
+
+	codes, err := us.permRepo.GetPermissionCodes(id)
+	if err != nil {
+		return nil, fmt.Errorf("Không thể lấy quyền sau khi cập nhật: %w", err)
+	}
+	return codes, nil
 }

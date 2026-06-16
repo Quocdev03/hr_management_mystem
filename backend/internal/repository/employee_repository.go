@@ -13,7 +13,6 @@ type EmployeeRepository interface {
 	Create(emp *model.Employee) error
 	FindAll(query model.PaginationQuery) ([]model.Employee, int64, error)
 	FindByID(id uint) (*model.Employee, error)
-	Update(emp *model.Employee) error
 	UpdateFields(id uint, fields map[string]interface{}) error
 	Delete(id uint) error
 	CountByDepartment(deptID uint) (int64, error)
@@ -97,10 +96,6 @@ func (r *employeeRepository) FindByUserID(userID uint) (*model.Employee, error) 
 		return nil, err
 	}
 	return &employee, nil
-}
-
-func (r *employeeRepository) Update(emp *model.Employee) error {
-	return r.db.Save(emp).Error
 }
 
 func (r *employeeRepository) UpdateFields(id uint, fields map[string]interface{}) error {

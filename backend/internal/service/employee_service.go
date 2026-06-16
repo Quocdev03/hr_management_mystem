@@ -226,73 +226,125 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		updateData := map[string]interface{}{}
 
 		if req.FirstName != nil {
-			updateData["first_name"] = strings.TrimSpace(*req.FirstName)
+			value := strings.TrimSpace(*req.FirstName)
+			if value != empTx.FirstName {
+				updateData["first_name"] = value
+			}
 		}
 		if req.LastName != nil {
-			updateData["last_name"] = strings.TrimSpace(*req.LastName)
+			value := strings.TrimSpace(*req.LastName)
+			if value != empTx.LastName {
+				updateData["last_name"] = value
+			}
 		}
 		if req.Phone != nil {
-			updateData["phone"] = strings.TrimSpace(*req.Phone)
+			value := strings.TrimSpace(*req.Phone)
+			if value != empTx.Phone {
+				updateData["phone"] = value
+			}
 		}
 		if req.Position != nil {
-			updateData["position"] = strings.TrimSpace(*req.Position)
+			value := strings.TrimSpace(*req.Position)
+			if value != empTx.Position {
+				updateData["position"] = value
+			}
 		}
 		if req.Salary != nil {
 			if *req.Salary < 0 {
 				return errors.New("Lương không được âm")
 			}
-			updateData["salary"] = *req.Salary
+			if *req.Salary != empTx.Salary {
+				updateData["salary"] = *req.Salary
+			}
 		}
 		if req.Status != nil {
-			updateData["status"] = strings.TrimSpace(*req.Status)
+			value := strings.TrimSpace(*req.Status)
+			if value != empTx.Status {
+				updateData["status"] = value
+			}
 		}
 		if req.Gender != nil {
-			updateData["gender"] = strings.TrimSpace(strings.ToLower(*req.Gender))
+			value := strings.TrimSpace(strings.ToLower(*req.Gender))
+			if value != empTx.Gender {
+				updateData["gender"] = value
+			}
 		}
 		if req.BirthDate != nil {
 			parsed, err := time.Parse("2006-01-02", *req.BirthDate)
 			if err != nil {
 				return errors.New("Ngày sinh không đúng định dạng, sử dụng YYYY-MM-DD")
 			}
-			updateData["birth_date"] = parsed
+			if empTx.BirthDate == nil || !empTx.BirthDate.Equal(parsed) {
+				updateData["birth_date"] = parsed
+			}
 		}
 
 		if req.UserID != nil {
-			if *req.UserID == 0 {
-				updateData["user_id"] = nil
-			} else {
-				user, err := txUserRepo.FindByID(*req.UserID)
-				if err != nil {
-					if errors.Is(err, gorm.ErrRecordNotFound) {
-						return errors.New("Không tìm thấy tài khoản người dùng này")
+			oldUserID := empTx.UserID
+			newUserID := *req.UserID
+			if oldUserID == nil {
+				if newUserID != 0 {
+					user, err := txUserRepo.FindByID(newUserID)
+					if err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+							return errors.New("Không tìm thấy tài khoản người dùng này")
+						}
+						return err
 					}
-					return err
-				}
 
-				if !user.IsActive {
-					return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
-				}
+					if !user.IsActive {
+						return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+					}
 
-				existingEmp, err := txEmpRepo.FindByUserID(user.ID)
-				if err == nil && existingEmp.ID != id {
-					return errors.New("User đã gắn cho nhân viên khác")
-				}
-				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-					return err
-				}
+					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
+					if err == nil && existingEmp.ID != id {
+						return errors.New("User đã gắn cho nhân viên khác")
+					}
+					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+						return err
+					}
 
-				updateData["user_id"] = *req.UserID
+					updateData["user_id"] = newUserID
+				}
+			} else if *oldUserID != newUserID {
+				if newUserID == 0 {
+					updateData["user_id"] = nil
+				} else {
+					user, err := txUserRepo.FindByID(newUserID)
+					if err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+							return errors.New("Không tìm thấy tài khoản người dùng này")
+						}
+						return err
+					}
+
+					if !user.IsActive {
+						return errors.New("Không thể gắn tài khoản đang ngưng hoạt động")
+					}
+
+					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
+					if err == nil && existingEmp.ID != id {
+						return errors.New("User đã gắn cho nhân viên khác")
+					}
+					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+						return err
+					}
+
+					updateData["user_id"] = newUserID
+				}
 			}
 		}
 
 		if req.DepartmentID != nil {
-			if _, err := txDeptRepo.FindByID(*req.DepartmentID); err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					return errors.New("Không tìm thấy phòng ban này")
+			if *req.DepartmentID != empTx.DepartmentID {
+				if _, err := txDeptRepo.FindByID(*req.DepartmentID); err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return errors.New("Không tìm thấy phòng ban này")
+					}
+					return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
 				}
-				return fmt.Errorf("Lỗi kiểm tra phòng ban: %w", err)
+				updateData["department_id"] = *req.DepartmentID
 			}
-			updateData["department_id"] = *req.DepartmentID
 		}
 
 		if len(updateData) > 0 {

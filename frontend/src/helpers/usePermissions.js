@@ -20,19 +20,45 @@ import { useAuthStore } from "@/store/auth";
 export function usePermissions() {
 	const authStore = useAuthStore();
 
-	// role.name trả về từ backend: "admin", "hr", "employee"
 	const roleName = computed(() => authStore.user?.role?.name || "");
+	const permissions = computed(() => {
+		return (
+			authStore.user?.permissions || authStore.userProfile?.permissions || []
+		);
+	});
 
-	// === Kiểm tra role ===
-	const isAdmin = computed(() => roleName.value === "admin");
-	const isHR = computed(() => roleName.value === "hr");
+	const hasPermission = (code) => {
+		const list = permissions.value || [];
+		return list.includes(code) || list.includes(`admin:${code}`);
+	};
+
+	const isAdmin = computed(
+		() =>
+			roleName.value === "admin" ||
+			hasPermission("admin") ||
+			hasPermission("role.admin"),
+	);
+	const isHR = computed(
+		() =>
+			roleName.value === "hr" ||
+			hasPermission("hr") ||
+			hasPermission("role.hr"),
+	);
 	const isEmployee = computed(() => roleName.value === "employee");
 
 	// === Quyền trên Nhân viên ===
-	const canViewEmployeeList = computed(() => isAdmin.value || isHR.value);
-	const canCreateEmployee = computed(() => isAdmin.value || isHR.value);
-	const canEditEmployee = computed(() => isAdmin.value || isHR.value);
-	const canDeleteEmployee = computed(() => isAdmin.value);
+	const canViewEmployeeList = computed(
+		() => hasPermission("employee.read") || isAdmin.value || isHR.value,
+	);
+	const canCreateEmployee = computed(
+		() => hasPermission("employee.create") || isAdmin.value || isHR.value,
+	);
+	const canEditEmployee = computed(
+		() => hasPermission("employee.update") || isAdmin.value || isHR.value,
+	);
+	const canDeleteEmployee = computed(
+		() => hasPermission("employee.delete") || isAdmin.value,
+	);
 
 	/**
 	 * Employee chỉ được xem chi tiết của chính mình.
@@ -40,18 +66,35 @@ export function usePermissions() {
 	 * Nhận targetEmployeeId để so sánh với employee đang đăng nhập.
 	 */
 	const canViewEmployeeDetail = computed(() => (targetEmployeeId) => {
-		if (isAdmin.value || isHR.value) return true;
-		if (isEmployee.value) {
-			return authStore.user?.employee?.id === targetEmployeeId;
+		if (
+			hasPermission("employee.read") &&
+			(isAdmin.value ||
+				isHR.value ||
+				authStore.user?.employee?.id === targetEmployeeId)
+		) {
+			return true;
 		}
-		return false;
+		return authStore.user?.employee?.id === targetEmployeeId;
 	});
 
 	// === Quyền trên Phòng ban ===
-	const canCrudDepartment = computed(() => isAdmin.value);
+	const canCrudDepartment = computed(
+		() =>
+			hasPermission("department.create") ||
+			hasPermission("department.update") ||
+			hasPermission("department.delete") ||
+			isAdmin.value,
+	);
 
 	// === Quyền Quản lý User ===
-	const canManageUsers = computed(() => isAdmin.value);
+	const canManageUsers = computed(
+		() =>
+			hasPermission("user.read") ||
+			hasPermission("user.create") ||
+			hasPermission("user.update") ||
+			hasPermission("user.delete") ||
+			isAdmin.value,
+	);
 
 	// Helper: có ít nhất 1 quyền thao tác trên bảng NV không? (hiện/ẩn cột Thao tác)
 	const hasAnyEmployeeAction = computed(

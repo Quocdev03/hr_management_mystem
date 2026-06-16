@@ -52,21 +52,21 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	if existingDepts, _, err := ds.deptRepo.FindAll(model.PaginationQuery{Page: 1, Limit: 100, Search: req.Name}); err == nil {
 		for _, d := range existingDepts {
 			if strings.EqualFold(d.Name, req.Name) {
-				return nil, fmt.Errorf("tên phòng ban '%s' đã tồn tại!", req.Name)
+				return nil, fmt.Errorf("tên phòng ban '%s' đã tồn tại", req.Name)
 			}
 		}
 	}
 
 	// Kiểm tra code phòng ban đã tồn tại chưa
 	if _, err := ds.deptRepo.FindByCode(req.Code); err == nil {
-		return nil, fmt.Errorf("mã phòng ban '%s' đã tồn tại!", req.Code)
+		return nil, fmt.Errorf("mã phòng ban '%s' đã tồn tại", req.Code)
 	}
 
 	if req.ManagerID != nil {
 		if *req.ManagerID == 0 {
 			return nil, errors.New("id quản lý phải lớn hơn 0")
 		}
-		return nil, errors.New("không thể chỉ định trưởng phòng khi tạo phòng ban mới. Vui lòng tạo phòng ban trước rồi gán trưởng phòng sau.")
+		return nil, errors.New("không thể chỉ định trưởng phòng khi tạo phòng ban mới. Vui lòng tạo phòng ban trước rồi gán trưởng phòng sau")
 	}
 
 	dept := &model.Department{
@@ -161,7 +161,7 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 				if err == nil {
 					for _, d := range existingDepts {
 						if strings.EqualFold(d.Name, name) && d.ID != id {
-							return fmt.Errorf("tên phòng ban '%s' đã tồn tại!", name)
+							return fmt.Errorf("tên phòng ban '%s' đã tồn tại", name)
 						}
 					}
 				}

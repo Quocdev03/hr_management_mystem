@@ -241,11 +241,9 @@ jobs:
               id: now
               run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-            - name: 📢 Slack Notification - Deployment Starting
+            - name: 📢 Slack Notification
               uses: slackapi/slack-github-action@v2.1.0
               with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK }}
-                  webhook-type: incoming-webhook
                   payload: |
                       {
                         "text": "🚀 Production Deployment Starting",
@@ -259,6 +257,8 @@ jobs:
                           }
                         ]
                       }
+              env:
+                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
             - name: 🚀 Deploy to Production Server
               run: |
@@ -315,12 +315,10 @@ jobs:
                     }' \
                     -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
 
-            - name: 📢 Slack Notification - Deployment Success
+            - name: 📢 Slack Success
               if: success()
               uses: slackapi/slack-github-action@v2.1.0
               with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK }}
-                  webhook-type: incoming-webhook
                   payload: |
                       {
                         "text": "✅ Production Deployment Successful",
@@ -329,18 +327,18 @@ jobs:
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: ${{ steps.now.outputs.value }}"
+                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}"
                             }
                           }
                         ]
                       }
+              env:
+                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
-            - name: 📢 Slack Notification - Deployment Failed
+            - name: 📢 Slack Failed
               if: failure()
               uses: slackapi/slack-github-action@v2.1.0
               with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK }}
-                  webhook-type: incoming-webhook
                   payload: |
                       {
                         "text": "❌ Production Deployment Failed",
@@ -349,11 +347,13 @@ jobs:
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*❌ Deployment Failed*\nVersion: ${{ github.sha }}\nAuthor: ${{ github.actor }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                              "text": "*❌ Deployment Failed*\nCheck GitHub Actions logs"
                             }
                           }
                         ]
                       }
+              env:
+                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
     # ============================================================================
     # Stage 4: CLEANUP & REPORTING

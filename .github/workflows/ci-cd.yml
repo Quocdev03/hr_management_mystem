@@ -11,6 +11,7 @@ env:
     OWNER: quocdev03
     REPO: hr_management_mystem
     IMAGE_BACKEND: hrm-backend
+    IMAGE_FRONTEND: hrm-frontend
 
 permissions:
     contents: read
@@ -147,7 +148,7 @@ jobs:
               id: meta
               uses: docker/metadata-action@v6
               with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+                  images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/${{ env.IMAGE_FRONTEND }}
                   tags: |
                       type=ref,event=branch
                       type=semver,pattern={{version}}

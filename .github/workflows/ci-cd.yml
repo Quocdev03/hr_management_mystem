@@ -8,8 +8,9 @@ on:
 
 env:
     REGISTRY: ghcr.io
-    IMAGE_NAME_BACKEND: ${{ github.repository }}/hrm-backend
-    IMAGE_NAME_FRONTEND: ${{ github.repository }}/hrm-frontend
+    OWNER: quocdev03
+    REPO: hr_management_mystem
+    IMAGE_BACKEND: hrm-backend
 
 permissions:
     contents: read
@@ -84,7 +85,7 @@ jobs:
               id: meta
               uses: docker/metadata-action@v6
               with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+                  images: ghcr.io/${{ env.OWNER }}/${{ env.REPO }}/${{ env.IMAGE_BACKEND }}
                   tags: |
                       type=ref,event=branch
                       type=semver,pattern={{version}}
@@ -104,15 +105,15 @@ jobs:
                   push: true
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
-                  cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
-                  cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+                  cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/${{ env.IMAGE_BACKEND }}:buildcache
+                  cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/${{ env.IMAGE_BACKEND }}:buildcache,mode=max
 
             - name: 🔒 Security Scan - Trivy
               uses: aquasecurity/trivy-action@v0.36.0
               with:
                   # scan the exact image just built/pushed via its digest, not a
                   # ":latest" tag that this job never actually creates
-                  image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}@${{ steps.build.outputs.digest }}
+                  image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPO }}/${{ env.IMAGE_BACKEND }}@${{ steps.build.outputs.digest }}
                   format: sarif
                   output: trivy-backend.sarif
                   severity: "HIGH,CRITICAL"

@@ -30,7 +30,9 @@ func CreateDatabase(cfg *DatabaseConfig) {
 	}
 
 	if sqlTempDB, err := tempDB.DB(); err == nil {
-		sqlTempDB.Close()
+		if err := sqlTempDB.Close(); err != nil {
+			log.Printf("failed to close temp db: %v", err)
+		}
 	}
 }
 
@@ -154,12 +156,20 @@ func seedPermissions(ctx *gorm.DB) error {
 
 func seedRolePermissions(ctx *gorm.DB) error {
 	var adminRole, hrRole, employeeRole model.Role
-	if err := ctx.Where("name = ?", "admin").First(&adminRole).Error; err != nil { return err }
-	if err := ctx.Where("name = ?", "hr").First(&hrRole).Error; err != nil { return err }
-	if err := ctx.Where("name = ?", "employee").First(&employeeRole).Error; err != nil { return err }
+	if err := ctx.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
+		return err
+	}
+	if err := ctx.Where("name = ?", "hr").First(&hrRole).Error; err != nil {
+		return err
+	}
+	if err := ctx.Where("name = ?", "employee").First(&employeeRole).Error; err != nil {
+		return err
+	}
 
 	var allPerms []model.Permission
-	if err := ctx.Find(&allPerms).Error; err != nil { return err }
+	if err := ctx.Find(&allPerms).Error; err != nil {
+		return err
+	}
 
 	adminCodes := []string{"employee.read", "employee.create", "employee.update", "employee.delete", "user.read", "user.create", "user.update", "user.delete", "department.read", "department.create", "department.update", "department.delete"}
 	hrCodes := []string{"employee.read", "employee.create", "employee.update", "department.read"}
@@ -181,9 +191,15 @@ func seedRolePermissions(ctx *gorm.DB) error {
 		return nil
 	}
 
-	if err := assign(adminRole.ID, adminCodes); err != nil { return err }
-	if err := assign(hrRole.ID, hrCodes); err != nil { return err }
-	if err := assign(employeeRole.ID, employeeCodes); err != nil { return err }
+	if err := assign(adminRole.ID, adminCodes); err != nil {
+		return err
+	}
+	if err := assign(hrRole.ID, hrCodes); err != nil {
+		return err
+	}
+	if err := assign(employeeRole.ID, employeeCodes); err != nil {
+		return err
+	}
 
 	return nil
 }

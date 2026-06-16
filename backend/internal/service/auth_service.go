@@ -81,14 +81,14 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		return nil, errors.New("email là bắt buộc")
 	}
 	if len(req.Password) < 8 {
-		return nil, errors.New("Mật khẩu phải có ít nhất 8 ký tự")
+		return nil, errors.New("mật khẩu phải có ít nhất 8 ký tự")
 	}
 
 	// Tìm user theo email.
 	user, err := au.useRepo.FindByEmail(req.Email)
 	if err != nil {
 		// Trả lỗi chung không tiết lộ email hay pass.
-		return nil, errors.New("Email hoặc mật khẩu không hợp lệ!")
+		return nil, errors.New("email hoặc mật khẩu không hợp lệ!")
 	}
 
 	// Kiểm tra xem tài khoản có bị khoá không.

@@ -103,13 +103,14 @@ func CheckEmail(ve *ValidationErrors, email string) {
 	validateEmailFormat(ve, email)
 }
 
-
 func validatePasswordFormat(ve *ValidationErrors, password string) {
 	if len(password) < 8 {
 		ve.Add(FieldPassword, "Mật khẩu phải có ít nhất 8 ký tự")
 		return
 	}
-	if !(regUpper.MatchString(password) && regLower.MatchString(password) && regDigit.MatchString(password)) {
+	if !regUpper.MatchString(password) ||
+		!regLower.MatchString(password) ||
+		!regDigit.MatchString(password) {
 		ve.Add(FieldPassword, "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số")
 	}
 }
@@ -121,7 +122,6 @@ func CheckPassword(ve *ValidationErrors, password string) {
 	}
 	validatePasswordFormat(ve, password)
 }
-
 
 func validateUsernameFormat(ve *ValidationErrors, username string) {
 	l := length(username)
@@ -141,7 +141,6 @@ func CheckUsername(ve *ValidationErrors, username string) {
 	validateUsernameFormat(ve, username)
 }
 
-
 func validatePhoneFormat(ve *ValidationErrors, phone string) {
 	if !regPhone.MatchString(phone) {
 		ve.Add(FieldPhone, "Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 số")
@@ -156,7 +155,6 @@ func CheckPhone(ve *ValidationErrors, phone string) {
 	}
 	validatePhoneFormat(ve, phone)
 }
-
 
 func validateNameFormat(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen, maxLen int) {
 	l := length(name)
@@ -176,7 +174,6 @@ func CheckName(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen,
 	validateNameFormat(ve, fieldName, fieldLabel, name, minLen, maxLen)
 }
 
-
 func validateCodeFormat(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen, maxLen int) {
 	l := length(code)
 	if l < minLen || l > maxLen {
@@ -194,4 +191,3 @@ func CheckCode(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen,
 	}
 	validateCodeFormat(ve, fieldName, fieldLabel, code, minLen, maxLen)
 }
-

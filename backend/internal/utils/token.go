@@ -49,19 +49,19 @@ func ValidateToken(tokenString string, secretKey string) (*model.Claims, error) 
 	token, err := jwt.ParseWithClaims(tokenString, &model.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Kiểm tra đúng thuật toán đã ký (HMAC SHA-256).
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("Thuật toán ký không hợp lệ")
+			return nil, errors.New("thuật toán ký không hợp lệ")
 		}
 		return []byte(secretKey), nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, errors.New("Token đã hết hạn!")
+			return nil, errors.New("token đã hết hạn!")
 		}
-		return nil, errors.New("Token không hợp lệ!")
+		return nil, errors.New("token không hợp lệ!")
 	}
 	claim, ok := token.Claims.(*model.Claims)
 	if !ok || !token.Valid {
-		return nil, errors.New("Token không hợp lệ")
+		return nil, errors.New("token không hợp lệ")
 	}
 	return claim, nil
 }

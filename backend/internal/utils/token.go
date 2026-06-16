@@ -55,9 +55,9 @@ func ValidateToken(tokenString string, secretKey string) (*model.Claims, error) 
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, errors.New("token đã hết hạn!")
+			return nil, errors.New("token đã hết hạn")
 		}
-		return nil, errors.New("token không hợp lệ!")
+		return nil, errors.New("token không hợp lệ")
 	}
 	claim, ok := token.Claims.(*model.Claims)
 	if !ok || !token.Valid {

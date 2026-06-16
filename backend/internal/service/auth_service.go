@@ -88,7 +88,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	user, err := au.useRepo.FindByEmail(req.Email)
 	if err != nil {
 		// Trả lỗi chung không tiết lộ email hay pass.
-		return nil, errors.New("email hoặc mật khẩu không hợp lệ!")
+		return nil, errors.New("email hoặc mật khẩu không hợp lệ")
 	}
 
 	// Kiểm tra xem tài khoản có bị khoá không.
@@ -97,12 +97,13 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("Email hoặc mật khẩu không hợp lệ!")
+		return nil, errors.New("email hoặc mật khẩu không hợp lệ")
 	}
 
 	permissions, err := au.permRepo.GetPermissionCodes(user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Không thể lấy quyền người dùng: %w", err)
+		return nil, fmt.Errorf("không thể lấy quyền người dùng: %w", err)
+
 	}
 	user.Permissions = permissions
 
@@ -116,7 +117,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		au.jwtCfg.ExpireHour,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Có lỗi khi tạo token: %w", err)
+		return nil, fmt.Errorf("có lỗi khi tạo token: %w", err)
 	}
 
 	// Tạo refresh token chứa thông tin user và role.
@@ -129,7 +130,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		au.jwtCfg.RefreshExpireDay,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Có lỗi khi tạo refresh token: %w", err)
+		return nil, fmt.Errorf("có lỗi khi tạo refresh token: %w", err)
 	}
 
 	// Lưu refresh token vào Redis.
@@ -193,7 +194,7 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 
 	permissions, err := au.permRepo.GetPermissionCodes(user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("Không thể lấy quyền người dùng: %w", err)
+		return nil, fmt.Errorf("không thể lấy quyền người dùng: %w", err)
 	}
 	user.Permissions = permissions
 

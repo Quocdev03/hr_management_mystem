@@ -241,9 +241,11 @@ jobs:
               id: now
               run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-            - name: 📢 Slack Notification
+            - name: 📢 Slack Notification - Deployment Starting
               uses: slackapi/slack-github-action@v2.1.0
               with:
+                  webhook-type: incoming-webhook
+                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
                   payload: |
                       {
                         "text": "🚀 Production Deployment Starting",
@@ -257,8 +259,6 @@ jobs:
                           }
                         ]
                       }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
             - name: 🚀 Deploy to Production Server
               run: |
@@ -315,10 +315,12 @@ jobs:
                     }' \
                     -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
 
-            - name: 📢 Slack Success
+            - name: 📢 Slack Notification - Success
               if: success()
               uses: slackapi/slack-github-action@v2.1.0
               with:
+                  webhook-type: incoming-webhook
+                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
                   payload: |
                       {
                         "text": "✅ Production Deployment Successful",
@@ -332,28 +334,26 @@ jobs:
                           }
                         ]
                       }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
-            - name: 📢 Slack Failed
-              if: failure()
+            - name: 📢 Slack Notification - Success
+              if: success()
               uses: slackapi/slack-github-action@v2.1.0
               with:
+                  webhook-type: incoming-webhook
+                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
                   payload: |
                       {
-                        "text": "❌ Production Deployment Failed",
+                        "text": "✅ Production Deployment Successful",
                         "blocks": [
                           {
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*❌ Deployment Failed*\nCheck GitHub Actions logs"
+                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}"
                             }
                           }
                         ]
                       }
-              env:
-                  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
     # ============================================================================
     # Stage 4: CLEANUP & REPORTING

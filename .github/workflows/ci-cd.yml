@@ -13,6 +13,8 @@ env:
     IMAGE_BACKEND: hrm-backend
     IMAGE_FRONTEND: hrm-frontend
 
+    SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
 permissions:
     contents: read
 
@@ -241,20 +243,21 @@ jobs:
               id: now
               run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-            - name: 📢 Slack Notification - Deployment Starting
+            - name: 📢 Slack Notification
+              if: always()
               uses: slackapi/slack-github-action@v2.1.0
               with:
                   webhook-type: incoming-webhook
-                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  webhook: ${{ env.SLACK_WEBHOOK }}
                   payload: |
                       {
-                        "text": "🚀 Production Deployment Starting",
+                        "text": "${{ env.SLACK_TITLE }}",
                         "blocks": [
                           {
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*Deployment Started*\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}"
+                              "text": "${{ env.SLACK_MESSAGE }}"
                             }
                           }
                         ]
@@ -315,12 +318,12 @@ jobs:
                     }' \
                     -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
 
-            - name: 📢 Slack Notification - Success
-              if: success()
+            - name: 📢 Slack - Success
+              if: success() && github.ref == 'refs/heads/main'
               uses: slackapi/slack-github-action@v2.1.0
               with:
                   webhook-type: incoming-webhook
-                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  webhook: ${{ secrets.SLACK_WEBHOOK }}
                   payload: |
                       {
                         "text": "✅ Production Deployment Successful",
@@ -329,27 +332,27 @@ jobs:
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}"
+                              "text": "*✅ Deployment Successful*\n• Version: ${{ github.sha }}\n• Time: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
                             }
                           }
                         ]
                       }
 
-            - name: 📢 Slack Notification - Success
-              if: success()
+            - name: 📢 Slack - Failure
+              if: failure() && github.ref == 'refs/heads/main'
               uses: slackapi/slack-github-action@v2.1.0
               with:
                   webhook-type: incoming-webhook
-                  slack-webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  webhook: ${{ secrets.SLACK_WEBHOOK }}
                   payload: |
                       {
-                        "text": "✅ Production Deployment Successful",
+                        "text": "❌ Production Deployment Failed",
                         "blocks": [
                           {
                             "type": "section",
                             "text": {
                               "type": "mrkdwn",
-                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}"
+                              "text": "*❌ Deployment Failed*\n• Commit: ${{ github.sha }}\n• Author: ${{ github.actor }}\n• Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                             }
                           }
                         ]

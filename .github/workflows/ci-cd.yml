@@ -1,379 +1,379 @@
 name: 🚀 CI/CD Pipeline - Build & Deploy
 
 on:
-   push:
-      branches: [main, develop, staging]
-   pull_request:
-      branches: [main, develop]
+    push:
+        branches: [main, develop, staging]
+    pull_request:
+        branches: [main, develop]
 
 env:
-   REGISTRY: ghcr.io
-   IMAGE_NAME_BACKEND: ${{ github.repository }}/hrm-backend
-   IMAGE_NAME_FRONTEND: ${{ github.repository }}/hrm-frontend
+    REGISTRY: ghcr.io
+    IMAGE_NAME_BACKEND: ${{ github.repository }}/hrm-backend
+    IMAGE_NAME_FRONTEND: ${{ github.repository }}/hrm-frontend
 
 permissions:
-   contents: read
+    contents: read
 
 jobs:
-   # ============================================================================
-   # Stage 1: LINT & TEST (Linting & Unit Tests)
-   # ============================================================================
-   lint-and-test:
-      name: Lint & Test Backend
-      runs-on: ubuntu-latest
-      steps:
-         - name: 📥 Checkout code
-           uses: actions/checkout@v6
+    # ============================================================================
+    # Stage 1: LINT & TEST (Linting & Unit Tests)
+    # ============================================================================
+    lint-and-test:
+        name: Lint & Test Backend
+        runs-on: ubuntu-latest
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v6
 
-         - name: 🔧 Setup Go
-           uses: actions/setup-go@v6
-           with:
-              go-version: "1.26"
-              cache-dependency-path: backend/go.sum
+            - name: 🔧 Setup Go
+              uses: actions/setup-go@v6
+              with:
+                  go-version: "1.26"
+                  cache-dependency-path: backend/go.sum
 
-         - name: 📦 Download Go modules
-           run: |
-              cd backend
-              go mod download
-              go mod verify
+            - name: 📦 Download Go modules
+              run: |
+                  cd backend
+                  go mod download
+                  go mod verify
 
-         - name: 🔍 Run linting (golangci-lint)
-           uses: golangci/golangci-lint-action@v9
-           with:
-              version: v2.12
-              working-directory: backend
+            - name: 🔍 Run linting (golangci-lint)
+              uses: golangci/golangci-lint-action@v9
+              with:
+                  version: v2.12
+                  working-directory: backend
 
-         - name: 🧪 Run unit tests
-           run: |
-              cd backend
-              go test -v -race -coverprofile=coverage.out ./...
+            - name: 🧪 Run unit tests
+              run: |
+                  cd backend
+                  go test -v -race -coverprofile=coverage.out ./...
 
-         - name: 📊 Upload coverage to Codecov
-           uses: codecov/codecov-action@v5
-           with:
-              files: ./backend/coverage.out
-              flags: unittests
-              name: codecov-umbrella
-              token: ${{ secrets.CODECOV_TOKEN }}
+            - name: 📊 Upload coverage to Codecov
+              uses: codecov/codecov-action@v5
+              with:
+                  files: ./backend/coverage.out
+                  flags: unittests
+                  name: codecov-umbrella
+                  token: ${{ secrets.CODECOV_TOKEN }}
 
-   # ============================================================================
-   # Stage 2: BUILD & SCAN (Build Docker Images & Security Scan)
-   # ============================================================================
-   build-backend:
-      name: Build Backend Image
-      runs-on: ubuntu-latest
-      needs: lint-and-test
-      if: github.event_name == 'push' # Chỉ build khi push, không PR
-      permissions:
-         contents: read
-         packages: write
-         security-events: write # required by codeql-action/upload-sarif
+    # ============================================================================
+    # Stage 2: BUILD & SCAN (Build Docker Images & Security Scan)
+    # ============================================================================
+    build-backend:
+        name: Build Backend Image
+        runs-on: ubuntu-latest
+        needs: lint-and-test
+        if: github.event_name == 'push' # Chỉ build khi push, không PR
+        permissions:
+            contents: read
+            packages: write
+            security-events: write # required by codeql-action/upload-sarif
 
-      steps:
-         - name: 📥 Checkout code
-           uses: actions/checkout@v6
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v6
 
-         - name: 🔐 Log in to Container Registry
-           uses: docker/login-action@v4
-           with:
-              registry: ${{ env.REGISTRY }}
-              username: ${{ github.actor }}
-              password: ${{ secrets.GITHUB_TOKEN }}
+            - name: 🔐 Log in to Container Registry
+              uses: docker/login-action@v4
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-         - name: 📝 Extract metadata
-           id: meta
-           uses: docker/metadata-action@v6
-           with:
-              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-              tags: |
-                 type=ref,event=branch
-                 type=semver,pattern={{version}}
-                 type=semver,pattern={{major}}.{{minor}}
-                 type=sha,prefix={{branch}}-
+            - name: 📝 Extract metadata
+              id: meta
+              uses: docker/metadata-action@v6
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+                  tags: |
+                      type=ref,event=branch
+                      type=semver,pattern={{version}}
+                      type=semver,pattern={{major}}.{{minor}}
+                      type=sha,prefix={{branch}}-
 
-         - name: 🛠️ Set up Docker Buildx
-           uses: docker/setup-buildx-action@v3
-           # required for cache-to/cache-from with type=registry; the default
-           # "docker" driver cannot export cache, only docker-container can.
+            - name: 🛠️ Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+              # required for cache-to/cache-from with type=registry; the default
+              # "docker" driver cannot export cache, only docker-container can.
 
-         - name: 🐳 Build & Push Backend Image
-           id: build
-           uses: docker/build-push-action@v7
-           with:
-              context: ./backend
-              push: true
-              tags: ${{ steps.meta.outputs.tags }}
-              labels: ${{ steps.meta.outputs.labels }}
-              cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
-              cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
+            - name: 🐳 Build & Push Backend Image
+              id: build
+              uses: docker/build-push-action@v7
+              with:
+                  context: ./backend
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache
+                  cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:buildcache,mode=max
 
-         - name: 🔒 Security Scan - Trivy
-           uses: aquasecurity/trivy-action@v0.36.0
-           with:
-              # scan the exact image just built/pushed via its digest, not a
-              # ":latest" tag that this job never actually creates
-              image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}@${{ steps.build.outputs.digest }}
-              format: sarif
-              output: trivy-backend.sarif
-              severity: "HIGH,CRITICAL"
+            - name: 🔒 Security Scan - Trivy
+              uses: aquasecurity/trivy-action@v0.36.0
+              with:
+                  # scan the exact image just built/pushed via its digest, not a
+                  # ":latest" tag that this job never actually creates
+                  image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}@${{ steps.build.outputs.digest }}
+                  format: sarif
+                  output: trivy-backend.sarif
+                  severity: "HIGH,CRITICAL"
 
-         - name: 📤 Upload Trivy results
-           uses: github/codeql-action/upload-sarif@v4
-           with:
-              sarif_file: trivy-backend.sarif
+            - name: 📤 Upload Trivy results
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: trivy-backend.sarif
 
-   build-frontend:
-      name: Build Frontend Image
-      runs-on: ubuntu-latest
-      needs: lint-and-test
-      if: github.event_name == 'push'
-      permissions:
-         contents: read
-         packages: write
+    build-frontend:
+        name: Build Frontend Image
+        runs-on: ubuntu-latest
+        needs: lint-and-test
+        if: github.event_name == 'push'
+        permissions:
+            contents: read
+            packages: write
 
-      steps:
-         - name: 📥 Checkout code
-           uses: actions/checkout@v6
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v6
 
-         - name: 🔐 Log in to Container Registry
-           uses: docker/login-action@v4
-           with:
-              registry: ${{ env.REGISTRY }}
-              username: ${{ github.actor }}
-              password: ${{ secrets.GITHUB_TOKEN }}
+            - name: 🔐 Log in to Container Registry
+              uses: docker/login-action@v4
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-         - name: 📝 Extract metadata
-           id: meta
-           uses: docker/metadata-action@v6
-           with:
-              images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-              tags: |
-                 type=ref,event=branch
-                 type=semver,pattern={{version}}
-                 type=sha,prefix={{branch}}-
+            - name: 📝 Extract metadata
+              id: meta
+              uses: docker/metadata-action@v6
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+                  tags: |
+                      type=ref,event=branch
+                      type=semver,pattern={{version}}
+                      type=sha,prefix={{branch}}-
 
-         - name: 🛠️ Set up Docker Buildx
-           uses: docker/setup-buildx-action@v3
+            - name: 🛠️ Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
 
-         - name: 🐳 Build & Push Frontend Image
-           uses: docker/build-push-action@v7
-           with:
-              context: ./frontend
-              push: true
-              tags: ${{ steps.meta.outputs.tags }}
-              labels: ${{ steps.meta.outputs.labels }}
+            - name: 🐳 Build & Push Frontend Image
+              uses: docker/build-push-action@v7
+              with:
+                  context: ./frontend
+                  push: true
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
 
-   # ============================================================================
-   # Stage 3: DEPLOY (Deploy to Staging/Production)
-   # ============================================================================
-   deploy-staging:
-      name: 🌐 Deploy to Staging
-      runs-on: ubuntu-latest
-      needs: [build-backend, build-frontend]
-      if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
-      environment:
-         name: staging
-         url: https://staging.example.com
+    # ============================================================================
+    # Stage 3: DEPLOY (Deploy to Staging/Production)
+    # ============================================================================
+    deploy-staging:
+        name: 🌐 Deploy to Staging
+        runs-on: ubuntu-latest
+        needs: [build-backend, build-frontend]
+        if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+        environment:
+            name: staging
+            url: https://staging.example.com
 
-      steps:
-         - name: 📥 Checkout code
-           uses: actions/checkout@v6
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v6
 
-         - name: 🚀 Deploy to Staging Server
-           run: |
-              echo "Deploying to Staging..."
+            - name: 🚀 Deploy to Staging Server
+              run: |
+                  echo "Deploying to Staging..."
 
-              # SSH vào server staging
-              mkdir -p ~/.ssh
-              echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key
-              chmod 600 ~/.ssh/staging_key
+                  # SSH vào server staging
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key
+                  chmod 600 ~/.ssh/staging_key
 
-              ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no \
-                ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
-                cd /app/hrm
+                  ssh -i ~/.ssh/staging_key -o StrictHostKeyChecking=no \
+                    ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }} << 'EOF'
+                    cd /app/hrm
 
-                # Pull latest images
-                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:staging
-                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:staging
+                    # Pull latest images
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:staging
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:staging
 
-                # Deploy
-                docker-compose -f docker-compose.staging.yml up -d
+                    # Deploy
+                    docker-compose -f docker-compose.staging.yml up -d
 
-                # Health check
-                sleep 5
-                curl -f http://localhost:8080/health || exit 1
-              EOF
+                    # Health check
+                    sleep 5
+                    curl -f http://localhost:8080/health || exit 1
+                  EOF
 
-         - name: 🧪 Smoke Tests - Staging
-           run: |
-              echo "Running smoke tests..."
+            - name: 🧪 Smoke Tests - Staging
+              run: |
+                  echo "Running smoke tests..."
 
-              for i in {1..30}; do
-                if curl -f https://staging.example.com/health; then
-                  echo "✅ Staging is healthy"
-                  exit 0
-                fi
-                echo "Waiting... ($i/30)"
-                sleep 2
-              done
-              echo "❌ Health check failed"
-              exit 1
+                  for i in {1..30}; do
+                    if curl -f https://staging.example.com/health; then
+                      echo "✅ Staging is healthy"
+                      exit 0
+                    fi
+                    echo "Waiting... ($i/30)"
+                    sleep 2
+                  done
+                  echo "❌ Health check failed"
+                  exit 1
 
-   deploy-production:
-      name: 🎯 Deploy to Production
-      runs-on: ubuntu-latest
-      needs: [build-backend, build-frontend]
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      environment:
-         name: production
-         url: https://api.example.com
-      concurrency:
-         group: production
-         cancel-in-progress: false
+    deploy-production:
+        name: 🎯 Deploy to Production
+        runs-on: ubuntu-latest
+        needs: [build-backend, build-frontend]
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        environment:
+            name: production
+            url: https://api.example.com
+        concurrency:
+            group: production
+            cancel-in-progress: false
 
-      steps:
-         - name: 📥 Checkout code
-           uses: actions/checkout@v6
+        steps:
+            - name: 📥 Checkout code
+              uses: actions/checkout@v6
 
-         - name: 🕒 Compute deployment timestamp
-           id: now
-           run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+            - name: 🕒 Compute deployment timestamp
+              id: now
+              run: echo "value=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-         - name: 📢 Slack Notification - Deployment Starting
-           uses: slackapi/slack-github-action@v1.27.0
-           with:
-              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-              payload: |
-                 {
-                   "text": "🚀 Production Deployment Starting",
-                   "blocks": [
-                     {
-                       "type": "section",
-                       "text": {
-                         "type": "mrkdwn",
-                         "text": "*Deployment Started*\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}"
-                       }
-                     }
-                   ]
-                 }
+            - name: 📢 Slack Notification - Deployment Starting
+              uses: slackapi/slack-github-action@v1.27.0
+              with:
+                  webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  payload: |
+                      {
+                        "text": "🚀 Production Deployment Starting",
+                        "blocks": [
+                          {
+                            "type": "section",
+                            "text": {
+                              "type": "mrkdwn",
+                              "text": "*Deployment Started*\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}"
+                            }
+                          }
+                        ]
+                      }
 
-         - name: 🚀 Deploy to Production Server
-           run: |
-              echo "🎯 Deploying to Production..."
+            - name: 🚀 Deploy to Production Server
+              run: |
+                  echo "🎯 Deploying to Production..."
 
-              mkdir -p ~/.ssh
-              echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/prod_key
-              chmod 600 ~/.ssh/prod_key
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/prod_key
+                  chmod 600 ~/.ssh/prod_key
 
-              ssh -i ~/.ssh/prod_key -o StrictHostKeyChecking=no \
-                ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} << 'EOF'
-                cd /app/hrm
+                  ssh -i ~/.ssh/prod_key -o StrictHostKeyChecking=no \
+                    ${{ secrets.PROD_SSH_USER }}@${{ secrets.PROD_SSH_HOST }} << 'EOF'
+                    cd /app/hrm
 
-                # Backup current state
-                docker-compose -f docker-compose.prod.yml ps > /tmp/deployment_backup_$(date +%s).log
+                    # Backup current state
+                    docker-compose -f docker-compose.prod.yml ps > /tmp/deployment_backup_$(date +%s).log
 
-                # Pull latest images
-                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:main
-                docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:main
+                    # Pull latest images
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:main
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:main
 
-                # Graceful deployment
-                docker-compose -f docker-compose.prod.yml up -d
+                    # Graceful deployment
+                    docker-compose -f docker-compose.prod.yml up -d
 
-                # Health check
-                sleep 10
-                curl -f https://localhost:8443/health || exit 1
-              EOF
+                    # Health check
+                    sleep 10
+                    curl -f https://localhost:8443/health || exit 1
+                  EOF
 
-         - name: 🧪 Smoke Tests - Production
-           run: |
-              echo "Running production smoke tests..."
+            - name: 🧪 Smoke Tests - Production
+              run: |
+                  echo "Running production smoke tests..."
 
-              for i in {1..60}; do
-                if curl -f https://api.example.com/health; then
-                  echo "✅ Production is healthy"
-                  exit 0
-                fi
-                echo "Waiting... ($i/60)"
-                sleep 2
-              done
-              echo "❌ Production health check failed"
-              exit 1
+                  for i in {1..60}; do
+                    if curl -f https://api.example.com/health; then
+                      echo "✅ Production is healthy"
+                      exit 0
+                    fi
+                    echo "Waiting... ($i/60)"
+                    sleep 2
+                  done
+                  echo "❌ Production health check failed"
+                  exit 1
 
-         - name: 📊 Notify Monitoring
-           run: |
-              # Notify monitoring system (DataDog, NewRelic, etc.)
-              curl -X POST https://api.datadoghq.com/api/v1/events \
-                -H "Content-Type: application/json" \
-                -d '{
-                  "title": "HR Management System - Production Deployment",
-                  "text": "Version ${{ github.sha }} deployed to production",
-                  "priority": "low",
-                  "tags": ["deployment", "production", "hrm"]
-                }' \
-                -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
+            - name: 📊 Notify Monitoring
+              run: |
+                  # Notify monitoring system (DataDog, NewRelic, etc.)
+                  curl -X POST https://api.datadoghq.com/api/v1/events \
+                    -H "Content-Type: application/json" \
+                    -d '{
+                      "title": "HR Management System - Production Deployment",
+                      "text": "Version ${{ github.sha }} deployed to production",
+                      "priority": "low",
+                      "tags": ["deployment", "production", "hrm"]
+                    }' \
+                    -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" || true
 
-         - name: 📢 Slack Notification - Deployment Success
-           if: success()
-           uses: slackapi/slack-github-action@v1.27.0
-           with:
-              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-              payload: |
-                 {
-                   "text": "✅ Production Deployment Successful",
-                   "blocks": [
-                     {
-                       "type": "section",
-                       "text": {
-                         "type": "mrkdwn",
-                         "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: ${{ steps.now.outputs.value }}"
-                       }
-                     }
-                   ]
-                 }
+            - name: 📢 Slack Notification - Deployment Success
+              if: success()
+              uses: slackapi/slack-github-action@v1.27.0
+              with:
+                  webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  payload: |
+                      {
+                        "text": "✅ Production Deployment Successful",
+                        "blocks": [
+                          {
+                            "type": "section",
+                            "text": {
+                              "type": "mrkdwn",
+                              "text": "*✅ Deployment Successful*\nVersion: ${{ github.sha }}\nTime: ${{ steps.now.outputs.value }}"
+                            }
+                          }
+                        ]
+                      }
 
-         - name: 📢 Slack Notification - Deployment Failed
-           if: failure()
-           uses: slackapi/slack-github-action@v1.27.0
-           with:
-              webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-              payload: |
-                 {
-                   "text": "❌ Production Deployment Failed",
-                   "blocks": [
-                     {
-                       "type": "section",
-                       "text": {
-                         "type": "mrkdwn",
-                         "text": "*❌ Deployment Failed*\nVersion: ${{ github.sha }}\nAuthor: ${{ github.actor }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                       }
-                     }
-                   ]
-                 }
+            - name: 📢 Slack Notification - Deployment Failed
+              if: failure()
+              uses: slackapi/slack-github-action@v1.27.0
+              with:
+                  webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+                  payload: |
+                      {
+                        "text": "❌ Production Deployment Failed",
+                        "blocks": [
+                          {
+                            "type": "section",
+                            "text": {
+                              "type": "mrkdwn",
+                              "text": "*❌ Deployment Failed*\nVersion: ${{ github.sha }}\nAuthor: ${{ github.actor }}\nCheck: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                            }
+                          }
+                        ]
+                      }
 
-   # ============================================================================
-   # Stage 4: CLEANUP & REPORTING
-   # ============================================================================
-   cleanup:
-      name: 🧹 Cleanup & Reporting
-      runs-on: ubuntu-latest
-      needs: [lint-and-test, build-backend, build-frontend]
-      if: always()
+    # ============================================================================
+    # Stage 4: CLEANUP & REPORTING
+    # ============================================================================
+    cleanup:
+        name: 🧹 Cleanup & Reporting
+        runs-on: ubuntu-latest
+        needs: [lint-and-test, build-backend, build-frontend]
+        if: always()
 
-      steps:
-         - name: 📊 Report Status
-           run: |
-              echo "Lint & Test: ${{ needs.lint-and-test.result }}"
-              echo "Build Backend: ${{ needs.build-backend.result }}"
-              echo "Build Frontend: ${{ needs.build-frontend.result }}"
-              echo "Workflow completed at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        steps:
+            - name: 📊 Report Status
+              run: |
+                  echo "Lint & Test: ${{ needs.lint-and-test.result }}"
+                  echo "Build Backend: ${{ needs.build-backend.result }}"
+                  echo "Build Frontend: ${{ needs.build-frontend.result }}"
+                  echo "Workflow completed at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
-         - name: 📤 Generate Report
-           run: |
-              echo "# CI/CD Pipeline Report" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Lint & Test: **${{ needs.lint-and-test.result }}**" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Build Backend: **${{ needs.build-backend.result }}**" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Build Frontend: **${{ needs.build-frontend.result }}**" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
-              echo "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"
+            - name: 📤 Generate Report
+              run: |
+                  echo "# CI/CD Pipeline Report" >> "$GITHUB_STEP_SUMMARY"
+                  echo "" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Lint & Test: **${{ needs.lint-and-test.result }}**" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Build Backend: **${{ needs.build-backend.result }}**" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Build Frontend: **${{ needs.build-frontend.result }}**" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Branch: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"

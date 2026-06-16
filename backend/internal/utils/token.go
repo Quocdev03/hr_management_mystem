@@ -49,7 +49,7 @@ func ValidateToken(tokenString string, secretKey string) (*model.Claims, error) 
 	token, err := jwt.ParseWithClaims(tokenString, &model.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Kiểm tra đúng thuật toán đã ký (HMAC SHA-256).
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("Thuật toán ký không hợp lệ!")
+			return nil, errors.New("Thuật toán ký không hợp lệ")
 		}
 		return []byte(secretKey), nil
 	})

@@ -27,11 +27,11 @@ type AuthService interface {
 
 // --- Auth Service Implementation ---
 type authService struct {
-	useRepo   repository.UserRepository
-	empRepo   repository.EmployeeRepository
-	permRepo  repository.PermissionRepository
-	jwtCfg    *config.JWTConfig
-	rdb       *redis.Client
+	useRepo  repository.UserRepository
+	empRepo  repository.EmployeeRepository
+	permRepo repository.PermissionRepository
+	jwtCfg   *config.JWTConfig
+	rdb      *redis.Client
 }
 
 func NewAuthService(userRepo repository.UserRepository, empRepo repository.EmployeeRepository, permRepo repository.PermissionRepository, jwtCfg *config.JWTConfig, rdb *redis.Client) AuthService {
@@ -47,7 +47,7 @@ func NewAuthService(userRepo repository.UserRepository, empRepo repository.Emplo
 // Logout xử lý đăng xuất bằng cách blacklist access token và xóa refresh token.
 func (au *authService) Logout(tokenString string, remainingTime time.Duration, refreshToken string) error {
 	if au.rdb == nil {
-		return errors.New("Redis client is not initialized")
+		return errors.New("redis client is not initialized")
 	}
 	ctx := context.Background()
 
@@ -78,7 +78,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	// Validate đầu vào (defense-in-depth, handler đã validate rồi).
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	if req.Email == "" {
-		return nil, errors.New("Email là bắt buộc")
+		return nil, errors.New("email là bắt buộc")
 	}
 	if len(req.Password) < 8 {
 		return nil, errors.New("Mật khẩu phải có ít nhất 8 ký tự")
@@ -152,7 +152,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 // RefreshToken dùng refresh token cũ để lấy access token mới và refresh token mới (rotation).
 func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResponse, error) {
 	if au.rdb == nil {
-		return nil, errors.New("Redis client is not initialized")
+		return nil, errors.New("redis client is not initialized")
 	}
 	ctx := context.Background()
 

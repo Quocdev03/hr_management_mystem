@@ -9,6 +9,7 @@ import (
 	"chiquoc_hocgolang/internal/utils"
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -98,12 +99,17 @@ func main() {
 	}
 
 	// Đóng kết nối database
-	sqlDB, _ := db.DB()
-	sqlDB.Close()
-
+	if sqlDB, err := db.DB(); err == nil {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("failed to close database: %v", err)
+		}
+	}
+	// Đóng kết nối Redis
 	// Đóng kết nối Redis
 	if rdb != nil {
-		rdb.Close()
+		if err := rdb.Close(); err != nil {
+			log.Printf("failed to close redis: %v", err)
+		}
 	}
 
 	utils.Info("Server đã thoát thành công.")

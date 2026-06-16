@@ -41,8 +41,8 @@ func RunMigrations(db *gorm.DB) {
 
 	origDisableFK := false
 	if db.Config != nil {
-		origDisableFK = db.Config.DisableForeignKeyConstraintWhenMigrating
-		db.Config.DisableForeignKeyConstraintWhenMigrating = true
+		origDisableFK = db.DisableForeignKeyConstraintWhenMigrating
+		db.DisableForeignKeyConstraintWhenMigrating = true
 	}
 
 	if err := db.AutoMigrate(&model.Department{}, &model.Employee{}); err != nil {
@@ -50,7 +50,7 @@ func RunMigrations(db *gorm.DB) {
 	}
 
 	if db.Config != nil {
-		db.Config.DisableForeignKeyConstraintWhenMigrating = origDisableFK
+		db.DisableForeignKeyConstraintWhenMigrating = origDisableFK
 	}
 
 	if err := db.Migrator().CreateConstraint(&model.Employee{}, "User"); err != nil {

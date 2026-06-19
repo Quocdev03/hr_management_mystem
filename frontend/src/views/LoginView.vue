@@ -1,8 +1,7 @@
 <script setup>
-import { Eye, EyeOff, Lock, Mail, Users } from '@lucide/vue';
+import { Eye, EyeOff, Lock, Mail, Users } from "@lucide/vue";
 
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
-
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { reactive, ref } from "vue";
@@ -50,7 +49,7 @@ function togglePasswordVisibility() {
 		<section class="login-card">
 			<header class="logo-section">
 				<div class="logo-icon">
-					<Users class="logo-svg" />
+					<img src="../assets/image/logo.png" alt="" />
 				</div>
 				<h2 class="login-title">Chào mừng trở lại</h2>
 				<p class="login-subtitle">
@@ -92,7 +91,9 @@ function togglePasswordVisibility() {
 							@click="togglePasswordVisibility"
 							aria-label="Ẩn/hiện mật khẩu"
 						>
-							<component :is="!isPasswordVisible ? Eye : EyeOff" />
+							<component
+								:is="!isPasswordVisible ? Eye : EyeOff"
+							/>
 						</button>
 					</div>
 				</div>
@@ -137,7 +138,11 @@ function togglePasswordVisibility() {
 }
 
 .blob-1 {
-	background: radial-gradient(circle, rgba(0, 192, 250, 0.35) 0%, rgba(0, 192, 250, 0) 70%); /* Cyan */
+	background: radial-gradient(
+		circle,
+		rgba(0, 192, 250, 0.35) 0%,
+		rgba(0, 192, 250, 0) 70%
+	); /* Cyan */
 	width: 450px;
 	height: 450px;
 	top: 10%;
@@ -146,7 +151,11 @@ function togglePasswordVisibility() {
 }
 
 .blob-2 {
-	background: radial-gradient(circle, rgba(103, 23, 204, 0.25) 0%, rgba(103, 23, 204, 0) 70%); /* Purple */
+	background: radial-gradient(
+		circle,
+		rgba(103, 23, 204, 0.25) 0%,
+		rgba(103, 23, 204, 0) 70%
+	); /* Purple */
 	width: 500px;
 	height: 500px;
 	bottom: 10%;
@@ -202,22 +211,15 @@ function togglePasswordVisibility() {
 
 .logo-icon {
 	margin-bottom: var(--space-2);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 64px;
-	height: 64px;
-	background: var(--primary-gradient);
-	border-radius: var(--radius-xl);
-	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.2);
 }
-
-.logo-svg {
-	width: 32px;
-	height: 32px;
-	color: white;
+.logo-icon img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	max-width: 190px;
+	margin-left: auto;
+	margin-right: auto;
 }
-
 .login-title {
 	font-family: var(--font-title);
 	color: var(--text-main);
@@ -277,7 +279,11 @@ function togglePasswordVisibility() {
 	font-size: var(--fs-base);
 	color: var(--text-main);
 	background: rgba(255, 255, 255, 0.85);
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		box-shadow 0.2s ease;
 	outline: none;
 	font-family: var(--font-body);
 }

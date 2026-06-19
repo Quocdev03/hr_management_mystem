@@ -55,8 +55,9 @@ const emit = defineEmits(["confirm", "cancel"]);
 .confirm-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(15, 23, 42, 0.65);
+	background: rgba(15, 23, 42, 0.25);
 	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -65,11 +66,12 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-container {
-	background: var(--bg-card, #ffffff);
-	border-radius: var(--radius-xl, 16px);
+	background: #ffffff;
+	border: 1px solid rgba(66, 97, 237, 0.15);
+	border-radius: var(--radius-xl);
 	width: 100%;
 	max-width: 400px;
-	box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.12);
 	overflow: hidden;
 	animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -85,50 +87,51 @@ const emit = defineEmits(["confirm", "cancel"]);
 .warning-icon {
 	width: 64px;
 	height: 64px;
-	color: #ef4444;
-	background-color: #fef2f2;
+	background-color: rgba(225, 29, 72, 0.1);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 20px;
 	padding: 14px;
-	border: 8px solid #fff1f2;
+	border: 8px solid rgba(225, 29, 72, 0.05);
 }
 
-.warning-icon svg {
+.warning-icon img {
 	width: 100%;
 	height: 100%;
+	filter: invert(24%) sepia(87%) saturate(2258%) hue-rotate(330deg) brightness(95%) contrast(92%); /* Rose filter */
 }
 
 .confirm-title {
-	font-size: 20px;
+	font-family: var(--font-title);
+	font-size: var(--fs-xl);
 	font-weight: 700;
-	color: var(--text-main, #0f172a);
+	color: var(--text-main);
 	margin: 0 0 12px 0;
 }
 
 .confirm-message {
-	font-size: 15px;
-	color: var(--text-muted, #64748b);
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
 	line-height: 1.5;
 	margin: 0;
 }
 
 .confirm-footer {
 	padding: 16px 24px;
-	background: var(--bg-lighter, #f8fafc);
+	background: #f8faf9;
 	display: flex;
 	justify-content: center;
 	gap: 12px;
-	border-top: 1px solid var(--border-color, #e2e8f0);
+	border-top: 1px solid var(--border-color);
 }
 
 .btn {
 	padding: 10px 16px;
 	border-radius: 8px;
 	font-weight: 600;
-	font-size: 14px;
+	font-size: var(--fs-sm);
 	cursor: pointer;
 	transition: all 0.2s ease;
 	display: flex;
@@ -138,29 +141,32 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .btn-cancel {
-	background: white;
-	border: 1px solid var(--border-color, #e2e8f0);
-	color: var(--text-main, #334155);
+	background: rgba(255, 255, 255, 0.5);
+	border: 1px solid var(--border-color);
+	color: var(--text-muted);
 	flex: 1;
-	box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	backdrop-filter: var(--glass-backdrop);
 }
 
 .btn-cancel:hover {
-	background: #f1f5f9;
-	color: #0f172a;
+	background: rgba(255, 255, 255, 0.8);
+	border-color: var(--border-hover);
+	color: var(--text-main);
 }
 
 .btn-delete {
-	background: #ef4444;
-	border: 1px solid #ef4444;
+	background: var(--danger-color);
+	border: 1px solid var(--danger-color);
 	color: white;
 	flex: 1;
-	box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	box-shadow: 0 4px 14px rgba(225, 29, 72, 0.2);
 }
 
 .btn-delete:hover:not(:disabled) {
-	background: #dc2626;
-	border-color: #dc2626;
+	background: var(--danger-hover);
+	border-color: var(--danger-hover);
+	box-shadow: 0 6px 20px rgba(225, 29, 72, 0.3);
 }
 
 .btn-delete:disabled {

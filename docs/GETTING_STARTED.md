@@ -1,177 +1,97 @@
-👋 **CHÀO MỪNG!** Bạn vừa tải source code project HR Management System
+# 🚀 Getting Started — HR Management System
+
+> **Tài liệu hướng dẫn cài đặt và khởi chạy dự án trong môi trường phát triển (Development).**
 
 ---
 
-# 🚀 GETTING STARTED
+## ✅ Yêu cầu hệ thống
 
-**Hướng dẫn nhanh và chi tiết cho người mới**
+Chỉ cần cài đặt **Docker Desktop** trên máy của bạn:
+
+- **Windows / macOS:** Tải và cài đặt tại [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- **Linux:** Cài đặt thông qua package manager: `sudo apt install docker.io docker-compose-plugin`
 
 ---
 
-## ⚡ Chạy Ngay (3 Phút)
+## ⚡ Khởi chạy dự án (Development)
 
-Nếu bạn chỉ muốn chạy project ngay:
+### Trên Windows (Sử dụng Command Prompt / CMD)
+
+Mở CMD trong thư mục gốc của dự án và chạy:
+
+```cmd
+:: Lần đầu tiên chạy (để thiết lập DB, chạy migration và seed dữ liệu mẫu)
+start-dev.bat setup
+
+:: Các lần tiếp theo chạy (chỉ khởi động hệ thống)
+start-dev.bat
+```
+
+### Trên macOS / Linux (Sử dụng Terminal)
+
+Mở Terminal trong thư mục gốc của dự án và chạy:
 
 ```bash
-# 1. Setup environment
-cp .env.example .env
-# Edit 3 dòng quan trọng trong .env:
-#  - DB_PASSWORD=strong_pass_16_chars
-#  - MYSQL_ROOT_PASSWORD=root_pass_16_chars
-#  - JWT_SECRET=jwt_secret_32_chars
+# Lần đầu tiên chạy: Khởi chạy docker compose, sau đó chạy migrate và seed
+docker compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml run --rm migrate
+docker compose -f docker-compose.dev.yml run --rm seed
 
-# 2. Tạo SSL certificates
-chmod +x scripts/generate-certs.sh
-./scripts/generate-certs.sh
-
-# 3. Chạy project
-docker-compose -f docker-compose.prod.yml up -d
-
-# 4. Chờ ~30 giây
-sleep 30
-
-# 5. Truy cập
-# Frontend: https://localhost
-# Backend Health: curl -k https://localhost/api/v1/health
-```
-
-✅ **Xong!** Project chạy được.
-
----
-
-## 📚 Chọn Hướng Dẫn Phù Hợp
-
-### 🏃 "Tôi chỉ muốn chạy project ngay"
-
-⏱️ **Mất 3 phút**
-
-```bash
-cp .env.example .env
-# Edit .env: change DB_PASSWORD, MYSQL_ROOT_PASSWORD, JWT_SECRET
-
-chmod +x scripts/generate-certs.sh
-./scripts/generate-certs.sh
-
-docker-compose -f docker-compose.prod.yml up -d
-sleep 30
-
-# Truy cập: https://localhost
-# Backend: curl -k https://localhost/api/v1/health
-```
-
-✅ **Xong!** Project chạy được.
-
----
-
-### 🧑‍🎓 "Tôi muốn hiểu từng bước"
-
-⏱️ **Mất 20 phút**
-
-👉 **[Đọc: SETUP_FOR_NEWCOMERS.md](SETUP_FOR_NEWCOMERS.md)**
-
-Bao gồm:
-
-- Cài đặt phần mềm yêu cầu
-- Setup environment từng bước
-- Giải thích từng lệnh
-- Xử lý lỗi thường gặp
-- Lệnh hữu ích
-
----
-
-### 🎯 "Tôi muốn biết project này làm gì"
-
-⏱️ **Mất 30 phút**
-
-👉 **[Đọc: README.md](README.md)**
-
----
-
-### 🔐 "Tôi muốn biết về bảo mật"
-
-⏱️ **Mất 5 phút**
-
-👉 **Xem phần "🗄️ Chiến Lược Redis"** trong [README.md](../README.MD)
-
-Bao gồm:
-- Fix `ParseUnverified` vulnerability (JWT)
-- Caching strategy (Dashboard cache 1h, loại bỏ GET cache 95% miss rate)
-- Rate limiting và Token Blacklist
-
----
-
-### 🌍 "Tôi muốn deploy lên production"
-
-⏱️ **Mất 60 phút** (bắt buộc đọc)
-
-👉 **[Đọc: DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**
-
----
-
-## 🎯 Lộ Trình Nhanh
-
-```
-Lần 1: Chạy ngay (3 phút)
-├─ GETTING_STARTED.md (Quick section)
-└─ ✅ Chạy được
-
-Lần 2: Hiểu chi tiết (20 phút)
-├─ SETUP_FOR_NEWCOMERS.md
-└─ ✅ Hiểu rõ
-
-Lần 3: Nâng cao (15 phút)
-├─ README.md (Tech stack + API + Redis strategy)
-└─ ✅ Hiểu sâu
-
-Lần 4: Production (60 phút)
-├─ DEPLOYMENT_GUIDE.md
-└─ ✅ Deploy thành công
+# Các lần tiếp theo chạy
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ---
 
-## 📋 Tài Liệu Có Sẵn
+## 🌍 Các cổng truy cập (Ports)
 
-| Tài Liệu                                                   | Mục Đích                 | Thời Gian |
-| ---------------------------------------------------------- | ------------------------ | --------- |
-| **[SETUP_FOR_NEWCOMERS.md](SETUP_FOR_NEWCOMERS.md)**       | Setup chi tiết từng bước | 20 min    |
-| **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**             | Deploy lên production    | 60 min    |
-| **[README.md](../README.MD)**                              | Tổng quan + Redis strategy | 10 min  |
+Sau khi hệ thống khởi chạy thành công:
+
+- **Frontend (Vue 3 + Vite HMR):** [http://localhost:5173](http://localhost:5173)
+- **Backend API (Go + Gin):** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
 
 ---
 
-## ✅ Yêu Cầu
+## 🔑 Tài khoản đăng nhập demo
 
-- Docker & Docker Compose
-- Git (tùy chọn)
-- Editor (VS Code, Notepad++, etc.)
+Hệ thống đã được tự động seed các tài khoản mẫu sau trong môi trường dev:
 
-```bash
-docker --version
-docker-compose --version
+| Vai trò (Role) | Email đăng nhập | Mật khẩu (Password) |
+|----------------|----------------|---------------------|
+| **Admin** | `chiquoc23AD@company.vn` | `chiquoc23AD` |
+| **HR (Nhân sự)** | `chiquoc23HR@company.vn` | `chiquoc23HR` |
+| **Employee (Nhân viên)** | `chiquoc23EMP@company.vn` | `chiquoc23EMP` |
+
+---
+
+## 📋 Các lệnh quản lý khác (Windows CMD)
+
+| Mục đích | Lệnh chạy |
+|----------|-----------|
+| **Dừng hệ thống** | `start-dev.bat down` |
+| **Xem logs** | `start-dev.bat logs` |
+| **Xem trạng thái container** | `start-dev.bat status` |
+
+---
+
+## 🔧 Cấu hình biến môi trường (.env)
+
+Khi chạy `start-dev.bat`, file `.env` sẽ tự động được copy từ `.env.example` nếu chưa tồn tại.
+Để tùy chỉnh cổng kết nối hoặc thông số DB, bạn có thể chỉnh sửa trực tiếp trong file `.env`:
+
+```env
+APP_PORT=8080        # Cổng chạy Backend API
+VITE_PORT=5173       # Cổng chạy Frontend
+DB_PASSWORD=change_me_strong_db_password   # Mật khẩu MySQL
+JWT_SECRET=change_me_min_32_chars_cryptographically_random_key # Khóa ký JWT
 ```
 
 ---
 
-## 📞 Gặp Vấn Đề?
+## 🐛 Xử lý một số lỗi thường gặp
 
-| Lỗi                 | Giải Pháp                                        |
-| ------------------- | ------------------------------------------------ |
-| Port đang dùng      | `docker-compose -f docker-compose.prod.yml down` |
-| SSL certificate     | `./scripts/generate-certs.sh`                    |
-| .env không tìm      | `cp .env.example .env`                           |
-| Containers "Exited" | `docker-compose -f docker-compose.prod.yml logs` |
-
-👉 **Chi tiết xem:** [SETUP_FOR_NEWCOMERS.md](SETUP_FOR_NEWCOMERS.md)
-
----
-
-## 🎉 Bắt Đầu Thôi!
-
-1. **Chỉ có 3 phút?** → Chạy lệnh quick ở trên
-2. **Có 20 phút?** → Đọc [SETUP_FOR_NEWCOMERS.md](SETUP_FOR_NEWCOMERS.md)
-3. **Muốn deploy?** → Đọc [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-
----
-
-**Cập nhật:** 2026-06-14 | **Phiên bản:** 1.1 | **Trạng thái:** ✅
+| Hiện tượng | Nguyên nhân & Cách khắc phục |
+|------------|------------------------------|
+| `Docker is not running` | Docker Desktop chưa được mở hoặc đang khởi động. Hãy mở Docker Desktop và đợi nó báo xanh. |
+| Cổng `5173` hoặc `8080` bị chiếm | Một ứng dụng khác đang dùng cổng này. Bạn có thể sửa `VITE_PORT` / `APP_PORT` tương ứng trong file `.env` rồi khởi động lại. |
+| Container dừng bất thường | Chạy lệnh `start-dev.bat logs` để xem thông tin lỗi của container đó. |

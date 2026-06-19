@@ -47,18 +47,10 @@ export function usePermissions() {
 	const isEmployee = computed(() => roleName.value === "employee");
 
 	// === Quyền trên Nhân viên ===
-	const canViewEmployeeList = computed(
-		() => hasPermission("employee.read") || isAdmin.value || isHR.value,
-	);
-	const canCreateEmployee = computed(
-		() => hasPermission("employee.create") || isAdmin.value || isHR.value,
-	);
-	const canEditEmployee = computed(
-		() => hasPermission("employee.update") || isAdmin.value || isHR.value,
-	);
-	const canDeleteEmployee = computed(
-		() => hasPermission("employee.delete") || isAdmin.value,
-	);
+	const canViewEmployeeList = computed(() => hasPermission("employee.read"));
+	const canCreateEmployee = computed(() => hasPermission("employee.create"));
+	const canEditEmployee = computed(() => hasPermission("employee.update"));
+	const canDeleteEmployee = computed(() => hasPermission("employee.delete"));
 
 	/**
 	 * Employee chỉ được xem chi tiết của chính mình.
@@ -66,24 +58,19 @@ export function usePermissions() {
 	 * Nhận targetEmployeeId để so sánh với employee đang đăng nhập.
 	 */
 	const canViewEmployeeDetail = computed(() => (targetEmployeeId) => {
-		if (
-			hasPermission("employee.read") &&
-			(isAdmin.value ||
-				isHR.value ||
-				authStore.user?.employee?.id === targetEmployeeId)
-		) {
+		if (isAdmin.value || isHR.value) {
 			return true;
 		}
 		return authStore.user?.employee?.id === targetEmployeeId;
 	});
 
 	// === Quyền trên Phòng ban ===
+	const canViewDepartmentList = computed(() => hasPermission("department.read"));
 	const canCrudDepartment = computed(
 		() =>
 			hasPermission("department.create") ||
 			hasPermission("department.update") ||
-			hasPermission("department.delete") ||
-			isAdmin.value,
+			hasPermission("department.delete"),
 	);
 
 	// === Quyền Quản lý User ===
@@ -92,8 +79,7 @@ export function usePermissions() {
 			hasPermission("user.read") ||
 			hasPermission("user.create") ||
 			hasPermission("user.update") ||
-			hasPermission("user.delete") ||
-			isAdmin.value,
+			hasPermission("user.delete"),
 	);
 
 	// Helper: có ít nhất 1 quyền thao tác trên bảng NV không? (hiện/ẩn cột Thao tác)
@@ -114,6 +100,7 @@ export function usePermissions() {
 		canCreateEmployee,
 		canEditEmployee,
 		canDeleteEmployee,
+		canViewDepartmentList,
 		canCrudDepartment,
 		canManageUsers,
 		hasAnyEmployeeAction,

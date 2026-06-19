@@ -1,34 +1,51 @@
 #!/bin/sh
 
-# Mặc định nếu không được cấu hình qua env
+# ═══════════════════════════════════════════════════════════════════════════
+# Backend Production Entrypoint
+# ═══════════════════════════════════════════════════════════════════════════
+# Chỉ chờ DB + Redis, sau đó start server.
+# Migration và Seed KHÔNG chạy tự động.
+#
+# Chạy migration: docker compose run --rm migrate
+# Chạy seed:      docker compose run --rm seed
+# ═══════════════════════════════════════════════════════════════════════════
+
+set -e
+
 DB_HOST=${DB_HOST:-mysql}
 DB_PORT=${DB_PORT:-3306}
 REDIS_HOST=${REDIS_HOST:-redis}
 REDIS_PORT=${REDIS_PORT:-6379}
+WAIT_TIMEOUT=${WAIT_TIMEOUT:-60}
 
-echo "================================================================="
-echo "⚙️ Khởi tạo môi trường Backend..."
-echo "================================================================="
+log_info()    { echo "[INFO]    $*"; }
+log_success() { echo "[SUCCESS] $*"; }
+log_error()   { echo "[ERROR]   $*" >&2; }
 
-# Chờ MySQL sẵn sàng
-echo "▶ Đang chờ MySQL kết nối tại $DB_HOST:$DB_PORT..."
-while ! nc -z $DB_HOST $DB_PORT; do
-  sleep 1
-done
-echo "✔ MySQL đã hoạt động!"
+# ─── Wait for dependency ──────────────────────────────────────────────────────
+wait_for() {
+    local host=$1
+    local port=$2
+    local name=$3
+    local elapsed=0
 
-# Chờ Redis sẵn sàng
-echo "▶ Đang chờ Redis kết nối tại $REDIS_HOST:$REDIS_PORT..."
-while ! nc -z $REDIS_HOST $REDIS_PORT; do
-  sleep 1
-done
-echo "✔ Redis đã hoạt động!"
+    log_info "Connecting to $name at $host:$port..."
+    while ! nc -z "$host" "$port" 2>/dev/null; do
+        if [ "$elapsed" -ge "$WAIT_TIMEOUT" ]; then
+            log_error "Timeout: $name ($host:$port) not ready after ${WAIT_TIMEOUT}s"
+            exit 1
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+    log_success "$name connected (${elapsed}s)"
+}
 
-# Thực hiện setup cơ sở dữ liệu (migration và seed)
-echo "▶ Đang kiểm tra và chạy setup DB (migrations & seed)..."
-./setup
+# ─── Main ────────────────────────────────────────────────────────────────────
+log_info "Loading environment... (APP_ENV=${APP_ENV:-production})"
 
-# Khởi chạy server
-echo "🚀 Khởi động API Server..."
-echo "================================================================="
+wait_for "$DB_HOST"    "$DB_PORT"    "MySQL"
+wait_for "$REDIS_HOST" "$REDIS_PORT" "Redis"
+
+log_info "Starting API server on :${APP_PORT:-8080}..."
 exec ./server

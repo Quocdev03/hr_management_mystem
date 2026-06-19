@@ -1,0 +1,182 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Development Docker Compose Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d          # Start services
+#   docker compose -f docker-compose.dev.yml run --rm migrate  # Run migration
+#   docker compose -f docker-compose.dev.yml run --rm seed     # Run seed
+#
+# Shortcuts (Makefile):
+#   make dev           # start
+#   make dev-migrate   # migrate
+#   make dev-seed      # seed
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+    # ─── MySQL Database — Development ─────────────────────────────────────
+    mysql:
+        image: mysql:8.0
+        container_name: hrm_mysql_dev
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - "${DB_PORT}:3306"
+        volumes:
+            - mysql_data_dev:/var/lib/mysql
+        networks:
+            - hrm_network_dev
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-u",
+                    "root",
+                    "-p${MYSQL_ROOT_PASSWORD}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # ─── Redis Cache — Development ────────────────────────────────────────
+    redis:
+        image: redis:7.2-alpine
+        container_name: hrm_redis_dev
+        restart: unless-stopped
+        ports:
+            - "${REDIS_PORT}:6379"
+        volumes:
+            - redis_data_dev:/data
+        networks:
+            - hrm_network_dev
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    # ─── Backend (Go API) — Development with Hot Reload ──────────────────
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile.dev
+        container_name: hrm_backend_dev
+        restart: unless-stopped
+        ports:
+            - "${APP_PORT}:${APP_PORT}"
+        environment:
+            - APP_PORT=${APP_PORT}
+            - APP_ENV=development
+            - DB_HOST=mysql
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - JWT_SECRET=${JWT_SECRET}
+            - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR}
+            - JWT_REFRESH_EXPIRE_DAY=${JWT_REFRESH_EXPIRE_DAY}
+            - REDIS_HOST=redis
+            - REDIS_PORT=${REDIS_PORT}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_DB=${REDIS_DB}
+            - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+        volumes:
+            - ./backend:/app
+            - backend_go_cache:/go/pkg/mod
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - hrm_network_dev
+
+    # ─── Frontend (Vue 3 + Vite HMR) — Development ───────────────────────
+    frontend:
+        image: node:20-alpine
+        container_name: hrm_frontend_dev
+        working_dir: /app
+        command: sh -c "npm install && npm run dev"
+        ports:
+            - "${VITE_PORT}:${VITE_PORT}"
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        environment:
+            - VITE_API_URL=${VITE_API_URL}
+            - VITE_PORT=${VITE_PORT}
+        depends_on:
+            - backend
+        networks:
+            - hrm_network_dev
+
+    # ─── Migrate — chạy migration thủ công ───────────────────────────────
+    # Dùng: docker compose -f docker-compose.dev.yml run --rm migrate
+    # Idempotent: chạy nhiều lần không gây lỗi
+    migrate:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: hrm_migrate_dev
+        entrypoint: []
+        command: ["./migrate"]
+        environment:
+            - APP_ENV=development
+            - DB_HOST=mysql
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - hrm_network_dev
+        profiles:
+            - tools
+
+    # ─── Seed — chạy seed thủ công ───────────────────────────────────────
+    # Dùng: docker compose -f docker-compose.dev.yml run --rm seed
+    # Idempotent: chạy nhiều lần không tạo dữ liệu trùng
+    seed:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: hrm_seed_dev
+        entrypoint: []
+        command: ["./seed"]
+        environment:
+            - APP_ENV=development
+            - DB_HOST=mysql
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - hrm_network_dev
+        profiles:
+            - tools
+
+volumes:
+    mysql_data_dev:
+        driver: local
+    redis_data_dev:
+        driver: local
+    backend_go_cache:
+        driver: local
+
+networks:
+    hrm_network_dev:
+        driver: bridge

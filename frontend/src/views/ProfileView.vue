@@ -1,14 +1,13 @@
 <script setup>
-// ─── Icon SVG ────────────────────────────────────────────────────────────────
-import userBlueIcon from "@/assets/svg/user-blue.svg";
-import briefcaseGreenIcon from "@/assets/svg/briefcase-green.svg";
-
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { useAuthStore } from "@/store/auth";
 import { onMounted, computed } from "vue";
 import { storeToRefs } from "pinia";
 import Skeleton from "@/components/Skeleton.vue";
 import { formatCurrency, formatDate } from "@/helpers/formatters";
+
+// ─── Icon Lucide ─────────────────────────────────────────────────────────────
+import { User, Briefcase } from "@lucide/vue";
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
 
@@ -17,14 +16,8 @@ const { loading } = storeToRefs(authStore);
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 
-// Kiểm tra user có hồ sơ nhân viên đính kèm không
 const hasEmployee = computed(() => !!authStore.userProfile?.employee);
 
-/**
- * Ưu tiên hiển thị tên từ hồ sơ nhân viên.
- * Nếu chưa có nhân viên → fallback về email của profile, rồi email của auth.
- * Nếu tất cả đều rỗng → hiển thị "Người dùng".
- */
 const displayName = computed(() => {
 	const first = authStore.userProfile?.employee?.first_name || "";
 	const last = authStore.userProfile?.employee?.last_name || "";
@@ -38,28 +31,24 @@ const displayName = computed(() => {
 	);
 });
 
-// ─── Khởi tạo trang ──────────────────────────────────────────────────────────
-
-// Tải thông tin profile ngay khi component mount
 onMounted(() => {
 	authStore.profile();
 });
 </script>
+
 <template>
 	<div class="profile-view">
-		<!-- ===== Tiêu đề trang ===== -->
 		<div class="page-header">
 			<div class="header-content">
-				<h1 class="page-title">Quản lý nhân sự</h1>
+				<h1 class="page-title">Thông tin tài khoản</h1>
 				<p class="page-subtitle">
-					Quản lý và xem thông tin chi tiết của bạn
+					Quản lý và xem thông tin chi tiết cá nhân
 				</p>
 			</div>
 		</div>
 
-		<!-- ===== Bố cục hồ sơ ===== -->
 		<div class="profile-grid">
-			<!-- ===== Cột trái: Thông tin tổng quan ===== -->
+			<!-- Cột trái: Thông tin tổng quan -->
 			<div class="profile-card sidebar-card">
 				<template v-if="loading">
 					<div class="avatar-section" style="width: 100%">
@@ -107,25 +96,9 @@ onMounted(() => {
 				</template>
 				<template v-else>
 					<div class="avatar-section">
-						<div class="avatar-container">
-							<img
-								src="https://ui-avatars.com/api/?name=User&background=random"
-								class="profile-avatar"
-								v-if="!hasEmployee"
-							/>
-							<img
-								:src="
-									'https://ui-avatars.com/api/?name=' +
-									(authStore.userProfile?.employee
-										?.first_name || 'User') +
-									'+' +
-									(authStore.userProfile?.employee
-										?.last_name || 'Profile') +
-									'&background=random'
-								"
-								class="profile-avatar"
-								v-else
-							/>
+						<!-- Premium custom CSS initials avatar synchronized with sidebar -->
+						<div class="profile-avatar-circle-large">
+							{{ displayName ? displayName.charAt(0).toUpperCase() : 'U' }}
 						</div>
 						<h2 class="user-name">
 							{{ displayName }}
@@ -156,7 +129,7 @@ onMounted(() => {
 						</div>
 					</div>
 
-					<div class="quick-stats">
+					<div class="quick-stats" v-if="hasEmployee">
 						<div class="stat-item">
 							<span class="stat-label">Ngày tham gia:</span>
 							<span class="stat-value">{{
@@ -176,10 +149,9 @@ onMounted(() => {
 				</template>
 			</div>
 
-			<!-- ===== Cột phải: Thông tin chi tiết ===== -->
+			<!-- Cột phải: Thông tin chi tiết -->
 			<div class="profile-main">
 				<template v-if="loading">
-					<!-- Personal Info Skeleton -->
 					<div class="profile-card main-card">
 						<div class="card-header">
 							<Skeleton
@@ -216,53 +188,12 @@ onMounted(() => {
 							</div>
 						</div>
 					</div>
-					<!-- Work Info Skeleton -->
-					<div class="profile-card main-card mt-6">
-						<div class="card-header">
-							<Skeleton
-								type="text"
-								width="20px"
-								height="20px"
-								border-radius="var(--radius-sm)"
-							/>
-							<Skeleton
-								type="text"
-								width="150px"
-								height="20px"
-								style="margin-bottom: 0"
-							/>
-						</div>
-						<div class="info-grid">
-							<div
-								v-for="i in 4"
-								:key="'skeleton-w-' + i"
-								class="info-group"
-							>
-								<Skeleton
-									type="text"
-									width="80px"
-									height="14px"
-									style="margin-bottom: 0.5rem"
-								/>
-								<Skeleton
-									type="text"
-									width="100%"
-									height="40px"
-									border-radius="12px"
-								/>
-							</div>
-						</div>
-					</div>
 				</template>
 				<template v-else>
-					<!-- ===== Block: Thông tin cá nhân ===== -->
+					<!-- Block: Thông tin cá nhân -->
 					<div v-if="hasEmployee" class="profile-card main-card">
 						<div class="card-header">
-							<img
-								:src="userBlueIcon"
-								alt="user"
-								class="card-icon"
-							/>
+							<User class="card-icon" />
 							<h3>Thông tin cá nhân</h3>
 						</div>
 						<div class="info-grid">
@@ -328,11 +259,7 @@ onMounted(() => {
 
 					<div v-else class="profile-card main-card">
 						<div class="card-header">
-							<img
-								:src="userBlueIcon"
-								alt="user"
-								class="card-icon"
-							/>
+							<User class="card-icon" />
 							<h3>Thông tin tài khoản</h3>
 						</div>
 						<div class="info-grid">
@@ -369,14 +296,10 @@ onMounted(() => {
 						</div>
 					</div>
 
-					<!-- ===== Block: Thông tin công việc ===== -->
+					<!-- Block: Thông tin công việc -->
 					<div v-if="hasEmployee" class="profile-card main-card mt-6">
 						<div class="card-header">
-							<img
-								:src="briefcaseGreenIcon"
-								alt="work"
-								class="card-icon"
-							/>
+							<Briefcase class="card-icon" />
 							<h3>Thông tin công việc</h3>
 						</div>
 						<div class="info-grid">
@@ -427,40 +350,29 @@ onMounted(() => {
 		</div>
 	</div>
 </template>
+
 <style scoped>
-/* ===== Bố cục chính ===== */
 .profile-grid {
 	display: grid;
 	grid-template-columns: 340px 1fr;
 	gap: var(--container-padding);
 }
 
-/* ===== Card dùng chung ===== */
 .profile-card {
 	background: var(--bg-card);
+	backdrop-filter: var(--glass-backdrop);
+	-webkit-backdrop-filter: var(--glass-backdrop);
 	border-radius: var(--radius-lg);
-	border: 1px solid var(--border-color);
-	box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+	border: var(--glass-border);
+	box-shadow: var(--glass-shadow);
 	overflow: hidden;
-}
-.page-header {
-	margin-bottom: var(--space-4);
-}
-.page-title {
-	font-size: var(--fs-2xl);
-	font-weight: var(--fw-bold);
-	letter-spacing: var(--tracking-tight);
-	margin: 0 0 4px 0;
-	color: var(--text-main);
+	transition: all 0.3s ease;
 }
 
-.page-subtitle {
-	color: var(--text-muted);
-	font-size: var(--fs-sm);
-	margin: 0;
+.profile-card:hover {
+	box-shadow: var(--glass-shadow-hover);
 }
 
-/* ===== Cột trái: Sidebar ===== */
 .sidebar-card {
 	padding: 2.5rem 1.5rem;
 	display: flex;
@@ -472,6 +384,7 @@ onMounted(() => {
 .avatar-section {
 	text-align: center;
 	margin-bottom: 2rem;
+	width: 100%;
 }
 
 .avatar-container {
@@ -480,16 +393,24 @@ onMounted(() => {
 	margin: 1.5rem auto;
 }
 
-.profile-avatar {
-	width: 100%;
-	height: 100%;
-	border-radius: 40px;
-	object-fit: cover;
-	box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+.profile-avatar-circle-large {
+	width: 140px;
+	height: 140px;
+	border-radius: var(--radius-xl);
+	background: var(--primary-gradient);
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: var(--fw-bold);
+	font-size: var(--fs-4xl);
+	box-shadow: 0 10px 25px -5px rgba(66, 97, 237, 0.25);
+	margin: 1.5rem auto;
 }
 
 .user-name {
-	font-size: 1.5rem;
+	font-family: var(--font-title);
+	font-size: var(--fs-2xl);
 	font-weight: 700;
 	color: var(--text-main);
 	margin-bottom: 0.6rem;
@@ -498,10 +419,10 @@ onMounted(() => {
 .user-role-tag {
 	display: inline-block;
 	padding: 0.35rem 1rem;
-	background: var(--bg-light);
-	color: var(--text-muted);
-	border-radius: 999px;
-	font-size: 0.8125rem;
+	background: rgba(66, 97, 237, 0.08);
+	color: var(--primary-color);
+	border-radius: var(--radius-md);
+	font-size: var(--fs-sm);
 	font-weight: 600;
 	margin-bottom: 0.75rem;
 }
@@ -511,7 +432,7 @@ onMounted(() => {
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	font-size: 0.875rem;
+	font-size: var(--fs-sm);
 	color: var(--text-muted);
 }
 
@@ -530,7 +451,7 @@ onMounted(() => {
 
 .quick-stats {
 	width: 100%;
-	border-top: 1px solid var(--bg-light);
+	border-top: 1px solid var(--border-color);
 	padding-top: 1.5rem;
 	margin-top: 0.5rem;
 }
@@ -542,17 +463,16 @@ onMounted(() => {
 }
 
 .stat-label {
-	font-size: 0.875rem;
+	font-size: var(--fs-sm);
 	color: var(--text-muted);
 }
 
 .stat-value {
-	font-size: 0.875rem;
+	font-size: var(--fs-sm);
 	font-weight: 600;
 	color: var(--text-main);
 }
 
-/* ===== Cột phải: Thông tin chi tiết ===== */
 .main-card {
 	padding: 1.75rem 2rem;
 }
@@ -562,17 +482,22 @@ onMounted(() => {
 	align-items: center;
 	gap: 12px;
 	margin-bottom: 1.5rem;
+	border-bottom: 1px solid var(--border-color);
+	padding-bottom: 12px;
 }
 
 .card-header h3 {
-	font-size: 1.125rem;
+	font-family: var(--font-title);
+	font-size: var(--fs-lg);
 	font-weight: 700;
 	color: var(--text-main);
+	margin: 0;
 }
 
 .card-icon {
 	width: 20px;
 	height: 20px;
+	color: var(--primary-color);
 }
 
 .info-grid {
@@ -583,35 +508,34 @@ onMounted(() => {
 
 .info-group label {
 	display: block;
-	font-size: 0.75rem;
+	font-size: var(--fs-xs);
 	font-weight: 700;
-	color: var(--text-light);
+	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	margin-bottom: 0.5rem;
 }
 
 .info-group .value {
-	font-size: 1rem;
+	font-size: var(--fs-base);
 	font-weight: 500;
 	color: var(--text-main);
 	padding: 0.75rem 1rem;
-	background: var(--bg-lighter);
+	background: rgba(255, 255, 255, 0.45);
 	border-radius: 12px;
-	border: 1px solid var(--bg-light);
+	border: 1px solid rgba(66, 97, 237, 0.15);
 }
 
 .info-group .value.salary {
 	color: var(--success-color);
+	font-family: var(--font-widget);
 	font-weight: 700;
 }
 
-/* ===== Utilities ===== */
 .mt-6 {
 	margin-top: 1.5rem;
 }
 
-/* ===== Responsive ===== */
 @media (max-width: 1023px) {
 	.profile-grid {
 		grid-template-columns: 1fr;

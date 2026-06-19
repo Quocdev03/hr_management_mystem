@@ -1,153 +1,106 @@
 # Hệ Thống Quản Lý Nhân Sự (HR Management System)
 
-![Go Version](https://img.shields.io/badge/Go-1.26.2+-00ADD8?logo=go)
+![Go Version](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)
 ![Vue Version](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vuedotjs)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Một ứng dụng Quản Lý Nhân Sự (HRM) toàn diện (full-stack) được xây dựng với Backend bằng Go và Frontend bằng Vue.js 3. Hệ thống này cung cấp các chức năng cốt lõi để quản lý nhân viên, phòng ban và tài khoản người dùng cùng với phân quyền truy cập.
-
-> 📖 **Hướng dẫn Setup:** Xem [GETTING_STARTED.md](/docs/GETTING_STARTED.md)
+Ứng dụng Quản Lý Nhân Sự (HRM) full-stack với Backend Go (Gin, GORM, MySQL, Redis) và Frontend Vue.js 3 (Vite, Pinia, Vue Router). Hỗ trợ quản lý nhân viên, phòng ban, tài khoản và phân quyền truy cập chi tiết.
 
 ---
 
-## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
+## 📸 Giao diện ứng dụng
 
-- **Backend:** Go, Gin, GORM, Go-Redis, JWT
+![Dashboard Preview](reviews/dashboard.png)
+
+*(Xem thêm ảnh chụp màn hình các chức năng khác tại thư mục [reviews/](reviews/))*
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend:** Go 1.25, Gin, GORM, Go-Redis, JWT
 - **Frontend:** Vue.js 3 (Composition API), Vite, Pinia, Vue Router, Axios
-- **Database:** MySQL
-- **Cache/Rate Limiter:** Redis
+- **Database:** MySQL 8.0
+- **Cache / Rate Limiter:** Redis 7.2
 - **DevOps:** Docker, Docker Compose
 
-## ✨ Tính Năng
+---
 
-### Backend (Go)
+## 📖 Hướng Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
 
-- **RESTful API:** Xây dựng với Gin, GORM ORM cho tương tác MySQL hiệu quả.
-- **Xác Thực JWT:** Refresh Token rotation + Token Blacklist lưu Redis với TTL tự động. Logout an toàn — chỉ dùng verified claims, không dùng `ParseUnverified`.
-- **Phân Quyền (RBAC):** Role-based access control cho `admin`, `hr`, `employee` roles.
-- **Caching thông minh:** Dashboard stats cache TTL 1h (hit rate ~99%). GET endpoints truy vấn DB trực tiếp (index tốt, <100ms). Tránh URL-based cache với 95% miss rate.
-- **Rate Limiting:** Redis rate limit login — 5 lượt/phút/IP (Fixed Window Counter).
-- **Docker & Environment Config:** Multi-environment support với `.env`, dịch vụ containerize hoàn toàn.
+Toàn bộ tài liệu hướng dẫn chi tiết đã được di chuyển sang thư mục [docs/](docs/):
 
-### Frontend (Vue.js)
+- 🚀 **[Hướng dẫn chạy Local Development](docs/GETTING_STARTED.md)** — Bắt đầu nhanh với Docker và các file script `start-dev.bat` (Windows) hoặc qua Docker Compose.
+- 🏭 **[Hướng dẫn deploy Production](docs/DEPLOYMENT_GUIDE.md)** — Cấu hình môi trường bảo mật, thiết lập SSL/TLS Nginx và deploy thực tế.
 
-- **Vue 3 + Composition API:** Framework hiện đại với Vite build tool cho development cực nhanh.
-- **State Management & Routing:** Pinia quản lý trạng thái + Vue Router với role-based route guards.
-- **Giao Diện CRUD & Dashboard:** Quản lý Nhân Viên, Phòng Ban, Người Dùng + bảng thống kê tập trung.
-- **Token Management:** Axios interceptor + Silent Refresh (tự động retry 401) + Responsive UI đa kích thước.
-- **Reusable Components:** Modal, Dialog, Skeleton loader, UI components để tối ưu UX.
+---
 
-## 📸 Ảnh Chụp Màn Hình (Screenshots)
-
-|                Trang Đăng Nhập                |            Bảng Điều Khiển (Dashboard)            |
-| :-------------------------------------------: | :-----------------------------------------------: |
-| ![Trang Đăng Nhập](./images_review/login.png) | ![Bảng Điều Khiển](./images_review/dashboard.png) |
-
-|                 Quản Lý Nhân Viên                  |                  Quản Lý Phòng Ban                   |
-| :------------------------------------------------: | :--------------------------------------------------: |
-| ![Quản Lý Nhân Viên](./images_review/employee.png) | ![Quản Lý Phòng Ban](./images_review/department.png) |
-
-|               Quản Lý Người Dùng                |                 Hồ Sơ Cá Nhân                 |
-| :---------------------------------------------: | :-------------------------------------------: |
-| ![Quản Lý Người Dùng](./images_review/user.png) | ![Hồ Sơ Cá Nhân](./images_review/profile.png) |
-
-## ⚙️ Cấu Trúc Dự Án (Project Structure)
-
-Kho mã nguồn được sắp xếp theo cấu trúc monorepo bao gồm `backend` và `frontend`.
+## 🏗️ Cấu Trúc Dự Án
 
 ```text
 .
-├── backend/                # Ứng dụng Backend Go
-│   ├── cmd/                # Các điểm khởi chạy chính (server, setup)
-│   ├── internal/           # Logic lõi của ứng dụng
-│   │   ├── config/         # Cấu hình (env, db, jwt)
-│   │   ├── handler/        # Các HTTP Handler (controllers)
-│   │   ├── middleware/     # API Middleware (auth, cors, cache)
-│   │   ├── model/          # Các Model và DTO
-│   │   ├── repository/     # Tầng truy xuất dữ liệu (GORM)
-│   │   ├── router/         # Khai báo các API route
-│   │   └── service/        # Logic nghiệp vụ (Business logic)
-│   ├── go.mod
-│   └── ...
-├── frontend/               # Ứng dụng Frontend Vue.js
-│   ├── public/
+├── backend/                # Backend Go
+│   ├── cmd/                # Entry points (server, migrate, seed)
+│   ├── internal/           # Business logic
+│   │   ├── config/         # Config (env, db, jwt, redis)
+│   │   ├── handler/        # HTTP Handlers
+│   │   ├── middleware/     # Auth, CORS, Cache, Rate limit
+│   │   ├── model/          # GORM models
+│   │   ├── repository/     # Data repository layer
+│   │   ├── router/         # API routes
+│   │   └── service/        # Service layer
+│   ├── .air.toml           # Hot-reload config for Air
+│   ├── Dockerfile          # Production Dockerfile
+│   ├── Dockerfile.dev      # Development Dockerfile
+│   ├── docker-entrypoint.sh
+│   └── docker-entrypoint.dev.sh
+├── frontend/               # Frontend Vue.js 3
 │   ├── src/
-│   │   ├── api/            # Cấu hình và Axios instance
-│   │   ├── assets/         # Tài nguyên tĩnh (CSS, hình ảnh)
-│   │   ├── components/     # Component Vue dùng lại
-│   │   ├── helpers/        # Các hàm hỗ trợ và composable
-│   │   ├── layout/         # Giao diện khung (layout) chính
-│   │   ├── router/         # Cấu hình Vue Router
-│   │   ├── store/          # Quản lý trạng thái bằng Pinia
-│   │   └── views/          # Các component Trang (Pages)
-│   ├── package.json
-│   └── ...
-├── docker-compose.yml      # Cấu hình dịch vụ Docker (MySQL, Redis)
-├── Makefile                # Các lệnh hỗ trợ quá trình phát triển
-└── database.sql            # File định nghĩa Schema SQL thuần
+│   │   ├── api/            # Axios instance
+│   │   ├── components/     # Reusable components
+│   │   ├── router/         # Routing
+│   │   ├── store/          # Pinia stores
+│   │   └── views/          # Views
+│   ├── Dockerfile          # Nginx production build
+│   └── vite.config.js
+├── docs/                   # Tài liệu hướng dẫn
+├── reviews/                # Ảnh chụp màn hình ứng dụng
+├── scripts/                # Script tự động hóa
+├── start-dev.bat           # Script chạy Development (CMD)
+├── start-prod.bat          # Script chạy Production (CMD)
+├── docker-compose.dev.yml  # Compose development
+├── docker-compose.prod.yml # Compose production
+└── database.sql            # Database schema backup
 ```
 
-## 🔐 Danh Sách API (API Endpoints)
+---
 
-API được đánh dấu phiên bản `/api/v1`. Hầu hết các endpoint yêu cầu token xác thực JWT qua tiêu đề `Bearer`.
+## 🔐 API Endpoints chính
 
-- **Xác Thực (Authentication - `/auth`)**
-   - `POST /login`: Đăng nhập và nhận JWT.
-   - `GET /me`: Lấy thông tin hồ sơ của người dùng đang đăng nhập.
-   - `POST /logout`: Đăng xuất, blacklist access token (Redis TTL), xoá refresh token.
-   - `POST /refresh`: Lấy access token mới bằng refresh token (token rotation).
+API được versioned tại `/api/v1`. Hầu hết endpoints yêu cầu JWT Bearer token trong header.
 
-- **Nhân Viên (Employees - `/employees`)**
-   - `GET /`: Lấy danh sách nhân viên có phân trang.
-   - `POST /`: Tạo nhân viên mới (admin, hr).
-   - `GET /:id`: Lấy thông tin một nhân viên theo ID.
-   - `PUT /:id`: Cập nhật nhân viên đầy đủ (admin, hr).
-   - `PATCH /:id`: Cập nhật nhân viên một phần (admin, hr).
-   - `DELETE /:id`: Xóa nhân viên (chỉ admin).
+| Method | Endpoint | Mô tả | Quyền truy cập |
+|--------|----------|-------|----------------|
+| `POST` | `/api/v1/auth/login` | Đăng nhập | Public |
+| `GET` | `/api/v1/auth/me` | Lấy thông tin tài khoản hiện tại | User đăng nhập |
+| `POST` | `/api/v1/auth/logout` | Đăng xuất (blacklist token) | User đăng nhập |
+| `POST` | `/api/v1/auth/refresh` | Làm mới access token | User đăng nhập |
+| `GET` | `/api/v1/employees` | Lấy danh sách nhân viên | `employee.read` |
+| `POST` | `/api/v1/employees` | Tạo mới nhân viên | `employee.create` |
+| `PUT/PATCH/DELETE` | `/api/v1/employees/:id` | Xem chi tiết, cập nhật, xóa nhân viên | `employee.read/update/delete` |
+| `GET` | `/api/v1/departments` | Lấy danh sách phòng ban | `department.read` |
+| `GET` | `/api/v1/users` | Lấy danh sách tài khoản | `user.read` (Admin) |
+| `GET` | `/api/v1/dashboard/stats` | Lấy thống kê cho trang Dashboard | Đăng nhập |
+| `GET` | `/api/v1/health` | Kiểm tra trạng thái của server | Public |
 
-- **Phòng Ban (Departments - `/departments`)**
-   - `GET /`: Lấy danh sách tất cả phòng ban.
-   - `POST /`: Tạo phòng ban mới (chỉ admin).
-   - `GET /:id`: Lấy thông tin một phòng ban theo ID.
-   - `PUT /:id`: Cập nhật phòng ban đầy đủ (chỉ admin).
-   - `PATCH /:id`: Cập nhật phòng ban một phần (chỉ admin).
-   - `DELETE /:id`: Xóa phòng ban (chỉ admin).
+---
 
-- **Người Dùng (Users - `/users`)**
-   - `GET /`: Lấy danh sách người dùng có phân trang (chỉ admin).
-   - `POST /`: Tạo người dùng mới (chỉ admin).
-   - `GET /available`: Lấy các user chưa được liên kết với hồ sơ nhân viên (chỉ admin).
-   - `GET /:id`: Lấy thông tin một người dùng theo ID (chỉ admin).
-   - `PUT /:id`: Cập nhật người dùng đầy đủ (chỉ admin).
-   - `PATCH /:id`: Cập nhật người dùng một phần (chỉ admin).
-   - `DELETE /:id`: Xóa người dùng (chỉ admin).
+## 🗄️ Redis Caching & Rate Limiting Strategy
 
-- **Bảng Điều Khiển (Dashboard - `/dashboard`)**
-   - `GET /stats`: Lấy thống kê hệ thống (số lượng nhân viên, phòng ban, v.v.). **Cache Redis 1h**, tự động invalidate khi dữ liệu thay đổi.
-
-## 🗄️ Chiến Lược Redis
-
-| Tính Năng             | Key Format                    | TTL       | Ghi Chú                           |
-| --------------------- | ----------------------------- | --------- | --------------------------------- |
-| Token Blacklist       | `blacklist:{token}`           | Tự động   | Bắt buộc — bảo mật logout        |
-| Rate Limit Login      | `rate_limit:login:{IP}`       | 1 phút    | Bắt buộc — chống brute-force     |
-| Refresh Token Storage | `refresh_token:{userID}`      | 7 ngày    | Bắt buộc — token rotation        |
-| Dashboard Stats Cache | `dashboard:stats`             | 1 giờ     | Tốt — hit rate ~99%, key cố định |
-| ~~GET Response Cache~~| ~~`cache:{URL+params}`~~      | ~~Đã xóa~~| Xấu — 95% cache miss rate        |
-
-## 🚀 Bắt Đầu
-
-👉 **[Hướng dẫn setup chi tiết tại: docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**
-
-**Quick 3-step (3 phút):**
-
-```bash
-cp .env.example .env          # Setup environment
-chmod +x scripts/generate-certs.sh && ./scripts/generate-certs.sh  # SSL
-docker-compose -f docker-compose.prod.yml up -d  # Run
-```
-
-**Xem thêm:**
-
-- 📖 [docs/SETUP_FOR_NEWCOMERS.md](docs/SETUP_FOR_NEWCOMERS.md) - Chi tiết từng bước
-- 🚀 [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) - Deploy production
+| Chức năng | Định dạng Key | TTL (Thời gian sống) | Mục đích |
+|-----------|---------------|----------------------|----------|
+| Token Blacklist | `blacklist:{token}` | Tương ứng thời hạn token | Đăng xuất an toàn |
+| Rate Limit Login | `rate_limit:login:{IP}` | 1 phút | Chống brute-force đăng nhập |
+| Refresh Token | `refresh_token:{userID}` | 7 ngày | Token rotation, duy trì session |
+| Dashboard Cache | `dashboard:stats` | 1 giờ | Tăng tốc độ load trang Dashboard |

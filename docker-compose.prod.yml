@@ -3,146 +3,184 @@ version: "3.8"
 # ═══════════════════════════════════════════════════════════════════════════
 # Production Docker Compose Configuration
 # ═══════════════════════════════════════════════════════════════════════════
-# Usage: docker-compose -f docker-compose.prod.yml up -d
-# Note: Set environment variables from .env file before running
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d          # Start app
+#   docker compose -f docker-compose.prod.yml run --rm migrate  # Run migration
+#
+# Validate trước khi deploy: ./scripts/validate-production.sh
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
-   # MySQL Database - Production
-   mysql:
-      image: mysql:8.0
-      container_name: hrm_mysql_prod
-      restart: always
-      environment:
-         MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-         MYSQL_DATABASE: ${DB_NAME}
-         MYSQL_USER: ${DB_USER}
-         MYSQL_PASSWORD: ${DB_PASSWORD}
-      ports:
-         - "3306:3306"
-      volumes:
-         - mysql_data_prod:/var/lib/mysql
-         - ./database.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      networks:
-         - hrm_network_prod
-      healthcheck:
-         test:
-            [
-               "CMD",
-               "mysqladmin",
-               "ping",
-               "-h",
-               "localhost",
-               "-u",
-               "root",
-               "-p${MYSQL_ROOT_PASSWORD}",
-            ]
-         interval: 10s
-         timeout: 5s
-         retries: 5
-      ulimits:
-         nofile:
-            soft: 65536
-            hard: 65536
-      security_opt:
-         - no-new-privileges:true
 
-   # Redis Cache - Production
-   redis:
-      image: redis:7.2-alpine
-      container_name: hrm_redis_prod
-      restart: always
-      command: redis-server --requirepass ${REDIS_PASSWORD}
-      ports:
-         - "6379:6379"
-      volumes:
-         - redis_data_prod:/data
-      networks:
-         - hrm_network_prod
-      healthcheck:
-         test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-         interval: 10s
-         timeout: 5s
-         retries: 5
-      security_opt:
-         - no-new-privileges:true
+    # ─── MySQL Database — Production ──────────────────────────────────────
+    mysql:
+        image: mysql:8.0
+        container_name: hrm_mysql_prod
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        # Không expose port ra ngoài — chỉ truy cập qua internal network
+        volumes:
+            - mysql_data_prod:/var/lib/mysql
+            - ./database.sql:/docker-entrypoint-initdb.d/init.sql:ro
+        networks:
+            - hrm_network_prod
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-u",
+                    "root",
+                    "-p${MYSQL_ROOT_PASSWORD}",
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        security_opt:
+            - no-new-privileges:true
 
-   # Backend (Go API) - Production
-   backend:
-      build:
-         context: ./backend
-         dockerfile: Dockerfile
-      container_name: hrm_backend_prod
-      restart: always
-      expose:
-         - "8080"
-      environment:
-         - APP_PORT=8080
-         - APP_ENV=production
-         - DB_HOST=mysql
-         - DB_PORT=3306
-         - DB_USER=${DB_USER}
-         - DB_PASSWORD=${DB_PASSWORD}
-         - DB_NAME=${DB_NAME}
-         - JWT_SECRET=${JWT_SECRET}
-         - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR}
-         - REFRESH_EXPIRE_DAY=${REFRESH_EXPIRE_DAY}
-         - REDIS_HOST=redis
-         - REDIS_PORT=6379
-         - REDIS_PASSWORD=${REDIS_PASSWORD}
-         - REDIS_DB=0
-         - APP_SEED=false
-      depends_on:
-         mysql:
-            condition: service_healthy
-         redis:
-            condition: service_healthy
-      networks:
-         - hrm_network_prod
-      logging:
-         driver: "json-file"
-         options:
-            max-size: "10m"
-            max-file: "3"
-      healthcheck:
-         test:
-            ["CMD", "curl", "-f", "-S", "http://localhost:8080/api/v1/health"]
-         interval: 30s
-         timeout: 10s
-         retries: 3
-      security_opt:
-         - no-new-privileges:true
+    # ─── Redis Cache — Production ─────────────────────────────────────────
+    redis:
+        image: redis:7.2-alpine
+        container_name: hrm_redis_prod
+        restart: always
+        command: redis-server --requirepass ${REDIS_PASSWORD}
+        # Không expose port ra ngoài — chỉ truy cập qua internal network
+        volumes:
+            - redis_data_prod:/data
+        networks:
+            - hrm_network_prod
+        healthcheck:
+            test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        security_opt:
+            - no-new-privileges:true
 
-   # Frontend (Vue 3 + Nginx Reverse Proxy) - Production
-   frontend:
-      build:
-         context: ./frontend
-         dockerfile: Dockerfile
-      container_name: hrm_frontend_prod
-      restart: always
-      ports:
-         - "80:80"
-         - "443:443"
-      volumes:
-         - ./certs:/etc/nginx/certs:ro
-      depends_on:
-         - backend
-      networks:
-         - hrm_network_prod
-      logging:
-         driver: "json-file"
-         options:
-            max-size: "10m"
-            max-file: "3"
-      security_opt:
-         - no-new-privileges:true
+    # ─── Backend (Go API) — Production ────────────────────────────────────
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: hrm_backend_prod
+        restart: always
+        expose:
+            - "${APP_PORT}"
+        environment:
+            - APP_PORT=${APP_PORT}
+            - APP_ENV=production
+            - DB_HOST=mysql
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - JWT_SECRET=${JWT_SECRET}
+            - JWT_EXPIRE_HOUR=${JWT_EXPIRE_HOUR}
+            - JWT_REFRESH_EXPIRE_DAY=${JWT_REFRESH_EXPIRE_DAY}
+            - REDIS_HOST=redis
+            - REDIS_PORT=${REDIS_PORT}
+            - REDIS_PASSWORD=${REDIS_PASSWORD}
+            - REDIS_DB=${REDIS_DB}
+            - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - hrm_network_prod
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--quiet",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:${APP_PORT}/api/v1/health",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        security_opt:
+            - no-new-privileges:true
+
+    # ─── Frontend (Vue 3 + Nginx) — Production ────────────────────────────
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: hrm_frontend_prod
+        restart: always
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./certs:/etc/nginx/certs:ro
+        depends_on:
+            - backend
+        networks:
+            - hrm_network_prod
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
+        security_opt:
+            - no-new-privileges:true
+
+    # ─── Migrate — chạy migration thủ công ───────────────────────────────
+    # Dùng: docker compose -f docker-compose.prod.yml run --rm migrate
+    # Chạy trước lần deploy đầu tiên hoặc khi có thay đổi schema.
+    # Idempotent: chạy nhiều lần không gây lỗi.
+    migrate:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: hrm_migrate_prod
+        entrypoint: []
+        command: ["./migrate"]
+        environment:
+            - APP_ENV=production
+            - DB_HOST=mysql
+            - DB_PORT=${DB_PORT}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - hrm_network_prod
+        security_opt:
+            - no-new-privileges:true
+        profiles:
+            - tools
 
 volumes:
-   mysql_data_prod:
-      driver: local
-   redis_data_prod:
-      driver: local
+    mysql_data_prod:
+        driver: local
+    redis_data_prod:
+        driver: local
 
 networks:
-   hrm_network_prod:
-      driver: bridge
+    hrm_network_prod:
+        driver: bridge

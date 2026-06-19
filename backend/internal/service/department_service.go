@@ -81,7 +81,9 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), ds.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return dept, nil
 }
@@ -232,7 +234,9 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), ds.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return updatedDept, nil
 }
@@ -277,7 +281,9 @@ func (ds *departmentService) DeleteDepartment(id uint) error {
 
 	if err == nil {
 		// Invalidate dashboard stats cache
-		_ = utils.InvalidateDashboardStats(context.Background(), ds.rdb)
+		if err := utils.InvalidateDashboardStats(context.Background(), ds.rdb); err != nil {
+			utils.Error("không thể invalidate cache dashboard: %v", err)
+		}
 	}
 
 	return err

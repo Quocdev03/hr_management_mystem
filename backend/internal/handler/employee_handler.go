@@ -2,6 +2,7 @@ package handler
 
 import (
 	"chiquoc_hocgolang/internal/common"
+	"chiquoc_hocgolang/internal/middleware"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
@@ -52,6 +53,24 @@ func (h *EmployeeHandler) GetEmployee(ctx *gin.Context) {
 		utils.NotFound(ctx, err.Error())
 		return
 	}
+
+	// Lấy thông tin vai trò từ context để phân quyền truy cập hồ sơ khác
+	roleNameVal, existsRole := ctx.Get(middleware.ContextKeyRoleName)
+	userIDVal, existsUser := ctx.Get(middleware.ContextKeyUserID)
+
+	// Nếu là vai trò nhân viên thông thường, chỉ được phép xem chính hồ sơ của mình
+	if existsRole && existsUser {
+		roleName := roleNameVal.(string)
+		userID := userIDVal.(uint)
+
+		if roleName != "admin" && roleName != "hr" {
+			if emp.UserID == nil || *emp.UserID != userID {
+				utils.Forbidden(ctx, "Bạn không có quyền xem thông tin nhân viên này")
+				return
+			}
+		}
+	}
+
 	utils.Success(ctx, "Lấy thông tin nhân viên thành công", emp)
 }
 

@@ -13,6 +13,9 @@ env:
     IMAGE_BACKEND: hrm-backend
     IMAGE_FRONTEND: hrm-frontend
 
+    PROD_URL: https://api.yourdomain.com
+    STAGING_URL: https://staging.yourdomain.com
+
     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
 permissions:
@@ -177,7 +180,7 @@ jobs:
         if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
         environment:
             name: staging
-            url: https://staging.example.com
+            url: ${{ env.STAGING_URL }}
 
         steps:
             - name: 📥 Checkout code
@@ -197,8 +200,8 @@ jobs:
                     cd /app/hrm
 
                     # Pull latest images
-                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:staging
-                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:staging
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:staging
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:staging
 
                     # Deploy
                     docker-compose -f docker-compose.staging.yml up -d
@@ -230,7 +233,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         environment:
             name: production
-            url: https://api.example.com
+            url: ${{ env.PROD_URL }}
         concurrency:
             group: production
             cancel-in-progress: false
@@ -279,8 +282,8 @@ jobs:
                     docker-compose -f docker-compose.prod.yml ps > /tmp/deployment_backup_$(date +%s).log
 
                     # Pull latest images
-                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:main
-                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:main
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:main
+                    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:main
 
                     # Graceful deployment
                     docker-compose -f docker-compose.prod.yml up -d

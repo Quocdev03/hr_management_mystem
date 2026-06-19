@@ -149,7 +149,9 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), es.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return es.empRepo.FindByID(emp.ID)
 }
@@ -371,7 +373,9 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), es.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return result, nil
 }
@@ -412,7 +416,9 @@ func (es *employeeService) DeleteEmployee(id uint) error {
 		return err
 	}
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), es.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), es.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return nil
 }

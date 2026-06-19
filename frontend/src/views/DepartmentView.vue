@@ -12,8 +12,8 @@ import { useDepartmentStore } from "@/store/department";
 import { useDashboardStore } from "@/store/dashboard";
 import { useEmployeeStore } from "@/store/employee";
 
-// ─── Component UI dùng chung ─────────────────────────────────────────────────
-import ModalDialog from "@/components/ModalDialog.vue";
+// ─── Component UI ────────────────────────────────────────────────────────────
+import DepartmentModal from "@/components/DepartmentModal.vue";
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
@@ -25,61 +25,43 @@ import { useModalState } from "@/helpers/useModalState";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 import { usePermissions } from "@/helpers/usePermissions";
 import { buildPatchPayload } from "@/helpers/buildPatchPayload";
+import { getInitials } from "@/helpers/formatters";
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
-
 const departmentStore = useDepartmentStore();
 const dashboardStore = useDashboardStore();
 const employeeStore = useEmployeeStore();
 const toast = useToast();
 
-// Quyền thao tác CRUD phòng ban
 const { canCrudDepartment } = usePermissions();
-
-// Reactive refs từ store
 const { departments, loading, pagination } = storeToRefs(departmentStore);
 const employeeOptions = ref([]);
 
 // ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
-
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
 
 // ─── Tìm kiếm & phân trang ───────────────────────────────────────────────────
-
 const {
 	searchQuery,
-	load: loadDepartments, // Tải danh sách phòng ban
-	handlePageChange, // Xử lý chuyển trang
+	load: loadDepartments,
+	handlePageChange,
 } = usePaginatedSearch(
 	(params) => departmentStore.fetchDepartments(params),
 	pagination,
 );
 
 // ─── Trạng thái local ────────────────────────────────────────────────────────
-
-const editingDepartment = ref(null); // Phòng ban đang được chỉnh sửa
-const formLoading = ref(false); // Đang xử lý submit form
-
-// Giá trị mặc định form — dùng hàm để tránh tái sử dụng cùng một object reference
-const initialFormData = () => ({
-	name: "",
-	code: "",
-	description: "",
-	manager_id: null,
-});
-const formData = ref(initialFormData());
+const editingDepartment = ref(null);
+const formLoading = ref(false);
 
 // ─── Trạng thái modal xoá ────────────────────────────────────────────────────
-
-const isDeleteModalVisible = ref(false); // Modal xoá có đang mở không
-const deletingDepartment = ref(null); // Phòng ban sắp bị xoá
-const deleteMessage = ref(""); // Nội dung xác nhận xoá
-const deleteLoading = ref(false); // Đang xử lý xoá
+const isDeleteModalVisible = ref(false);
+const deletingDepartment = ref(null);
+const deleteMessage = ref("");
+const deleteLoading = ref(false);
 
 // ─── Tải danh sách nhân viên ─────────────────────────────────────────────────
-
-// Lấy toàn bộ nhân viên (tối đa 100) để đổ vào dropdown chọn trưởng phòng
 async function loadEmployees() {
 	try {
 		const res = await employeeStore.fetchEmployeesForSelect({
@@ -104,36 +86,19 @@ const departmentEmployees = computed(() => {
 });
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
-
-// Reset form về trạng thái rỗng rồi mở modal
 function handleAdd() {
 	editingDepartment.value = null;
-	formData.value = initialFormData();
 	openAddModal();
 }
 
 // ─── Mở modal sửa ────────────────────────────────────────────────────────────
-
-/**
- * Điền dữ liệu phòng ban vào form.
- * manager_id ưu tiên lấy từ field trực tiếp, fallback về manager?.id
- * (API có thể trả về dạng nested object thay vì flat id).
- */
 async function handleEdit(department) {
 	editingDepartment.value = { ...department };
-	formData.value = {
-		name: department.name ?? "",
-		code: department.code ?? "",
-		description: department.description ?? "",
-		manager_id: department.manager_id ?? department.manager?.id ?? null,
-	};
 	openEditModal();
-	await loadEmployees(); // Tải nhân viên để dropdown có dữ liệu
+	await loadEmployees();
 }
 
 // ─── Mở modal xoá ────────────────────────────────────────────────────────────
-
-// Gán phòng ban cần xoá và hiển thị modal xác nhận
 function handleDelete(department) {
 	deletingDepartment.value = department;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
@@ -141,8 +106,6 @@ function handleDelete(department) {
 }
 
 // ─── Xác nhận xoá ────────────────────────────────────────────────────────────
-
-// Thực hiện xoá sau khi người dùng xác nhận
 async function confirmDelete() {
 	const department = deletingDepartment.value;
 	if (!department) return;
@@ -164,20 +127,17 @@ async function confirmDelete() {
 		toast.error(err?.message || "Đã xảy ra lỗi khi xoá phòng ban");
 		console.error("confirmDelete error:", err);
 	} finally {
-		deleteLoading.value = false; // Luôn tắt loading dù thành công hay lỗi
+		deleteLoading.value = false;
 	}
 }
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
-
-async function handleFormSubmit() {
+async function handleFormSubmit(submittedData) {
 	formLoading.value = true;
 	try {
 		let res;
 
 		if (isEditMode.value) {
-			// ── Chế độ SỬA: partial update — chỉ gửi field thực sự thay đổi ──
-
 			const original = {
 				name: editingDepartment.value?.name ?? "",
 				description: editingDepartment.value?.description ?? "",
@@ -186,19 +146,21 @@ async function handleFormSubmit() {
 					editingDepartment.value?.manager?.id ??
 					null,
 			};
-			const payload = buildPatchPayload(original, formData.value, {
+			const payload = buildPatchPayload(original, submittedData, {
 				fields: ["name", "description", "manager_id"],
 				transformValue: (key, value) => {
 					if (key === "manager_id") {
-						return value == null || value === "" ? 0 : Number(value);
+						return value == null || value === ""
+							? 0
+							: Number(value);
 					}
 					return value;
 				},
 			});
 
-			// Không có field nào thay đổi → báo và thoát sớm
 			if (Object.keys(payload).length === 0) {
 				toast.info("Không có dữ liệu thay đổi");
+				formLoading.value = false;
 				return;
 			}
 
@@ -207,12 +169,11 @@ async function handleFormSubmit() {
 				payload,
 			);
 		} else {
-			// ── Chế độ THÊM MỚI: gửi đủ các field ──
 			res = await departmentStore.createDepartment({
-				name: formData.value.name,
-				code: formData.value.code,
-				description: formData.value.description,
-				manager_id: formData.value.manager_id || null,
+				name: submittedData.name,
+				code: submittedData.code,
+				description: submittedData.description,
+				manager_id: submittedData.manager_id || null,
 			});
 		}
 
@@ -231,13 +192,11 @@ async function handleFormSubmit() {
 		toast.error(err?.message || "Đã xảy ra lỗi khi lưu phòng ban");
 		console.error("handleFormSubmit error:", err);
 	} finally {
-		formLoading.value = false; // Luôn tắt loading dù thành công hay lỗi
+		formLoading.value = false;
 	}
 }
 
 // ─── Khởi tạo trang ──────────────────────────────────────────────────────────
-
-// Tải song song phòng ban + dashboard để giảm thời gian chờ
 onMounted(async () => {
 	await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
 });
@@ -250,7 +209,7 @@ onMounted(async () => {
 				<h1 class="page-title">Quản lý phòng ban</h1>
 				<p class="page-subtitle">
 					Hệ thống có tổng cộng
-					<span>{{ departments.length }}</span> phòng ban
+					<span>{{ pagination.total || departments.length }}</span> phòng ban
 				</p>
 			</div>
 			<button
@@ -263,234 +222,144 @@ onMounted(async () => {
 			</button>
 		</header>
 
-		<main class="content-card">
-			<div class="toolbar">
-				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
-					<input
-						v-model="searchQuery"
-						class="form-control search-box__input"
-						placeholder="Tìm tên hoặc mã phòng ban..."
-					/>
+		<!-- Toolbar Search Card -->
+		<div class="search-card">
+			<div class="search-box">
+				<img
+					:src="searchIcon"
+					class="search-box__icon"
+					alt="search"
+				/>
+				<input
+					v-model="searchQuery"
+					class="form-control search-box__input"
+					placeholder="Tìm tên hoặc mã phòng ban..."
+				/>
+			</div>
+		</div>
+
+		<!-- Bento Grid of Departments -->
+		<main class="dept-bento-container">
+			<!-- Loading skeleton grid -->
+			<div v-if="loading" class="dept-bento-grid">
+				<div v-for="i in 6" :key="'skeleton-dept-' + i" class="dept-bento-card">
+					<div class="dept-bento-header">
+						<Skeleton type="text" width="60%" height="22px" />
+						<Skeleton type="badge" width="60px" height="24px" />
+					</div>
+					<div class="dept-bento-body">
+						<Skeleton type="text" width="100%" height="16px" style="margin-bottom: 8px" />
+						<Skeleton type="text" width="80%" height="16px" />
+					</div>
+					<div class="dept-bento-manager">
+						<Skeleton type="avatar" />
+						<div style="flex: 1; display: flex; flex-direction: column; gap: var(--space-1); margin-left: 8px;">
+							<Skeleton type="text" width="40%" />
+							<Skeleton type="text" width="70%" />
+						</div>
+					</div>
+					<div v-if="canCrudDepartment" class="dept-bento-actions">
+						<Skeleton type="btn" />
+						<Skeleton type="btn" />
+					</div>
 				</div>
 			</div>
 
-			<div class="table-responsive">
-				<table class="data-table">
-					<thead>
-						<tr>
-							<th>Tên phòng ban</th>
-							<th>Mã</th>
-							<th>Mô tả</th>
-							<th class="text-center">Trưởng Phòng</th>
-							<th v-if="canCrudDepartment" class="text-right">
-								Thao tác
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<!-- Loading skeleton rows -->
-						<template v-if="loading">
-							<tr v-for="i in 5" :key="'skeleton-' + i">
-								<td class="text-main fw-500">
-									<Skeleton type="text" width="150px" height="18px" />
-								</td>
-								<td>
-									<Skeleton
-										type="text"
-										class="dept-code"
-										width="60px"
-										height="22px"
-									/>
-								</td>
-								<td class="text-muted">
-									<Skeleton type="text" width="220px" height="16px" />
-								</td>
-								<td class="text-center">
-									<Skeleton
-										type="text"
-										class="employee-count"
-										width="120px"
-										height="18px"
-										style="display: inline-block"
-									/>
-								</td>
-								<td v-if="canCrudDepartment" class="text-right">
-									<div class="action-group">
-										<Skeleton type="btn" />
-										<Skeleton type="btn" />
-									</div>
-								</td>
-							</tr>
-						</template>
+			<!-- Actual department cards -->
+			<div v-else class="dept-bento-grid">
+				<div v-for="dept in departments" :key="dept.id" class="dept-bento-card">
+					<!-- Accent light border at top -->
+					<div class="dept-accent-bar"></div>
+					
+					<div class="dept-bento-header">
+						<h3 class="dept-bento-name">{{ dept.name }}</h3>
+						<span class="dept-code">{{ dept.code }}</span>
+					</div>
+					
+					<div class="dept-bento-body">
+						<p class="dept-bento-desc">
+							{{ dept.description || "Không có mô tả chi tiết cho phòng ban này." }}
+						</p>
+					</div>
+					
+					<div class="dept-bento-manager">
+						<div class="manager-avatar">
+							{{ dept.manager ? getInitials(dept.manager.first_name, dept.manager.last_name) : '?' }}
+						</div>
+						<div class="manager-info">
+							<span class="manager-label">Trưởng phòng</span>
+							<span class="manager-name">
+								{{ dept.manager ? dept.manager.first_name + " " + dept.manager.last_name : "Chưa bổ nhiệm" }}
+							</span>
+						</div>
+					</div>
+					
+					<div v-if="canCrudDepartment" class="dept-bento-actions">
+						<button
+							class="btn-icon btn-icon--edit"
+							title="Chỉnh sửa"
+							@click="handleEdit(dept)"
+						>
+							<img :src="editIcon" alt="edit" />
+						</button>
+						<button
+							class="btn-icon btn-icon--delete"
+							title="Xoá"
+							@click="handleDelete(dept)"
+						>
+							<img :src="deleteIcon" alt="delete" />
+						</button>
+					</div>
+				</div>
 
-						<!-- Actual rows when loaded -->
-						<template v-else>
-							<tr v-for="dept in departments" :key="dept.id">
-								<td class="text-main fw-500">
-									{{ dept.name }}
-								</td>
-								<td>
-									<span class="dept-code">{{ dept.code }}</span>
-								</td>
-								<td class="text-muted">
-									{{ dept.description || "—" }}
-								</td>
-								<td class="text-center">
-									<span class="employee-count">
-										{{
-											dept.manager
-												? dept.manager.first_name +
-													" " +
-													dept.manager.last_name
-												: "Chưa có"
-										}}
-									</span>
-								</td>
-								<td v-if="canCrudDepartment" class="text-right">
-									<div class="action-group">
-										<button
-											class="btn-icon btn-icon--edit"
-											title="Chỉnh sửa"
-											@click="handleEdit(dept)"
-										>
-											<img :src="editIcon" alt="edit" />
-										</button>
-										<button
-											class="btn-icon btn-icon--delete"
-											title="Xoá"
-											@click="handleDelete(dept)"
-										>
-											<img :src="deleteIcon" alt="delete" />
-										</button>
-									</div>
-								</td>
-							</tr>
-							<tr v-if="departments.length === 0">
-								<td
-									:colspan="canCrudDepartment ? 5 : 4"
-									class="empty-state"
-								>
-									<div class="empty-state__icon">🏢</div>
-									<p class="empty-state__text">
-										Không có phòng ban nào phù hợp.
-									</p>
-								</td>
-							</tr>
-						</template>
-					</tbody>
-				</table>
+				<!-- Empty State -->
+				<div v-if="departments.length === 0" class="empty-state-container">
+					<div class="empty-state">
+						<div class="empty-state__icon">🏢</div>
+						<p class="empty-state__text">
+							Không tìm thấy phòng ban nào phù hợp.
+						</p>
+					</div>
+				</div>
 			</div>
 
-			<div class="pagination" v-if="pagination.totalPages > 0">
-				<button
-					class="pagination__btn"
-					:disabled="pagination.page === 1"
-					@click="handlePageChange(pagination.page - 1)"
-				>
-					<img :src="prevIcon" alt="prev" />
-				</button>
-				<div class="pagination__info">
-					Trang <span>{{ pagination.page }}</span> /
-					{{ pagination.totalPages }}
+			<!-- Pagination controls (Glass styled) -->
+			<div class="pagination-container" v-if="pagination.totalPages > 0">
+				<div class="pagination">
+					<button
+						class="pagination__btn"
+						:disabled="pagination.page === 1"
+						@click="handlePageChange(pagination.page - 1)"
+					>
+						<img :src="prevIcon" alt="prev" />
+					</button>
+					<div class="pagination__info">
+						Trang <span>{{ pagination.page }}</span> /
+						{{ pagination.totalPages }}
+					</div>
+					<button
+						class="pagination__btn"
+						:disabled="pagination.page === pagination.totalPages"
+						@click="handlePageChange(pagination.page + 1)"
+					>
+						<img :src="nextIcon" alt="next" />
+					</button>
 				</div>
-				<button
-					class="pagination__btn"
-					:disabled="pagination.page === pagination.totalPages"
-					@click="handlePageChange(pagination.page + 1)"
-				>
-					<img :src="nextIcon" alt="next" />
-				</button>
 			</div>
 		</main>
 
-		<ModalDialog
+		<!-- Subcomponent Form Modal -->
+		<DepartmentModal
 			:visible="isModalVisible"
-			:title="isEditMode ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban mới'"
-			:subtitle="
-				isEditMode
-					? 'Cập nhật phòng ban hiện tại'
-					: 'Nhập thông tin phòng ban mới'
-			"
-			size="lg"
+			:is-edit-mode="isEditMode"
+			:editing-department="editingDepartment"
+			:department-employees="departmentEmployees"
+			:loading="formLoading"
 			@close="closeModal"
-		>
-			<form @submit.prevent="handleFormSubmit" class="department-form">
-				<div class="form-grid">
-					<div class="form-group">
-						<label class="form-label"
-							>Tên phòng ban <span class="required">*</span></label
-						>
-						<input
-							v-model="formData.name"
-							type="text"
-							class="form-control"
-							placeholder="Nhập tên phòng ban..."
-							required
-						/>
-					</div>
-					<div class="form-group">
-						<label class="form-label"
-							>Mã phòng ban <span class="required">*</span></label
-						>
-						<input
-							v-model="formData.code"
-							type="text"
-							class="form-control"
-							placeholder="Nhập mã phòng ban..."
-							required
-							:disabled="isEditMode"
-						/>
-					</div>
-					<div v-if="isEditMode" class="form-group">
-						<label class="form-label">Trưởng phòng</label>
-						<select v-model="formData.manager_id" class="form-control">
-							<option :value="null">Chọn trưởng phòng</option>
-							<option
-								v-for="employee in departmentEmployees"
-								:key="employee.id"
-								:value="employee.id"
-							>
-								{{ employee.first_name }} {{ employee.last_name
-								}}{{
-									employee.department
-										? " - " + employee.department.name
-										: ""
-								}}
-							</option>
-						</select>
-					</div>
-					<div class="form-group form-group--full">
-						<label class="form-label">Mô tả</label>
-						<textarea
-							v-model="formData.description"
-							class="form-control"
-							placeholder="Mô tả ngắn về phòng ban"
-							rows="4"
-						></textarea>
-					</div>
-				</div>
+			@submit="handleFormSubmit"
+		/>
 
-				<div class="form-actions">
-					<button
-						type="button"
-						class="btn btn--secondary"
-						@click="closeModal"
-					>
-						Hủy bỏ
-					</button>
-					<button
-						type="submit"
-						class="btn btn--primary"
-						:disabled="formLoading"
-					>
-						<span v-if="formLoading" class="spinner"></span>
-						{{ isEditMode ? "Lưu thay đổi" : "Thêm phòng ban" }}
-					</button>
-				</div>
-			</form>
-		</ModalDialog>
-
+		<!-- Confirmation Delete Dialog -->
 		<ConfirmationDialog
 			:visible="isDeleteModalVisible"
 			title="Xác nhận xoá phòng ban"
@@ -505,60 +374,25 @@ onMounted(async () => {
 <style scoped>
 .department-view {
 	padding-bottom: var(--space-4);
-}
-
-/* ===== Header ===== */
-.page-header {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: var(--space-4);
-	flex-wrap: wrap;
-	gap: var(--space-2);
-}
-
-.page-title {
-	font-size: var(--fs-2xl);
-	font-weight: var(--fw-bold);
-	letter-spacing: var(--tracking-tight);
-	margin: 0 0 4px 0;
-	color: var(--text-main);
-}
-
-.page-subtitle {
-	color: var(--text-muted);
-	font-size: var(--fs-sm);
-	margin: 0;
-}
-
-.page-subtitle span {
-	font-weight: var(--fw-semibold);
-	color: var(--primary-color);
-}
-
-/* ===== Card & Toolbar ===== */
-.content-card {
-	background: var(--bg-card);
-	border-radius: var(--radius-lg);
-	border: 1px solid var(--border-color);
-	box-shadow: var(--shadow-sm);
-	overflow: hidden;
-}
-
-.toolbar {
-	display: flex;
-	justify-content: space-between;
+	flex-direction: column;
 	gap: var(--space-3);
-	padding: var(--space-3) var(--space-4);
-	border-bottom: 1px solid var(--border-color);
-	flex-wrap: wrap;
+}
+
+/* Search bar glass container */
+.search-card {
 	background: var(--bg-card);
-	align-items: center;
+	backdrop-filter: var(--glass-backdrop);
+	-webkit-backdrop-filter: var(--glass-backdrop);
+	border: var(--glass-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+	padding: var(--space-3);
 }
 
 .search-box {
 	position: relative;
-	flex: 1;
+	width: 100%;
 	max-width: 400px;
 }
 
@@ -577,229 +411,169 @@ onMounted(async () => {
 	padding-left: 2.75rem !important;
 }
 
-/* ===== Table ===== */
-.table-responsive {
-	overflow-x: auto;
-}
-
-.data-table {
-	width: 100%;
-	border-collapse: collapse;
-	text-align: left;
-}
-
-.data-table th {
-	padding: var(--space-3) var(--space-2);
-	background: var(--bg-lighter);
-	font-size: var(--fs-xs);
-	text-transform: uppercase;
-	font-weight: var(--fw-bold);
-	color: var(--text-muted);
-	letter-spacing: 0.05em;
-	border-bottom: 1px solid var(--border-color);
-}
-
-.data-table td {
-	padding: var(--space-3) var(--space-2);
-	border-bottom: 1px solid var(--border-color);
-	vertical-align: middle;
-}
-
-.data-table tbody tr:hover td {
-	background: var(--bg-lighter);
-}
-
-/* Dept code pill */
-.dept-code {
-	display: inline-block;
-	padding: 0.2rem 0.6rem;
-	background: var(--bg-light);
-	border-radius: var(--radius-sm);
-	font-size: var(--fs-xs);
-	font-weight: var(--fw-semibold);
-	color: var(--text-muted);
-	letter-spacing: 0.03em;
-}
-
-/* ===== Actions ===== */
-.action-group {
-	display: inline-flex;
-	gap: 0.5rem;
-}
-
-.btn-icon {
-	width: 34px;
-	height: 34px;
-	border-radius: var(--radius-sm);
-	background: var(--bg-main);
-	border: 1px solid var(--border-color);
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	transition: all 0.2s ease;
-}
-
-.btn-icon img {
-	width: 16px;
-	height: 16px;
-	filter: grayscale(1) opacity(0.6);
-}
-
-.btn-icon:hover {
-	border-color: var(--primary-color);
-	background: #eff6ff;
-}
-
-.btn-icon:hover img {
-	filter: none;
-}
-
-.btn-icon--delete:hover {
-	border-color: var(--danger-color);
-	background: #fee2e2;
-}
-
-/* ===== Pagination ===== */
-.pagination {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-3) var(--space-4);
-	background: var(--bg-card);
-	border-top: 1px solid var(--border-color);
-}
-
-.pagination__btn {
-	width: 36px;
-	height: 36px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border: 1px solid var(--border-color);
-	background: var(--bg-main);
-	border-radius: var(--radius-md);
-	cursor: pointer;
-	transition: all 0.2s ease;
-}
-
-.pagination__btn:hover:not(:disabled) {
-	border-color: var(--primary-color);
-	background: var(--bg-light);
-}
-
-.pagination__btn:disabled {
-	opacity: 0.35;
-	cursor: not-allowed;
-}
-
-.pagination__btn img {
-	width: 18px;
-	height: 18px;
-	opacity: 0.7;
-}
-
-.pagination__info {
-	font-size: var(--fs-sm);
-	color: var(--text-muted);
-}
-
-.pagination__info span {
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-}
-
-/* ===== Empty state ===== */
-.empty-state {
-	text-align: center;
-	padding: var(--space-8) 0;
-}
-
-.empty-state__icon {
-	font-size: 2.5rem;
-	margin-bottom: var(--space-3);
-}
-
-.empty-state__text {
-	color: var(--text-muted);
-	font-size: var(--fs-sm);
-}
-
-/* ===== Misc ===== */
-.btn__icon {
-	width: 18px;
-	height: 18px;
-	filter: brightness(0) invert(1);
-}
-
-/* ===== Form ===== */
-.department-form {
+/* Bento Grid */
+.dept-bento-container {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-4);
 }
 
-.form-grid {
+.dept-bento-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 	gap: var(--space-3);
 }
 
-.form-group {
+.dept-bento-card {
+	background: var(--bg-card);
+	backdrop-filter: var(--glass-backdrop);
+	-webkit-backdrop-filter: var(--glass-backdrop);
+	border: var(--glass-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--glass-shadow);
+	padding: var(--space-3);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	gap: var(--space-3);
 }
 
-.form-group--full {
-	grid-column: 1 / -1;
+.dept-bento-card:hover {
+	transform: translateY(-4px);
+	box-shadow: var(--glass-shadow-hover);
 }
 
-.form-label {
+.dept-accent-bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: var(--primary-gradient);
+}
+
+.dept-bento-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: var(--space-2);
+	margin-top: 4px;
+}
+
+.dept-bento-name {
+	font-family: var(--font-title);
+	font-size: var(--fs-base);
+	font-weight: var(--fw-bold);
+	color: var(--text-main);
+	margin: 0;
+	line-height: var(--lh-tight);
+}
+
+.dept-bento-body {
+	flex: 1;
+}
+
+.dept-bento-desc {
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+	line-height: var(--lh-normal);
+	margin: 0;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* Manager Card Sub-Component */
+.dept-bento-manager {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	background: rgba(255, 255, 255, 0.45);
+	padding: var(--space-2);
+	border-radius: var(--radius-md);
+	border: 1px solid rgba(66, 97, 237, 0.08);
+}
+
+.manager-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: var(--radius-md);
+	background: linear-gradient(135deg, rgba(0, 192, 250, 0.12) 0%, rgba(66, 97, 237, 0.1) 100%);
+	color: var(--primary-color);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: var(--fw-bold);
+	font-size: var(--fs-xs);
+	flex-shrink: 0;
+}
+
+.manager-info {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.manager-label {
+	font-size: var(--fs-xs);
+	text-transform: uppercase;
+	color: var(--text-muted);
+	font-weight: var(--fw-semibold);
+	letter-spacing: 0.05em;
+}
+
+.manager-name {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
+	color: var(--text-main);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-.form-actions {
+/* Actions at the bottom of card */
+.dept-bento-actions {
 	display: flex;
 	justify-content: flex-end;
-	gap: var(--space-2);
-	margin-top: var(--space-2);
-	padding-top: var(--space-3);
+	gap: 0.5rem;
 	border-top: 1px solid var(--border-color);
+	padding-top: var(--space-2);
+	margin-top: auto;
 }
 
-.required {
-	color: var(--danger-color);
+.empty-state-container {
+	grid-column: 1 / -1;
+	padding: var(--space-8) 0;
 }
 
-.spinner {
-	width: 16px;
-	height: 16px;
-	border: 2px solid rgba(255, 255, 255, 0.3);
-	border-right-color: transparent;
-	border-radius: 50%;
-	animation: spin 0.8s linear infinite;
-	display: inline-block;
+/* Pagination container */
+.pagination-container {
+	display: flex;
+	justify-content: center;
+	margin-top: var(--space-2);
 }
 
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
+.pagination {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-4);
+	background: var(--bg-card);
+	backdrop-filter: var(--glass-backdrop);
+	-webkit-backdrop-filter: var(--glass-backdrop);
+	border: var(--glass-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 640px) {
-	.form-grid {
+	.dept-bento-grid {
 		grid-template-columns: 1fr;
-	}
-}
-
-@media (max-width: 768px) {
-	.toolbar {
-		flex-direction: column;
-		align-items: stretch;
 	}
 	.search-box {
 		max-width: none;

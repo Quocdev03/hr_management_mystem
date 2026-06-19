@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Backend Dockerfile.dev — Development with Hot Reload
+# ═══════════════════════════════════════════════════════════════════════════
+# Dùng 'air' để hot-reload Go code khi file thay đổi
+# Source được mount qua volume — không cần rebuild image khi sửa code
+# ═══════════════════════════════════════════════════════════════════════════
+
+FROM golang:1.25-alpine
+
+# Install build dependencies + air for hot reload
+RUN apk add --no-cache git gcc musl-dev curl && \
+    go install github.com/air-verse/air@latest
+
+WORKDIR /app
+
+# Copy dependency files and download
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Source code sẽ được mount qua volume trong docker-compose.dev.yml
+# Không COPY source ở đây để tận dụng hot-reload
+
+# Expose port (đọc từ APP_PORT env)
+EXPOSE 8080
+
+# Entrypoint: chờ DB + Redis, sau đó chạy air (hot-reload)
+COPY docker-entrypoint.dev.sh .
+RUN chmod +x docker-entrypoint.dev.sh
+
+ENTRYPOINT ["./docker-entrypoint.dev.sh"]

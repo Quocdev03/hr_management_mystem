@@ -28,11 +28,13 @@ const router = createRouter({
 					path: "departments",
 					name: "departments",
 					component: DepartmentView,
+					meta: { permissions: ["department.read"] },
 				},
 				{
 					path: "employees",
 					name: "employees",
 					component: EmployeeView,
+					meta: { permissions: ["employee.read"] },
 				},
 				{
 					path: "users",

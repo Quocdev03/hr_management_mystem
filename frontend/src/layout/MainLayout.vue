@@ -16,51 +16,56 @@ const closeSidebar = () => {
 
 <template>
 	<div class="layout" :class="{ 'sidebar-open': isSidebarOpen }">
-		<Header @toggle="toggleSidebar"></Header>
+		<!-- Sidebar on the left (full height) -->
+		<Sidebar :is-open="isSidebarOpen" @close="closeSidebar"></Sidebar>
 		
-		<div class="body-wrapper">
-			<div
-				v-if="isSidebarOpen"
-				class="sidebar-backdrop"
-				@click="closeSidebar"
-			></div>
-
-			<Sidebar :is-open="isSidebarOpen" @close="closeSidebar"></Sidebar>
+		<div class="main-wrapper">
+			<!-- Header above the main content -->
+			<Header @toggle="toggleSidebar"></Header>
 			
 			<main class="content">
 				<router-view />
 			</main>
 		</div>
+
+		<!-- Mobile Backdrop -->
+		<div
+			v-if="isSidebarOpen"
+			class="sidebar-backdrop"
+			@click="closeSidebar"
+		></div>
 	</div>
 </template>
 
 <style scoped>
 .layout {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row; /* Sidebar left, Content area right */
 	height: 100vh;
 	width: 100vw;
 	overflow: hidden;
-	background: var(--bg-main);
+	position: relative;
+	background: transparent;
 }
 
-.body-wrapper {
+.main-wrapper {
 	display: flex;
+	flex-direction: column;
 	flex: 1;
 	overflow: hidden;
-	position: relative;
+	height: 100%;
 }
 
 .content {
 	flex: 1;
 	padding: var(--container-padding);
 	overflow-y: auto;
-	background: var(--bg-main);
+	background: transparent;
 }
 
 .sidebar-backdrop {
 	display: none;
-	position: absolute;
+	position: fixed;
 	inset: 0;
 	background: rgba(15, 23, 42, 0.6);
 	backdrop-filter: blur(4px);

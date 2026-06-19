@@ -41,7 +41,7 @@
    - [ ] Test database restoration process
 
 - [ ] **Nginx Configuration**
-   - [ ] Verify security headers in `frontend/nginx.conf`
+   - [ ] Verify security headers in `frontend/nginx.prod.conf`
    - [ ] Test HTTP → HTTPS redirect
    - [ ] Verify SSL protocols (TLSv1.2, TLSv1.3)
    - [ ] Check rate limiting configuration
@@ -72,7 +72,6 @@ nano .env
 # Application
 APP_PORT=8080
 APP_ENV=production
-APP_SEED=false
 
 # Database (Use strong passwords!)
 DB_HOST=mysql
@@ -85,12 +84,12 @@ MYSQL_ROOT_PASSWORD=<generate-strong-root-password>  # Min 16 chars
 # JWT (Use cryptographically random key!)
 JWT_SECRET=<generate-32-char-random-key>  # Min 32 chars, use: openssl rand -base64 32
 JWT_EXPIRE_HOUR=1
-REFRESH_EXPIRE_DAY=7
+JWT_REFRESH_EXPIRE_DAY=7
 
 # Redis
 REDIS_HOST=redis
 REDIS_PORT=6379
-REDIS_PASSWORD=<generate-strong-password>  # Optional but recommended
+REDIS_PASSWORD=<generate-strong-password>
 REDIS_DB=0
 ```
 
@@ -170,6 +169,14 @@ openssl verify -CAfile certs/cert.pem certs/cert.pem
 
 ## 🚀 Deployment Process
 
+> [!NOTE]
+> On Windows, you can use the **`start-prod.bat`** script in CMD to manage the production stack easily:
+> * Start & Setup: `start-prod.bat setup`
+> * Start only: `start-prod.bat`
+> * Stop: `start-prod.bat down`
+> * Logs: `start-prod.bat logs`
+> * Status: `start-prod.bat status`
+
 ### Step 1: Validation
 
 ```bash
@@ -188,7 +195,7 @@ openssl verify -CAfile certs/cert.pem certs/cert.pem
 
 ```bash
 # Build production Docker images
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 
 # Verify images built successfully
 docker images | grep hrm
@@ -198,29 +205,39 @@ docker images | grep hrm
 
 ```bash
 # Start only database services first
-docker-compose -f docker-compose.prod.yml up -d mysql redis
+docker compose -f docker-compose.prod.yml up -d mysql redis
 
 # Wait for MySQL to be ready (check healthcheck)
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # Initialize database (if needed)
-docker-compose -f docker-compose.prod.yml exec mysql mysql -u root -p"${MYSQL_ROOT_PASSWORD}" < database.sql
+docker compose -f docker-compose.prod.yml exec mysql mysql -u root -p"${MYSQL_ROOT_PASSWORD}" < database.sql
 ```
 
 ### Step 4: Start All Services
 
 ```bash
 # Start all services
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # Verify all containers are running
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # Check logs for errors
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
-### Step 5: Verify Services
+### Step 5: Run Migration (REQUIRED — first deploy only)
+
+```bash
+# Tạo bảng database — chạy 1 lần trước khi dùng
+docker compose -f docker-compose.prod.yml run --rm migrate
+
+# Seed KHÔNG chạy tự động trong production.
+# Nếu cần dữ liệu khởi tạo, nhập thủ công qua SQL.
+```
+
+### Step 6: Verify Services
 
 ```bash
 # Check backend health
@@ -230,8 +247,8 @@ curl https://localhost/api/v1/health
 curl https://localhost
 
 # View logs
-docker-compose -f docker-compose.prod.yml logs backend
-docker-compose -f docker-compose.prod.yml logs frontend
+docker compose -f docker-compose.prod.yml logs backend
+docker compose -f docker-compose.prod.yml logs frontend
 ```
 
 ---
@@ -273,7 +290,7 @@ curl -i -k https://yourdomain.com | grep -i "strict-transport-security\|x-conten
 
 ```bash
 # Connect to database container
-docker-compose -f docker-compose.prod.yml exec mysql mysql -u hrm_app_user -p${DB_PASSWORD} hrm_db
+docker compose -f docker-compose.prod.yml exec mysql mysql -u hrm_app_user -p${DB_PASSWORD} hrm_db
 
 # List tables
 SHOW TABLES;
@@ -289,7 +306,7 @@ EXIT;
 
 ```bash
 # Connect to Redis
-docker-compose -f docker-compose.prod.yml exec redis redis-cli
+docker compose -f docker-compose.prod.yml exec redis redis-cli
 
 # Test connectivity
 PING
@@ -309,13 +326,13 @@ EXIT
 
 ```bash
 # Check container status
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # Check system resource usage
 docker stats
 
 # View recent logs
-docker-compose -f docker-compose.prod.yml logs --tail=100
+docker compose -f docker-compose.prod.yml logs --tail=100
 
 # Check disk space
 df -h
@@ -351,7 +368,7 @@ sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem certs/cert.pem
 sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem certs/key.pem
 
 # Reload nginx
-docker-compose -f docker-compose.prod.yml exec frontend nginx -s reload
+docker compose -f docker-compose.prod.yml exec frontend nginx -s reload
 ```
 
 ### Backup Strategy
@@ -359,7 +376,7 @@ docker-compose -f docker-compose.prod.yml exec frontend nginx -s reload
 ```bash
 # Daily database backup script
 #!/bin/bash
-docker-compose -f docker-compose.prod.yml exec mysql mysqldump \
+docker compose -f docker-compose.prod.yml exec mysql mysqldump \
   -u hrm_app_user \
   -p"${DB_PASSWORD}" \
   hrm_db | gzip > backups/hrm_db_$(date +%Y%m%d_%H%M%S).sql.gz
@@ -376,10 +393,10 @@ docker-compose -f docker-compose.prod.yml exec mysql mysqldump \
 
 ```bash
 # Container won't start - check logs
-docker-compose -f docker-compose.prod.yml logs <service-name>
+docker compose -f docker-compose.prod.yml logs <service-name>
 
 # Restart container
-docker-compose -f docker-compose.prod.yml restart <service-name>
+docker compose -f docker-compose.prod.yml restart <service-name>
 
 # View container status details
 docker inspect <container-name>
@@ -405,13 +422,13 @@ docker inspect <container-name>
 
 ```bash
 # Database connection failed
-docker-compose -f docker-compose.prod.yml logs mysql
+docker compose -f docker-compose.prod.yml logs mysql
 
 # Check database credentials in .env match
 grep "DB_" .env
 
 # MySQL port conflict
-docker-compose -f docker-compose.prod.yml ps | grep mysql
+docker compose -f docker-compose.prod.yml ps | grep mysql
 netstat -tlnp | grep 3306
 ```
 
@@ -422,12 +439,12 @@ netstat -tlnp | grep 3306
 docker stats
 
 # Check database query performance
-docker-compose -f docker-compose.prod.yml exec mysql mysql \
+docker compose -f docker-compose.prod.yml exec mysql mysql \
   -u hrm_app_user -p"${DB_PASSWORD}" hrm_db \
   -e "SHOW PROCESSLIST;"
 
 # Check Redis memory
-docker-compose -f docker-compose.prod.yml exec redis redis-cli INFO memory
+docker compose -f docker-compose.prod.yml exec redis redis-cli INFO memory
 ```
 
 ---
@@ -438,15 +455,15 @@ If deployment fails or issues occur:
 
 ```bash
 # Stop current deployment
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 
 # Restore database from backup
 gunzip < backups/hrm_db_<timestamp>.sql.gz | \
-  docker-compose -f docker-compose.prod.yml exec -T mysql mysql \
+  docker compose -f docker-compose.prod.yml exec -T mysql mysql \
   -u root -p"${MYSQL_ROOT_PASSWORD}" hrm_db
 
 # Deploy previous version
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---
@@ -470,7 +487,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 For deployment issues or questions:
 
-- Review logs: `docker-compose -f docker-compose.prod.yml logs`
+- Review logs: `docker compose -f docker-compose.prod.yml logs`
 - Check health endpoint: `curl https://api.yourdomain.com/api/v1/health`
 - Contact development team for debugging
 

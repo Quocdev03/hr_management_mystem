@@ -25,15 +25,15 @@ type UserService interface {
 	DeleteUser(id uint) error
 	GetUsersWithoutEmployee() ([]model.User, error)
 	GetAvailablePermissions() ([]model.Permission, error)
-	UpdateUserPermissions(id uint, permissionCodes []string) ([]string, error)
+	UpdateUserPermissions(id uint, permissionCodes []string, requesterID uint) ([]string, error)
 }
 
 // --- User Service Implementation ---
 
 type userService struct {
-	userRepo   repository.UserRepository
-	permRepo   repository.PermissionRepository
-	rdb        *redis.Client
+	userRepo repository.UserRepository
+	permRepo repository.PermissionRepository
+	rdb      *redis.Client
 }
 
 func NewUserService(userRepo repository.UserRepository, permRepo repository.PermissionRepository, rdb *redis.Client) UserService {
@@ -83,7 +83,9 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), us.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return us.userRepo.FindByID(user.ID)
 }
@@ -211,7 +213,9 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	}
 
 	// Invalidate dashboard stats cache
-	_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
+	if err := utils.InvalidateDashboardStats(context.Background(), us.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
+	}
 
 	return us.userRepo.FindByID(id)
 }
@@ -229,10 +233,11 @@ func (us *userService) DeleteUser(id uint) error {
 	}
 
 	err := us.userRepo.Delete(id)
-	if err == nil {
-		// Invalidate dashboard stats cache
-		_ = utils.InvalidateDashboardStats(context.Background(), us.rdb)
+
+	if err := utils.InvalidateDashboardStats(context.Background(), us.rdb); err != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", err)
 	}
+
 	return err
 }
 
@@ -249,16 +254,27 @@ func (us *userService) GetAvailablePermissions() ([]model.Permission, error) {
 	return us.permRepo.GetAllPermissions()
 }
 
-func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string) ([]string, error) {
+func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string, requesterID uint) ([]string, error) {
 	if id == 0 {
 		return nil, errors.New("id user phải lớn hơn 0")
 	}
 
-	if _, err := us.userRepo.FindByID(id); err != nil {
+	// 1. Ngăn tự cập nhật hoặc override quyền hạn của chính mình
+	if id == requesterID {
+		return nil, errors.New("không thể tự thay đổi hoặc override quyền hạn của chính mình")
+	}
+
+	targetUser, err := us.userRepo.FindByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("không tìm thấy user")
 		}
 		return nil, err
+	}
+
+	// 2. Ngăn chỉnh sửa quyền hạn của Admin chính trị hệ thống (RoleID == 1)
+	if targetUser.RoleID == 1 {
+		return nil, errors.New("không thể sửa đổi quyền hạn của quản trị viên hệ thống")
 	}
 
 	if err := us.permRepo.SetUserPermissions(id, permissionCodes); err != nil {

@@ -85,13 +85,15 @@ func SetupRouter(
 	// Quản lý nhân viên: CRUD + phân quyền
 	employees := protected.Group("/employees")
 	{
-		// GET /employees — Danh sách nhân viên (tất cả role, không cache — DB đủ nhanh)
+		// GET /employees — Danh sách nhân viên (cần quyền employee.read)
 		employees.GET("",
+			middleware.RequirePermission(permRepo, "employee.read"),
 			empHandler.GetEmployees,
 		)
 
-		// GET /employees/:id — Chi tiết nhân viên (tất cả role, không cache)
+		// GET /employees/:id — Chi tiết nhân viên (cần quyền employee.read)
 		employees.GET("/:id",
+			middleware.RequirePermission(permRepo, "employee.read"),
 			empHandler.GetEmployee,
 		)
 
@@ -177,13 +179,15 @@ func SetupRouter(
 	// Quản lý phòng ban: đọc tất cả role, ghi chỉ admin
 	departments := protected.Group("/departments")
 	{
-		// GET /departments — Danh sách phòng ban (tất cả role, không cache)
+		// GET /departments — Danh sách phòng ban (cần quyền department.read)
 		departments.GET("",
+			middleware.RequirePermission(permRepo, "department.read"),
 			deptHandler.GetDepartments,
 		)
 
-		// GET /departments/:id — Chi tiết phòng ban (tất cả role, không cache)
+		// GET /departments/:id — Chi tiết phòng ban (cần quyền department.read)
 		departments.GET("/:id",
+			middleware.RequirePermission(permRepo, "department.read"),
 			deptHandler.GetDepartment,
 		)
 

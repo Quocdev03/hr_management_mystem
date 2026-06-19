@@ -117,7 +117,7 @@ echo ""
 echo -e "${YELLOW}[*] Checking required files...${NC}"
 REQUIRED_FILES=(
     "docker-compose.prod.yml"
-    "frontend/nginx.conf"
+    "frontend/nginx.prod.conf"
     "backend/Dockerfile"
     "frontend/Dockerfile"
     "database.sql"
@@ -136,18 +136,18 @@ echo ""
 echo -e "${YELLOW}[*] Security checks...${NC}"
 
 # Check if secrets are in .env (not in docker-compose files)
-if grep -q "password123" docker-compose.yml 2>/dev/null; then
-    echo -e "${RED}[✗] ERROR: Hardcoded password found in docker-compose.yml${NC}"
+if grep -q "password123" docker-compose.prod.yml 2>/dev/null; then
+    echo -e "${RED}[✗] ERROR: Hardcoded password found in docker-compose.prod.yml${NC}"
     ((ERRORS++))
 else
-    echo -e "${GREEN}[✓] No hardcoded passwords in docker-compose.yml${NC}"
+    echo -e "${GREEN}[✓] No hardcoded passwords in docker-compose.prod.yml${NC}"
 fi
 
-if grep -q "your_jwt_secret_key" docker-compose.yml 2>/dev/null; then
-    echo -e "${RED}[✗] ERROR: Default JWT secret found in docker-compose.yml${NC}"
+if grep -q "your_jwt_secret_key" docker-compose.prod.yml 2>/dev/null; then
+    echo -e "${RED}[✗] ERROR: Default JWT secret found in docker-compose.prod.yml${NC}"
     ((ERRORS++))
 else
-    echo -e "${GREEN}[✓] No default JWT secrets in docker-compose.yml${NC}"
+    echo -e "${GREEN}[✓] No default JWT secrets in docker-compose.prod.yml${NC}"
 fi
 
 echo ""

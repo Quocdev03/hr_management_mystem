@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // Permission định nghĩa hành động có thể cấp cho vai trò/user.
 type Permission struct {
 	ID          uint   `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -10,14 +12,16 @@ type Permission struct {
 
 // RolePermission ánh xạ quyền cho vai trò.
 type RolePermission struct {
-	RoleID       uint `gorm:"primaryKey" json:"role_id"`
-	PermissionID uint `gorm:"primaryKey" json:"permission_id"`
-	TimestampModel
+	RoleID       uint      `gorm:"primaryKey" json:"role_id"`
+	PermissionID uint      `gorm:"primaryKey" json:"permission_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // UserPermission cho phép override quyền riêng cho user cụ thể.
 type UserPermission struct {
-	UserID       uint `gorm:"primaryKey" json:"user_id"`
-	PermissionID uint `gorm:"primaryKey" json:"permission_id"`
-	TimestampModel
+	UserID       uint      `gorm:"primaryKey" json:"user_id"`
+	PermissionID uint      `gorm:"primaryKey" json:"permission_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }

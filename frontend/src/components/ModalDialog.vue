@@ -60,7 +60,9 @@ const customStyle = computed(() => {
 .modal-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(15, 23, 42, 0.55);
+	background: rgba(15, 23, 42, 0.25);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -70,11 +72,12 @@ const customStyle = computed(() => {
 }
 
 .modal-container {
-	background: var(--bg-card);
+	background: #ffffff;
+	border: 1px solid rgba(66, 97, 237, 0.15);
 	border-radius: var(--radius-xl);
 	width: 100%;
 	max-height: 90vh;
-	box-shadow: var(--shadow-modal);
+	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.12);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -106,6 +109,7 @@ const customStyle = computed(() => {
 }
 
 .modal-title {
+	font-family: var(--font-title);
 	font-size: var(--fs-xl); /* 20px-22px */
 	font-weight: var(--fw-bold);
 	color: var(--text-main);
@@ -148,7 +152,7 @@ const customStyle = computed(() => {
 .modal-footer {
 	padding: var(--space-3) var(--space-4);
 	border-top: 1px solid var(--border-color);
-	background: var(--bg-lighter);
+	background: #f8faf9;
 	display: flex;
 	justify-content: flex-end;
 	gap: var(--space-2);

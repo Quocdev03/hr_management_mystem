@@ -143,7 +143,12 @@ func (h *UserHandler) UpdatePermissions(ctx *gin.Context) {
 		return
 	}
 
-	codes, err := h.userSvc.UpdateUserPermissions(id, req.Permissions)
+	var reqID uint
+	if requesterID, exists := ctx.Get(middleware.ContextKeyUserID); exists {
+		reqID = requesterID.(uint)
+	}
+
+	codes, err := h.userSvc.UpdateUserPermissions(id, req.Permissions, reqID)
 	if err != nil {
 		utils.BadRequest(ctx, err.Error())
 		return

@@ -1,10 +1,9 @@
 <script setup>
+import { Eye, EyeOff, Lock, Mail } from '@lucide/vue';
+
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
-import mailIcon from "@/assets/svg/mail.svg";
-import lockIcon from "@/assets/svg/lock.svg";
-import eyeIcon from "@/assets/svg/eye.svg";
-import eyeOffIcon from "@/assets/svg/eye-off.svg";
-import usersIcon from "@/assets/svg/user.svg";
+
+import logoPng from "@/assets/logo.png";
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { reactive, ref } from "vue";
@@ -52,18 +51,20 @@ function togglePasswordVisibility() {
 		<section class="login-card">
 			<header class="logo-section">
 				<div class="logo-icon">
-					<img :src="usersIcon" alt="logo" class="logo-img" />
+					<img :src="logoPng" alt="logo" class="logo-img" />
 				</div>
 				<h2 class="login-title">Chào mừng trở lại</h2>
-				<p class="login-subtitle">Đăng nhập vào Hệ thống Quản lý Nhân sự</p>
+				<p class="login-subtitle">
+					Đăng nhập vào Hệ thống Quản lý Nhân sự
+				</p>
 			</header>
 
 			<form @submit.prevent="loginHandler" class="login-form">
 				<!-- Nhập Email -->
 				<div class="login-input-group">
-					<label for="email">Địa chỉ Email</label>
+					<label for="email">Email</label>
 					<div class="input-wrapper">
-						<img :src="mailIcon" class="input-icon" alt="mail" />
+						<Mail class="input-icon" />
 						<input
 							type="email"
 							id="email"
@@ -78,7 +79,7 @@ function togglePasswordVisibility() {
 				<div class="login-input-group">
 					<label for="password">Mật khẩu</label>
 					<div class="input-wrapper">
-						<img :src="lockIcon" class="input-icon" alt="lock" />
+						<Lock class="input-icon" />
 						<input
 							:type="isPasswordVisible ? 'text' : 'password'"
 							id="password"
@@ -92,10 +93,7 @@ function togglePasswordVisibility() {
 							@click="togglePasswordVisibility"
 							aria-label="Ẩn/hiện mật khẩu"
 						>
-							<img
-								:src="!isPasswordVisible ? eyeIcon : eyeOffIcon"
-								alt="toggle visibility"
-							/>
+							<component :is="!isPasswordVisible ? Eye : EyeOff" />
 						</button>
 					</div>
 				</div>
@@ -136,46 +134,53 @@ function togglePasswordVisibility() {
 .blob {
 	position: absolute;
 	border-radius: 50%;
-	filter: blur(80px);
 	opacity: 0.6;
 }
 
 .blob-1 {
-	background: rgba(0, 192, 250, 0.25); /* Cyan */
-	width: 350px;
-	height: 350px;
+	background: radial-gradient(circle, rgba(0, 192, 250, 0.35) 0%, rgba(0, 192, 250, 0) 70%); /* Cyan */
+	width: 450px;
+	height: 450px;
 	top: 10%;
 	left: 15%;
 	animation: floatBlob1 12s infinite alternate ease-in-out;
 }
 
 .blob-2 {
-	background: rgba(103, 23, 204, 0.15); /* Purple */
-	width: 400px;
-	height: 400px;
+	background: radial-gradient(circle, rgba(103, 23, 204, 0.25) 0%, rgba(103, 23, 204, 0) 70%); /* Purple */
+	width: 500px;
+	height: 500px;
 	bottom: 10%;
 	right: 15%;
 	animation: floatBlob2 10s infinite alternate ease-in-out;
 }
 
 @keyframes floatBlob1 {
-	0% { transform: translate(0, 0) scale(1); }
-	100% { transform: translate(30px, 40px) scale(1.1); }
+	0% {
+		transform: translate(0, 0) scale(1);
+	}
+	100% {
+		transform: translate(30px, 40px) scale(1.1);
+	}
 }
 
 @keyframes floatBlob2 {
-	0% { transform: translate(0, 0) scale(1); }
-	100% { transform: translate(-40px, -30px) scale(1.05); }
+	0% {
+		transform: translate(0, 0) scale(1);
+	}
+	100% {
+		transform: translate(-40px, -30px) scale(1.05);
+	}
 }
 
 .login-card {
 	width: 100%;
-	max-width: 450px;
-	background: #ffffff;
-	border: 1px solid rgba(66, 97, 237, 0.15);
+	max-width: 500px;
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid rgba(255, 255, 255, 0.6);
 	border-radius: var(--radius-xl);
 	padding: var(--space-5);
-	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.08);
+	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.15);
 	z-index: 2;
 	animation: fadeInCard 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -201,17 +206,19 @@ function togglePasswordVisibility() {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 60px;
-	height: 60px;
-	background-color: var(--primary-glow);
-	border-radius: var(--radius-lg);
-	border: 1px solid rgba(66, 97, 237, 0.15);
+	width: 72px;
+	height: 72px;
+	background-color: #ffffff;
+	border-radius: var(--radius-xl);
+	border: 1px solid rgba(255, 255, 255, 0.8);
+	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.12);
+	overflow: hidden;
 }
 
 .logo-img {
-	width: 32px;
-	height: 32px;
-	filter: invert(34%) sepia(85%) saturate(3015%) hue-rotate(222deg) brightness(98%) contrast(93%); /* Blue */
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .login-title {
@@ -259,20 +266,21 @@ function togglePasswordVisibility() {
 	left: 1rem;
 	width: 18px;
 	height: 18px;
-	filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg) brightness(88%) contrast(89%); /* #94a3b8 */
-	transition: all 0.2s ease;
+	color: var(--text-light);
+	transition: color 0.2s ease;
 	z-index: 1;
+	pointer-events: none;
 }
 
 .input-wrapper input {
 	width: 100%;
-	padding: 0.75rem 1rem 0.75rem 2.75rem;
-	border: 1px solid rgba(66, 97, 237, 0.15);
+	padding: var(--space-2) var(--space-3) var(--space-2) 2.75rem;
+	border: 1px solid var(--border-color);
 	border-radius: var(--radius-md);
 	font-size: var(--fs-base);
 	color: var(--text-main);
 	background: rgba(255, 255, 255, 0.85);
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 	outline: none;
 	font-family: var(--font-body);
 }
@@ -288,7 +296,7 @@ function togglePasswordVisibility() {
 }
 
 .input-wrapper input:focus ~ .input-icon {
-	filter: invert(34%) sepia(85%) saturate(3015%) hue-rotate(222deg) brightness(98%) contrast(93%); /* Blue */
+	color: var(--primary-color);
 }
 
 .toggle-password {
@@ -306,14 +314,15 @@ function togglePasswordVisibility() {
 	z-index: 10;
 }
 
-.toggle-password:hover {
-	color: var(--text-muted);
-}
-
-.toggle-password img {
+.toggle-password svg {
 	width: 18px;
 	height: 18px;
-	filter: invert(72%) sepia(10%) saturate(415%) hue-rotate(182deg) brightness(88%) contrast(89%);
+	color: var(--text-light);
+	transition: color 0.2s ease;
+}
+
+.toggle-password:hover svg {
+	color: var(--text-muted);
 }
 
 .form-actions {
@@ -340,11 +349,15 @@ function togglePasswordVisibility() {
 	color: white;
 	border: none;
 	border-radius: var(--radius-md);
-	padding: 0.75rem 1rem;
+	padding: var(--space-2) var(--space-3);
 	font-size: var(--fs-base);
 	font-weight: var(--fw-semibold);
 	cursor: pointer;
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	transition:
+		background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -395,7 +408,7 @@ function togglePasswordVisibility() {
 		padding: var(--space-4) var(--space-3);
 		border-radius: var(--radius-lg);
 		background: rgba(255, 255, 255, 0.85);
-		box-shadow: 0 10px 30px rgba(66, 97, 237, 0.08);
+		box-shadow: 0 10px 30px rgba(66, 97, 237, 0.12);
 	}
 }
 </style>

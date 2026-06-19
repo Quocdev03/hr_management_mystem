@@ -1,8 +1,7 @@
 <script setup>
+import { Building, CheckCircle, Users } from '@lucide/vue';
+
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
-import usersIcon from "@/assets/svg/users.svg";
-import checkIcon from "@/assets/svg/check-circle.svg";
-import buildingIcon from "@/assets/svg/building.svg";
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { useDashboardStore } from "@/store/dashboard";
@@ -73,7 +72,7 @@ onMounted(loadDashboard);
 					<div class="stat-header">
 						<span class="stat-label">Tổng nhân viên</span>
 						<div class="stat-icon-wrapper">
-							<img :src="usersIcon" class="stat-icon" alt="users" />
+							<Users class="stat-icon" />
 						</div>
 					</div>
 					<div class="stat-body">
@@ -96,7 +95,7 @@ onMounted(loadDashboard);
 					<div class="stat-header">
 						<span class="stat-label">Đang hoạt động</span>
 						<div class="stat-icon-wrapper">
-							<img :src="checkIcon" class="stat-icon" alt="active" />
+							<CheckCircle class="stat-icon" />
 						</div>
 					</div>
 					<div class="stat-body">
@@ -121,7 +120,7 @@ onMounted(loadDashboard);
 					<div class="stat-header">
 						<span class="stat-label">Phòng ban</span>
 						<div class="stat-icon-wrapper">
-							<img :src="buildingIcon" class="stat-icon" alt="dept" />
+							<Building class="stat-icon" />
 						</div>
 					</div>
 					<div class="stat-body">
@@ -207,13 +206,11 @@ onMounted(loadDashboard);
 
 .bento-card {
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border: var(--glass-border);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--glass-shadow);
 	padding: var(--space-3);
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	position: relative;
 	overflow: hidden;
 }
@@ -279,7 +276,6 @@ onMounted(loadDashboard);
 .blob {
 	position: absolute;
 	border-radius: 50%;
-	filter: blur(25px);
 }
 
 .blob-1 {

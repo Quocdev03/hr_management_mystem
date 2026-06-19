@@ -1,11 +1,7 @@
 <script setup>
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, TriangleAlert } from '@lucide/vue';
+
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
-import deleteIcon from "@/assets/svg/warning.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import plusIcon from "@/assets/svg/plus.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
 
 // ─── Component UI dùng chung ─────────────────────────────────────────────────
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
@@ -208,7 +204,7 @@ onMounted(async () => {
 				class="btn btn--primary"
 				@click="handleAdd"
 			>
-				<img :src="plusIcon" alt="add" class="btn__icon" />
+				<Plus class="btn__icon" />
 				Thêm người dùng
 			</button>
 		</header>
@@ -216,7 +212,7 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
+					<Search class="search-box__icon" />
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -302,7 +298,7 @@ onMounted(async () => {
 											title="Chỉnh sửa"
 											@click="handleUpdate(user)"
 										>
-											<img :src="editIcon" alt="edit" />
+											<Pencil  />
 										</button>
 										<button
 											v-if="canManageUsers"
@@ -310,7 +306,7 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(user)"
 										>
-											<img :src="deleteIcon" alt="delete" />
+											<TriangleAlert  />
 										</button>
 									</div>
 								</td>
@@ -335,7 +331,7 @@ onMounted(async () => {
 					:disabled="pagination.page === 1"
 					@click="handlePageChange(pagination.page - 1)"
 				>
-					<img :src="prevIcon" alt="prev" />
+					<ChevronLeft  />
 				</button>
 				<div class="pagination__info">
 					Trang <span>{{ pagination.page }}</span> /
@@ -346,7 +342,7 @@ onMounted(async () => {
 					:disabled="pagination.page === pagination.totalPages"
 					@click="handlePageChange(pagination.page + 1)"
 				>
-					<img :src="nextIcon" alt="next" />
+					<ChevronRight  />
 				</button>
 			</div>
 		</main>

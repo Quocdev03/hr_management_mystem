@@ -107,8 +107,6 @@ const handleLogout = () => {
 .sidebar {
 	width: var(--sidebar-width);
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border-right: 1px solid var(--border-color);
 	display: flex;
 	flex-direction: column;
@@ -160,6 +158,7 @@ const handleLogout = () => {
 	gap: var(--space-2);
 	overflow-y: auto;
 	flex: 1;
+	-webkit-overflow-scrolling: touch;
 }
 
 .nav-item {
@@ -171,7 +170,7 @@ const handleLogout = () => {
 	color: var(--text-muted);
 	border-radius: var(--radius-md);
 	font-weight: var(--fw-medium);
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 	text-decoration: none;
 	overflow: hidden;
 }
@@ -180,7 +179,7 @@ const handleLogout = () => {
 	width: 18px;
 	height: 18px;
 	color: currentColor;
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 	z-index: 1;
 }
 
@@ -286,7 +285,7 @@ const handleLogout = () => {
 	border: 1px solid var(--border-color);
 	border-radius: var(--radius-md);
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 	flex-shrink: 0;
 	box-shadow: var(--shadow-sm);
 }
@@ -301,7 +300,7 @@ const handleLogout = () => {
 	width: 16px;
 	height: 16px;
 	color: currentColor;
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 @media (max-width: 1024px) {

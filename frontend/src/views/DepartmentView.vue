@@ -1,11 +1,7 @@
 <script setup>
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
-import plusIcon from "@/assets/svg/plus.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import deleteIcon from "@/assets/svg/delete.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 import { useDepartmentStore } from "@/store/department";
@@ -217,7 +213,7 @@ onMounted(async () => {
 				class="btn btn--primary"
 				@click="handleAdd"
 			>
-				<img :src="plusIcon" alt="add" class="btn__icon" />
+				<Plus class="btn__icon" />
 				Thêm phòng ban
 			</button>
 		</header>
@@ -225,11 +221,7 @@ onMounted(async () => {
 		<!-- Toolbar Search Card -->
 		<div class="search-card">
 			<div class="search-box">
-				<img
-					:src="searchIcon"
-					class="search-box__icon"
-					alt="search"
-				/>
+				<Search class="search-box__icon" />
 				<input
 					v-model="searchQuery"
 					class="form-control search-box__input"
@@ -300,14 +292,14 @@ onMounted(async () => {
 							title="Chỉnh sửa"
 							@click="handleEdit(dept)"
 						>
-							<img :src="editIcon" alt="edit" />
+							<Pencil  />
 						</button>
 						<button
 							class="btn-icon btn-icon--delete"
 							title="Xoá"
 							@click="handleDelete(dept)"
 						>
-							<img :src="deleteIcon" alt="delete" />
+							<Trash2  />
 						</button>
 					</div>
 				</div>
@@ -331,7 +323,7 @@ onMounted(async () => {
 						:disabled="pagination.page === 1"
 						@click="handlePageChange(pagination.page - 1)"
 					>
-						<img :src="prevIcon" alt="prev" />
+						<ChevronLeft  />
 					</button>
 					<div class="pagination__info">
 						Trang <span>{{ pagination.page }}</span> /
@@ -342,7 +334,7 @@ onMounted(async () => {
 						:disabled="pagination.page === pagination.totalPages"
 						@click="handlePageChange(pagination.page + 1)"
 					>
-						<img :src="nextIcon" alt="next" />
+						<ChevronRight  />
 					</button>
 				</div>
 			</div>
@@ -382,34 +374,12 @@ onMounted(async () => {
 /* Search bar glass container */
 .search-card {
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border: var(--glass-border);
 	border-radius: var(--radius-md);
 	box-shadow: var(--shadow-sm);
 	padding: var(--space-3);
 }
 
-.search-box {
-	position: relative;
-	width: 100%;
-	max-width: 400px;
-}
-
-.search-box__icon {
-	position: absolute;
-	left: 1rem;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 18px;
-	height: 18px;
-	filter: grayscale(1) opacity(0.5);
-	z-index: 1;
-}
-
-.search-box__input {
-	padding-left: 2.75rem !important;
-}
 
 /* Bento Grid */
 .dept-bento-container {
@@ -426,13 +396,11 @@ onMounted(async () => {
 
 .dept-bento-card {
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border: var(--glass-border);
 	border-radius: var(--radius-lg);
 	box-shadow: var(--glass-shadow);
 	padding: var(--space-3);
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	position: relative;
 	overflow: hidden;
 	display: flex;
@@ -564,8 +532,6 @@ onMounted(async () => {
 	gap: var(--space-3);
 	padding: var(--space-2) var(--space-4);
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border: var(--glass-border);
 	border-radius: var(--radius-md);
 	box-shadow: var(--shadow-sm);

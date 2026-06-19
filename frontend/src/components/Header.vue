@@ -21,8 +21,6 @@ defineEmits(["toggle"]);
 	height: var(--header-height-sm, 56px);
 	padding: 0 var(--space-3);
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border-bottom: 1px solid var(--border-color);
 	z-index: 10;
 	flex-shrink: 0;

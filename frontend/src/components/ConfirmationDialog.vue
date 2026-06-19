@@ -9,7 +9,7 @@
 				<div class="confirm-container">
 					<div class="confirm-body">
 						<div class="warning-icon">
-							<img :src="warningIcon" alt="warning" />
+							<TriangleAlert  />
 						</div>
 						<h3 class="confirm-title">{{ title }}</h3>
 						<p class="confirm-message">{{ message }}</p>
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import warningIcon from "@/assets/svg/warning.svg";
+import { TriangleAlert } from '@lucide/vue';
 
 const props = defineProps({
 	visible: Boolean,
@@ -56,8 +56,6 @@ const emit = defineEmits(["confirm", "cancel"]);
 	position: fixed;
 	inset: 0;
 	background: rgba(15, 23, 42, 0.25);
-	backdrop-filter: blur(4px);
-	-webkit-backdrop-filter: blur(4px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -133,7 +131,7 @@ const emit = defineEmits(["confirm", "cancel"]);
 	font-weight: 600;
 	font-size: var(--fs-sm);
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -146,7 +144,6 @@ const emit = defineEmits(["confirm", "cancel"]);
 	color: var(--text-muted);
 	flex: 1;
 	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-	backdrop-filter: var(--glass-backdrop);
 }
 
 .btn-cancel:hover {

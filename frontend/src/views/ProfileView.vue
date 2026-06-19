@@ -355,18 +355,17 @@ onMounted(() => {
 .profile-grid {
 	display: grid;
 	grid-template-columns: 340px 1fr;
-	gap: var(--container-padding);
+	gap: var(--space-3);
 }
 
 .profile-card {
 	background: var(--bg-card);
-	backdrop-filter: var(--glass-backdrop);
-	-webkit-backdrop-filter: var(--glass-backdrop);
 	border-radius: var(--radius-lg);
 	border: var(--glass-border);
 	box-shadow: var(--glass-shadow);
-	overflow: hidden;
-	transition: all 0.3s ease;
+	transition:
+		transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-card:hover {
@@ -374,7 +373,7 @@ onMounted(() => {
 }
 
 .sidebar-card {
-	padding: 2.5rem 1.5rem;
+	padding: var(--space-4) var(--space-3);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -383,14 +382,14 @@ onMounted(() => {
 
 .avatar-section {
 	text-align: center;
-	margin-bottom: 2rem;
+	margin-bottom: var(--space-3);
 	width: 100%;
 }
 
 .avatar-container {
 	width: 140px;
 	height: 140px;
-	margin: 1.5rem auto;
+	margin: var(--space-3) auto;
 }
 
 .profile-avatar-circle-large {
@@ -404,34 +403,34 @@ onMounted(() => {
 	justify-content: center;
 	font-weight: var(--fw-bold);
 	font-size: var(--fs-4xl);
-	box-shadow: 0 10px 25px -5px rgba(66, 97, 237, 0.25);
-	margin: 1.5rem auto;
+	box-shadow: 0 4px 12px -2px rgba(66, 97, 237, 0.25);
+	margin: var(--space-3) auto;
 }
 
 .user-name {
 	font-family: var(--font-title);
 	font-size: var(--fs-2xl);
-	font-weight: 700;
+	font-weight: var(--fw-bold);
 	color: var(--text-main);
-	margin-bottom: 0.6rem;
+	margin-bottom: var(--space-1);
 }
 
 .user-role-tag {
 	display: inline-block;
-	padding: 0.35rem 1rem;
+	padding: var(--space-1) var(--space-3);
 	background: rgba(66, 97, 237, 0.08);
 	color: var(--primary-color);
 	border-radius: var(--radius-md);
 	font-size: var(--fs-sm);
-	font-weight: 600;
-	margin-bottom: 0.75rem;
+	font-weight: var(--fw-semibold);
+	margin-bottom: var(--space-2);
 }
 
 .status-indicator {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: var(--space-1);
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
 }
@@ -452,14 +451,14 @@ onMounted(() => {
 .quick-stats {
 	width: 100%;
 	border-top: 1px solid var(--border-color);
-	padding-top: 1.5rem;
-	margin-top: 0.5rem;
+	padding-top: var(--space-3);
+	margin-top: var(--space-1);
 }
 
 .stat-item {
 	display: flex;
 	justify-content: space-between;
-	padding: 0.75rem 0;
+	padding: var(--space-2) 0;
 }
 
 .stat-label {
@@ -469,27 +468,27 @@ onMounted(() => {
 
 .stat-value {
 	font-size: var(--fs-sm);
-	font-weight: 600;
+	font-weight: var(--fw-semibold);
 	color: var(--text-main);
 }
 
 .main-card {
-	padding: 1.75rem 2rem;
+	padding: var(--space-4);
 }
 
 .card-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin-bottom: 1.5rem;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
 	border-bottom: 1px solid var(--border-color);
-	padding-bottom: 12px;
+	padding-bottom: var(--space-2);
 }
 
 .card-header h3 {
 	font-family: var(--font-title);
 	font-size: var(--fs-lg);
-	font-weight: 700;
+	font-weight: var(--fw-bold);
 	color: var(--text-main);
 	margin: 0;
 }
@@ -503,37 +502,37 @@ onMounted(() => {
 .info-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-	gap: 1.5rem;
+	gap: var(--space-3);
 }
 
 .info-group label {
 	display: block;
 	font-size: var(--fs-xs);
-	font-weight: 700;
+	font-weight: var(--fw-bold);
 	color: var(--text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	margin-bottom: 0.5rem;
+	margin-bottom: var(--space-1);
 }
 
 .info-group .value {
 	font-size: var(--fs-base);
-	font-weight: 500;
+	font-weight: var(--fw-medium);
 	color: var(--text-main);
-	padding: 0.75rem 1rem;
+	padding: var(--space-2) var(--space-3);
 	background: rgba(255, 255, 255, 0.45);
-	border-radius: 12px;
-	border: 1px solid rgba(66, 97, 237, 0.15);
+	border-radius: var(--radius-md);
+	border: 1px solid var(--border-color);
 }
 
 .info-group .value.salary {
 	color: var(--success-color);
 	font-family: var(--font-widget);
-	font-weight: 700;
+	font-weight: var(--fw-bold);
 }
 
 .mt-6 {
-	margin-top: 1.5rem;
+	margin-top: var(--space-3);
 }
 
 @media (max-width: 1023px) {
@@ -544,8 +543,8 @@ onMounted(() => {
 	.stat-item {
 		display: flex;
 		justify-content: flex-start;
-		padding: 0.75rem 0;
-		gap: 1rem;
+		padding: var(--space-2) 0;
+		gap: var(--space-2);
 	}
 }
 
@@ -553,7 +552,7 @@ onMounted(() => {
 	.avatar-section {
 		flex-direction: column;
 		text-align: center;
-		gap: 1rem;
+		gap: var(--space-2);
 	}
 	.info-grid {
 		grid-template-columns: 1fr;

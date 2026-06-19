@@ -12,7 +12,7 @@
 							</p>
 						</div>
 						<button class="close-btn" @click="$emit('close')">
-							<img :src="closeIcon" alt="close" width="24" height="24" />
+							<X width="24" height="24" />
 						</button>
 					</div>
 
@@ -32,8 +32,9 @@
 </template>
 
 <script setup>
+import { X } from '@lucide/vue';
+
 import { computed } from "vue";
-import closeIcon from "@/assets/svg/close.svg";
 
 const props = defineProps({
 	visible: Boolean,
@@ -61,8 +62,6 @@ const customStyle = computed(() => {
 	position: fixed;
 	inset: 0;
 	background: rgba(15, 23, 42, 0.25);
-	backdrop-filter: blur(4px);
-	-webkit-backdrop-filter: blur(4px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -129,7 +128,7 @@ const customStyle = computed(() => {
 	cursor: pointer;
 	padding: 8px;
 	border-radius: var(--radius-md);
-	transition: all 0.2s;
+	transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s, transform 0.2s, box-shadow 0.2s;
 	display: flex;
 	align-items: center;
 	justify-content: center;

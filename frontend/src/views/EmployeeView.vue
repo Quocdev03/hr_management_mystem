@@ -1,4 +1,6 @@
 <script setup>
+import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
@@ -26,13 +28,6 @@ import { usePermissions } from "@/helpers/usePermissions";
 import { buildPatchPayload } from "@/helpers/buildPatchPayload";
 
 // Icon SVG
-import plusIcon from "@/assets/svg/plus.svg";
-import searchIcon from "@/assets/svg/search.svg";
-import editIcon from "@/assets/svg/edit.svg";
-import deleteIcon from "@/assets/svg/delete.svg";
-import prevIcon from "@/assets/svg/chevron-left.svg";
-import nextIcon from "@/assets/svg/chevron-right.svg";
-import eyeIcon from "@/assets/svg/eye.svg";
 
 // ─── Khởi tạo store & tiện ích ───────────────────────────────────────────────
 
@@ -266,7 +261,7 @@ onMounted(async () => {
 				class="btn btn--primary"
 				@click="handleAdd"
 			>
-				<img :src="plusIcon" alt="add" class="btn__icon" />
+				<Plus class="btn__icon" />
 				Thêm nhân viên
 			</button>
 		</header>
@@ -274,7 +269,7 @@ onMounted(async () => {
 		<main class="content-card">
 			<div class="toolbar">
 				<div class="search-box">
-					<img :src="searchIcon" class="search-box__icon" alt="search" />
+					<Search class="search-box__icon" />
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
@@ -385,7 +380,7 @@ onMounted(async () => {
 											title="Xem chi tiết"
 											@click="handleViewDetails(emp)"
 										>
-											<img :src="eyeIcon" alt="detail" />
+											<Eye  />
 										</button>
 										<button
 											v-if="canEditEmployee"
@@ -393,7 +388,7 @@ onMounted(async () => {
 											title="Chỉnh sửa"
 											@click="handleEdit(emp)"
 										>
-											<img :src="editIcon" alt="edit" />
+											<Pencil  />
 										</button>
 										<button
 											v-if="canDeleteEmployee"
@@ -401,7 +396,7 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(emp)"
 										>
-											<img :src="deleteIcon" alt="delete" />
+											<Trash2  />
 										</button>
 									</div>
 								</td>
@@ -426,7 +421,7 @@ onMounted(async () => {
 					:disabled="pagination.page === 1"
 					@click="handlePageChange(pagination.page - 1)"
 				>
-					<img :src="prevIcon" alt="prev" />
+					<ChevronLeft  />
 				</button>
 				<div class="pagination__info">
 					Trang <span>{{ pagination.page }}</span> /
@@ -437,7 +432,7 @@ onMounted(async () => {
 					:disabled="pagination.page === pagination.totalPages"
 					@click="handlePageChange(pagination.page + 1)"
 				>
-					<img :src="nextIcon" alt="next" />
+					<ChevronRight  />
 				</button>
 			</div>
 		</main>

@@ -60,7 +60,9 @@ const closeSidebar = () => {
 	flex: 1;
 	padding: var(--container-padding);
 	overflow-y: auto;
-	background: transparent;
+	background: var(--bg-main);
+	-webkit-overflow-scrolling: touch;
+	will-change: scroll-position;
 }
 
 .sidebar-backdrop {
@@ -68,7 +70,6 @@ const closeSidebar = () => {
 	position: fixed;
 	inset: 0;
 	background: rgba(15, 23, 42, 0.6);
-	backdrop-filter: blur(4px);
 	z-index: 40;
 }
 

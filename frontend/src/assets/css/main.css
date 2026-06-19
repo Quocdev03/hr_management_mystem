@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap");
 
 :root {
 	/* Base units */
@@ -28,7 +28,7 @@
 	--tracking-wide: 0.02em;
 
 	/* Font families */
-	--font-title: "Outfit", sans-serif;
+	--font-title: "Montserrat", sans-serif;
 	--font-widget: "Plus Jakarta Sans", sans-serif;
 	--font-body: "Inter", sans-serif;
 

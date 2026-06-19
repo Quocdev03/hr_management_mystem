@@ -43,7 +43,8 @@ func (r *departmentRepository) FindAll(query model.PaginationQuery) ([]model.Dep
 	db := r.db.Model(&model.Department{}).
 		Preload("Manager").
 		Preload("Manager.User").
-		Preload("Manager.Department")
+		Preload("Manager.Department").
+		Preload("Manager.Position")
 
 	// Tìm kiếm theo tên hoặc mã phòng ban
 	if query.Search != "" {
@@ -68,7 +69,12 @@ func (r *departmentRepository) FindAll(query model.PaginationQuery) ([]model.Dep
 
 func (r *departmentRepository) FindByID(id uint) (*model.Department, error) {
 	var dept model.Department
-	err := r.db.Preload("Manager").First(&dept, id).Error
+	err := r.db.
+		Preload("Manager").
+		Preload("Manager.Position").
+		Preload("Employees").
+		Preload("Employees.Position").
+		First(&dept, id).Error
 	if err != nil {
 		return nil, err
 	}

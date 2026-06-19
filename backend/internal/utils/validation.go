@@ -34,13 +34,9 @@ const (
 
 // --- Compiled Regexes ---
 var (
-	regUpper    = regexp.MustCompile(`[A-Z]`)
-	regLower    = regexp.MustCompile(`[a-z]`)
-	regDigit    = regexp.MustCompile(`[0-9]`)
-	regUsername = regexp.MustCompile(`^[a-zA-Z0-9_]{4,50}$`)
-	regPhone    = regexp.MustCompile(`^0\d{9,10}$`) // 10 or 11 digits total (starts with 0)
-	regName     = regexp.MustCompile(`^[\p{L}\s]+$`)
-	regCode     = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	regUpper = regexp.MustCompile(`[A-Z]`)
+	regLower = regexp.MustCompile(`[a-z]`)
+	regDigit = regexp.MustCompile(`[0-9]`)
 )
 
 // FieldError chứa thông tin lỗi cho từng field
@@ -121,73 +117,4 @@ func CheckPassword(ve *ValidationErrors, password string) {
 		return
 	}
 	validatePasswordFormat(ve, password)
-}
-
-func validateUsernameFormat(ve *ValidationErrors, username string) {
-	l := length(username)
-	if l < 4 || l > 50 {
-		ve.Add(FieldUserName, "Tên đăng nhập phải từ 4 đến 50 ký tự")
-	} else if !regUsername.MatchString(username) {
-		ve.Add(FieldUserName, "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới")
-	}
-}
-
-func CheckUsername(ve *ValidationErrors, username string) {
-	username = normalize(username)
-	if username == "" {
-		ve.Add(FieldUserName, "Tên đăng nhập là bắt buộc")
-		return
-	}
-	validateUsernameFormat(ve, username)
-}
-
-func validatePhoneFormat(ve *ValidationErrors, phone string) {
-	if !regPhone.MatchString(phone) {
-		ve.Add(FieldPhone, "Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 số")
-	}
-}
-
-func CheckPhone(ve *ValidationErrors, phone string) {
-	phone = normalize(phone)
-	if phone == "" {
-		ve.Add(FieldPhone, "Số điện thoại là bắt buộc")
-		return
-	}
-	validatePhoneFormat(ve, phone)
-}
-
-func validateNameFormat(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen, maxLen int) {
-	l := length(name)
-	if l < minLen || l > maxLen {
-		ve.Add(fieldName, fmt.Sprintf("%s phải từ %d đến %d ký tự", fieldLabel, minLen, maxLen))
-	} else if !regName.MatchString(name) {
-		ve.Add(fieldName, fieldLabel+" chỉ được chứa chữ cái và dấu cách")
-	}
-}
-
-func CheckName(ve *ValidationErrors, fieldName, fieldLabel, name string, minLen, maxLen int) {
-	name = normalize(name)
-	if name == "" {
-		ve.Add(fieldName, fieldLabel+" là bắt buộc")
-		return
-	}
-	validateNameFormat(ve, fieldName, fieldLabel, name, minLen, maxLen)
-}
-
-func validateCodeFormat(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen, maxLen int) {
-	l := length(code)
-	if l < minLen || l > maxLen {
-		ve.Add(fieldName, fmt.Sprintf("%s phải từ %d đến %d ký tự", fieldLabel, minLen, maxLen))
-	} else if !regCode.MatchString(code) {
-		ve.Add(fieldName, fieldLabel+" chỉ được chứa chữ cái, số, gạch ngang và gạch dưới")
-	}
-}
-
-func CheckCode(ve *ValidationErrors, fieldName, fieldLabel, code string, minLen, maxLen int) {
-	code = normalize(code)
-	if code == "" {
-		ve.Add(fieldName, fieldLabel+" là bắt buộc")
-		return
-	}
-	validateCodeFormat(ve, fieldName, fieldLabel, code, minLen, maxLen)
 }

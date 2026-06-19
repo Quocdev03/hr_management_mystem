@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c0fa"/>
+      <stop offset="100%" stop-color="#4261ed"/>
+    </linearGradient>
+    <!-- Icon bg circle -->
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c0fa"/>
+      <stop offset="100%" stop-color="#4261ed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon: rounded square -->
+  <rect x="0" y="0" width="80" height="80" rx="20" ry="20" fill="url(#iconGrad)"/>
+
+  <!-- Person icon (head + body) centered in icon box -->
+  <!-- Head -->
+  <circle cx="40" cy="26" r="11" fill="white"/>
+  <!-- Body / shoulders -->
+  <path d="M18 62 Q18 44 40 44 Q62 44 62 62" fill="white"/>
+
+  <!-- HR text inside icon (small, bottom right corner subtle) -->
+  <!-- Actually let's use a briefcase + people hybrid — keep people icon, add HR letters -->
+
+  <!-- Wordmark -->
+  <!-- "HR" bold gradient text -->
+  <text x="96" y="38" font-family="'Segoe UI', 'Inter', Arial, sans-serif" font-size="32" font-weight="800" fill="url(#grad)" letter-spacing="-1">HR</text>
+
+  <!-- Divider line -->
+  <rect x="96" y="46" width="148" height="2" rx="1" fill="url(#grad)" opacity="0.35"/>
+
+  <!-- "Managers" text -->
+  <text x="97" y="66" font-family="'Segoe UI', 'Inter', Arial, sans-serif" font-size="15" font-weight="500" fill="#1a2a4a" letter-spacing="3.5">MANAGERS</text>
+</svg>

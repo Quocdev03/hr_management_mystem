@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -24,13 +23,4 @@ func InvalidateDashboardStats(ctx context.Context, rdb *redis.Client) error {
 	return nil
 }
 
-// InvalidateRefreshToken xóa refresh token của một user khỏi Redis.
-// Graceful fail-open: nếu rdb == nil thì bỏ qua.
-func InvalidateRefreshToken(ctx context.Context, rdb *redis.Client, userID uint) error {
-	if rdb == nil {
-		return nil
-	}
 
-	key := fmt.Sprintf("refresh_token:%d", userID)
-	return rdb.Del(ctx, key).Err()
-}

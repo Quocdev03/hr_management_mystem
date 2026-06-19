@@ -22,6 +22,7 @@ func SetupRouter(
 	deptHandler *handler.DepartmentHandler,
 	dashB *handler.DashboardHandler,
 	userHandler *handler.UserHandler,
+	posHandler *handler.PositionHandler,
 	permRepo repository.PermissionRepository,
 ) *gin.Engine {
 
@@ -210,6 +211,35 @@ func SetupRouter(
 			middleware.RequirePermission(permRepo, "department.delete"),
 			middleware.ClearMultipleCaches(rdb, middleware.DepartmentRelatedCachePatterns...),
 			deptHandler.DeleteDepartment,
+		)
+	}
+
+	// ── Positions (/positions) ──────────────────────────────────────────
+	// Quản lý chức vụ: đọc cần department.read, ghi/xóa cần department.update
+	positions := protected.Group("/positions")
+	{
+		positions.GET("",
+			middleware.RequirePermission(permRepo, "department.read"),
+			posHandler.GetPositions,
+		)
+		positions.GET("/:id",
+			middleware.RequirePermission(permRepo, "department.read"),
+			posHandler.GetPosition,
+		)
+		positions.POST("",
+			middleware.RequirePermission(permRepo, "department.update"),
+			middleware.ClearMultipleCaches(rdb, middleware.CachePatternDepartments, middleware.CachePatternEmployees, middleware.CachePatternPositions),
+			posHandler.CreatePosition,
+		)
+		positions.PATCH("/:id",
+			middleware.RequirePermission(permRepo, "department.update"),
+			middleware.ClearMultipleCaches(rdb, middleware.CachePatternDepartments, middleware.CachePatternEmployees, middleware.CachePatternPositions),
+			posHandler.UpdatePosition,
+		)
+		positions.DELETE("/:id",
+			middleware.RequirePermission(permRepo, "department.update"),
+			middleware.ClearMultipleCaches(rdb, middleware.CachePatternDepartments, middleware.CachePatternEmployees, middleware.CachePatternPositions),
+			posHandler.DeletePosition,
 		)
 	}
 

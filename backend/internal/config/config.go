@@ -55,6 +55,9 @@ func Load() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Println("không tìm thấy file .env, đang dùng biến môi trường")
 	}
+
+	env := getEnv("APP_ENV", "production")
+
 	// Chuyển string -> int vì env chỉ chứa string
 	expireHour, _ := strconv.Atoi(getEnv("JWT_EXPIRE_HOUR", "24"))
 	refreshExpireDay, _ := strconv.Atoi(getEnv("JWT_REFRESH_EXPIRE_DAY", "7"))
@@ -63,19 +66,19 @@ func Load() *Config {
 	return &Config{
 		App: AppConfig{
 			Port: getEnv("APP_PORT", "8080"),
-			Env:  getEnv("APP_ENV", "production"),
+			Env:  env,
 			Seed: getEnv("APP_SEED", "false") == "true",
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "3306"),
 			User:     getEnv("DB_USER", "root"),
-			Password: getEnv("DB_PASSWORD", "password123"),
+			Password: requireEnv("DB_PASSWORD", "password123", env),
 			DBName:   getEnv("DB_NAME", "hrm_db"),
-			Env:      getEnv("APP_ENV", "development"),
+			Env:      env,
 		},
 		JWT: JWTConfig{
-			SecretKey:        getEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production"),
+			SecretKey:        requireEnv("JWT_SECRET", "your-super-secret-key-min-32-chars-change-in-production", env),
 			ExpireHour:       expireHour,
 			RefreshExpireDay: refreshExpireDay,
 		},
@@ -100,4 +103,17 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+// requireEnv đọc biến môi trường bắt buộc.
+// Trong production nếu thiếu → log.Fatal ngay lập tức, không fallback.
+// Trong development/test thì dùng giá trị mặc định.
+func requireEnv(key, devDefault, env string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	if env == "production" {
+		log.Fatalf("[FATAL] Biến môi trường bắt buộc '%s' không được đặt trong production", key)
+	}
+	return devDefault
 }

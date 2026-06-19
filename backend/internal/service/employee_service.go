@@ -51,7 +51,6 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
 	req.Phone = strings.TrimSpace(req.Phone)
-	req.Position = strings.TrimSpace(req.Position)
 	req.JoinDate = strings.TrimSpace(req.JoinDate)
 	req.BirthDate = strings.TrimSpace(req.BirthDate)
 	req.Gender = strings.TrimSpace(strings.ToLower(req.Gender))
@@ -94,10 +93,10 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 	// Tạo đối tượng employee lưu vào db
 	emp := &model.Employee{
 		DepartmentID: req.DepartmentID,
+		PositionID:   req.PositionID,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Phone:        req.Phone,
-		Position:     req.Position,
 		Salary:       req.Salary,
 		JoinDate:     joinDate,
 		BirthDate:    birthDate,
@@ -137,6 +136,14 @@ func (es *employeeService) Create(req model.CreateEmployeeRequest) (*model.Emplo
 				return errors.New("không tìm thấy phòng ban này")
 			}
 			return fmt.Errorf("lỗi kiểm tra phòng ban: %w", err)
+		}
+
+		var pos model.Position
+		if err := tx.Where("id = ?", req.PositionID).First(&pos).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("chức vụ không tồn tại")
+			}
+			return fmt.Errorf("lỗi kiểm tra chức vụ: %w", err)
 		}
 
 		if err := txEmpRepo.Create(emp); err != nil {
@@ -195,14 +202,6 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		return nil, errors.New("id nhân viên phải lớn hơn 0")
 	}
 
-	_, err := es.empRepo.FindByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("không tìm thấy nhân viên này")
-		}
-		return nil, fmt.Errorf("lỗi khi tìm nhân viên: %w", err)
-	}
-
 	var result *model.Employee
 
 	if err := es.db.Transaction(func(tx *gorm.DB) error {
@@ -245,10 +244,17 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 				updateData["phone"] = value
 			}
 		}
-		if req.Position != nil {
-			value := strings.TrimSpace(*req.Position)
-			if value != empTx.Position {
-				updateData["position"] = value
+		if req.PositionID != nil {
+			newPosID := *req.PositionID
+			if newPosID != empTx.PositionID {
+				var pos model.Position
+				if err := tx.Where("id = ?", newPosID).First(&pos).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return errors.New("chức vụ không tồn tại")
+					}
+					return fmt.Errorf("lỗi kiểm tra chức vụ: %w", err)
+				}
+				updateData["position_id"] = newPosID
 			}
 		}
 		if req.Salary != nil {

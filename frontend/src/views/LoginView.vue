@@ -1,9 +1,8 @@
 <script setup>
-import { Eye, EyeOff, Lock, Mail } from '@lucide/vue';
+import { Eye, EyeOff, Lock, Mail, Users } from '@lucide/vue';
 
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
 
-import logoPng from "@/assets/logo.png";
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { reactive, ref } from "vue";
@@ -51,7 +50,7 @@ function togglePasswordVisibility() {
 		<section class="login-card">
 			<header class="logo-section">
 				<div class="logo-icon">
-					<img :src="logoPng" alt="logo" class="logo-img" />
+					<Users class="logo-svg" />
 				</div>
 				<h2 class="login-title">Chào mừng trở lại</h2>
 				<p class="login-subtitle">
@@ -206,19 +205,17 @@ function togglePasswordVisibility() {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 72px;
-	height: 72px;
-	background-color: #ffffff;
+	width: 64px;
+	height: 64px;
+	background: var(--primary-gradient);
 	border-radius: var(--radius-xl);
-	border: 1px solid rgba(255, 255, 255, 0.8);
-	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.12);
-	overflow: hidden;
+	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.2);
 }
 
-.logo-img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+.logo-svg {
+	width: 32px;
+	height: 32px;
+	color: white;
 }
 
 .login-title {

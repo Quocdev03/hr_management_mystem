@@ -67,6 +67,7 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 		Preload("Department").
 		Preload("User").
 		Preload("User.Role").
+		Preload("Position").
 		Offset(offset).
 		Limit(query.Limit).
 		Order("created_at DESC").
@@ -81,6 +82,7 @@ func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 		Preload("Department").
 		Preload("User").
 		Preload("User.Role").
+		Preload("Position").
 		First(&employee, id).Error
 	if err != nil {
 		return nil, err
@@ -91,7 +93,7 @@ func (r *employeeRepository) FindByID(id uint) (*model.Employee, error) {
 
 func (r *employeeRepository) FindByUserID(userID uint) (*model.Employee, error) {
 	var employee model.Employee
-	err := r.db.Preload("Department").Preload("User").Preload("User.Role").Where("user_id = ?", userID).First(&employee).Error
+	err := r.db.Preload("Department").Preload("User").Preload("User.Role").Preload("Position").Where("user_id = ?", userID).First(&employee).Error
 	if err != nil {
 		return nil, err
 	}

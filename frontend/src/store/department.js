@@ -45,6 +45,22 @@ export const useDepartmentStore = defineStore("department", () => {
 		}
 	}
 
+	async function fetchDepartmentByID(id) {
+		loading.value = true;
+		try {
+			const res = await api.get(`/departments/${id}`);
+			return res;
+		} catch (error) {
+			console.error("Fetch department by id error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tải chi tiết phòng ban",
+			};
+		} finally {
+			loading.value = false;
+		}
+	}
+
 	async function createDepartment(data) {
 		try {
 			const res = await api.post("/departments", data);
@@ -90,6 +106,7 @@ export const useDepartmentStore = defineStore("department", () => {
 		loading,
 
 		fetchDepartments,
+		fetchDepartmentByID,
 		createDepartment,
 		updateDepartment,
 		deleteDepartment,

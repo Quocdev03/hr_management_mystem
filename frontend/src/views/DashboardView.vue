@@ -1,5 +1,5 @@
 <script setup>
-import { Building, CheckCircle, Users } from '@lucide/vue';
+import { Building, CheckCircle, Users } from "@lucide/vue";
 
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,8 @@ try {
 }
 
 const userName = computed(
-	() => userFromStorage?.user_name ?? authStore.user?.user_name ?? "Thành viên",
+	() =>
+		userFromStorage?.user_name ?? authStore.user?.user_name ?? "Thành viên",
 );
 
 // ─── Tải dữ liệu dashboard ───────────────────────────────────────────────────
@@ -45,95 +46,76 @@ onMounted(loadDashboard);
 		<header class="page-header">
 			<div class="header-content">
 				<h1 class="page-title">Tổng quan Dashboard</h1>
-				<p class="page-subtitle">Báo cáo tóm tắt trạng thái nhân sự hệ thống</p>
+				<p class="page-subtitle">
+					Báo cáo tóm tắt trạng thái nhân sự hệ thống
+				</p>
 			</div>
 		</header>
 
-		<!-- Bento Grid Top Row -->
-		<div class="bento-grid">
-			<!-- Welcome Card (Spans 2 columns on desktop) -->
-			<div class="bento-card welcome-card">
-				<div class="welcome-content">
-					<span class="welcome-badge">Hệ thống HRM</span>
-					<h1 class="welcome-title">Xin chào, {{ userName }}! 👋</h1>
-					<p class="welcome-text">
-						Chào mừng bạn quay trở lại với trang quản trị nhân sự. Dưới đây là tóm tắt nhanh về tình hình nhân sự của công ty hôm nay.
-					</p>
-				</div>
-				<div class="welcome-illustration">
-					<div class="blob blob-1"></div>
-					<div class="blob blob-2"></div>
-				</div>
-			</div>
-
-			<!-- Tổng số nhân viên (1 column) -->
-			<div class="bento-card stat-card stat-card--teal">
-				<div class="stat-card-inner">
-					<div class="stat-header">
+		<!-- Thống kê tổng quan -->
+		<div class="stat-grid">
+			<!-- Tổng số nhân viên -->
+			<div class="stat-card">
+				<div class="stat-main">
+					<div class="stat-info">
 						<span class="stat-label">Tổng nhân viên</span>
-						<div class="stat-icon-wrapper">
-							<Users class="stat-icon" />
-						</div>
-					</div>
-					<div class="stat-body">
 						<template v-if="loading">
-							<Skeleton type="text" width="80px" height="40px" />
+							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
 							<div class="stat-value">{{ stats.total_employees }}</div>
 						</template>
 					</div>
-					<div class="stat-footer">
-						<span class="trend-text">Nhân sự toàn hệ thống</span>
+					<div class="stat-icon-wrapper text-teal">
+						<Users class="stat-icon" />
 					</div>
+				</div>
+				<div class="stat-footer">
+					<span class="trend-text">Nhân sự toàn hệ thống</span>
 				</div>
 			</div>
 
-			<!-- Nhân viên đang làm việc (1 column) -->
-			<div class="bento-card stat-card stat-card--emerald">
-				<div class="stat-card-inner">
-					<div class="stat-header">
+			<!-- Nhân viên đang làm việc -->
+			<div class="stat-card">
+				<div class="stat-main">
+					<div class="stat-info">
 						<span class="stat-label">Đang hoạt động</span>
-						<div class="stat-icon-wrapper">
-							<CheckCircle class="stat-icon" />
-						</div>
-					</div>
-					<div class="stat-body">
 						<template v-if="loading">
-							<Skeleton type="text" width="80px" height="40px" />
+							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
 							<div class="stat-value">{{ stats.total_employees_active }}</div>
 						</template>
 					</div>
-					<div class="stat-footer">
-						<span class="trend-badge trend-badge--success">
-							{{ stats.total_employees ? Math.round((stats.total_employees_active / stats.total_employees) * 100) : 0 }}% hoạt động
-						</span>
+					<div class="stat-icon-wrapper text-emerald">
+						<CheckCircle class="stat-icon" />
 					</div>
+				</div>
+				<div class="stat-footer">
+					<span class="trend-badge trend-badge--success">
+						{{ stats.total_employees ? Math.round((stats.total_employees_active / stats.total_employees) * 100) : 0 }}% hoạt động
+					</span>
 				</div>
 			</div>
 
-			<!-- Tổng số phòng ban (1 column) -->
-			<div class="bento-card stat-card stat-card--amber">
-				<div class="stat-card-inner">
-					<div class="stat-header">
+			<!-- Tổng số phòng ban -->
+			<div class="stat-card">
+				<div class="stat-main">
+					<div class="stat-info">
 						<span class="stat-label">Phòng ban</span>
-						<div class="stat-icon-wrapper">
-							<Building class="stat-icon" />
-						</div>
-					</div>
-					<div class="stat-body">
 						<template v-if="loading">
-							<Skeleton type="text" width="80px" height="40px" />
+							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
 							<div class="stat-value">{{ stats.total_departments }}</div>
 						</template>
 					</div>
-					<div class="stat-footer">
-						<span class="trend-text">Cơ cấu tổ chức hành chính</span>
+					<div class="stat-icon-wrapper text-amber">
+						<Building class="stat-icon" />
 					</div>
+				</div>
+				<div class="stat-footer">
+					<span class="trend-text">Cơ cấu tổ chức hành chính</span>
 				</div>
 			</div>
 		</div>
@@ -142,19 +124,31 @@ onMounted(loadDashboard);
 		<section class="dept-section">
 			<div class="section-header">
 				<h2 class="section-title">Phân bổ nhân sự theo phòng ban</h2>
-				<p class="section-subtitle">Tỉ lệ phần trăm nhân viên làm việc tại từng phòng ban</p>
+				<p class="section-subtitle">
+					Tỉ lệ phần trăm nhân viên làm việc tại từng phòng ban
+				</p>
 			</div>
-			
+
 			<div class="dept-grid">
 				<!-- Skeleton khi đang tải -->
 				<template v-if="loading">
-					<div v-for="i in 3" :key="'skeleton-d-' + i" class="bento-card dept-card">
+					<div
+						v-for="i in 3"
+						:key="'skeleton-d-' + i"
+						class="dept-card"
+					>
 						<div class="dept-header">
 							<Skeleton type="text" width="120px" height="18px" />
 							<Skeleton type="badge" width="40px" height="22px" />
 						</div>
-						<div class="progress-container" style="margin-top: 1rem;">
-							<div class="skeleton" style="width: 100%; height: 100%"></div>
+						<div
+							class="progress-container"
+							style="margin-top: 1rem"
+						>
+							<div
+								class="skeleton"
+								style="width: 100%; height: 100%"
+							></div>
 						</div>
 					</div>
 				</template>
@@ -164,22 +158,38 @@ onMounted(loadDashboard);
 					<div
 						v-for="(dept, idx) in stats.department_stats"
 						:key="dept.department_name + '-' + idx"
-						class="bento-card dept-card"
+						class="dept-card"
 					>
 						<div class="dept-header">
-							<span class="dept-name">{{ dept.department_name }}</span>
-							<span class="dept-count">{{ dept.employee_count }} nhân sự</span>
+							<span class="dept-name">{{
+								dept.department_name
+							}}</span>
+							<span class="dept-count"
+								>{{ dept.employee_count }} nhân sự</span
+							>
 						</div>
 						<div class="progress-container">
 							<div
 								class="progress-bar"
 								:style="{
-									width: (dept.employee_count / (stats.total_employees || 1)) * 100 + '%',
+									width:
+										(dept.employee_count /
+											(stats.total_employees || 1)) *
+											100 +
+										'%',
 								}"
 							></div>
 						</div>
 						<div class="dept-percentage">
-							{{ stats.total_employees ? Math.round((dept.employee_count / stats.total_employees) * 100) : 0 }}% tổng số
+							{{
+								stats.total_employees
+									? Math.round(
+											(dept.employee_count /
+												stats.total_employees) *
+												100,
+										)
+									: 0
+							}}% tổng số
 						</div>
 					</div>
 				</template>
@@ -197,199 +207,99 @@ onMounted(loadDashboard);
 	gap: var(--space-4);
 }
 
-/* Bento Grid */
-.bento-grid {
+/* Stat Grid */
+.stat-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 	gap: var(--space-3);
 }
 
-.bento-card {
+.stat-card {
 	background: var(--bg-card);
-	border: var(--glass-border);
+	border: 1px solid var(--border-color);
 	border-radius: var(--radius-lg);
-	box-shadow: var(--glass-shadow);
-	padding: var(--space-3);
-	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	position: relative;
-	overflow: hidden;
-}
-
-.bento-card:hover {
-	transform: translateY(-4px);
-	box-shadow: var(--glass-shadow-hover);
-}
-
-/* Welcome Card */
-.welcome-card {
-	grid-column: span 3;
-	background: linear-gradient(135deg, rgba(0, 192, 250, 0.08) 0%, rgba(66, 97, 237, 0.08) 50%, rgba(103, 23, 204, 0.08) 100%);
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.welcome-content {
-	z-index: 2;
-	max-width: 70%;
-}
-
-.welcome-badge {
-	display: inline-block;
-	font-family: var(--font-widget);
-	font-size: var(--fs-xs);
-	font-weight: var(--fw-bold);
-	color: var(--primary-color);
-	background: rgba(66, 97, 237, 0.1);
-	padding: 0.25rem 0.75rem;
-	border-radius: var(--radius-full);
-	margin-bottom: var(--space-2);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.welcome-title {
-	font-size: var(--fs-2xl);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-	margin-bottom: 0.5rem;
-}
-
-.welcome-text {
-	font-size: var(--fs-sm);
-	color: var(--text-muted);
-	line-height: var(--lh-normal);
-	margin: 0;
-}
-
-.welcome-illustration {
-	position: absolute;
-	right: -20px;
-	top: -20px;
-	width: 150px;
-	height: 150px;
-	z-index: 1;
-	opacity: 0.8;
-}
-
-.blob {
-	position: absolute;
-	border-radius: 50%;
-}
-
-.blob-1 {
-	background: rgba(0, 192, 250, 0.25);
-	width: 100px;
-	height: 100px;
-	right: 10px;
-	top: 10px;
-	animation: floatBlob 8s infinite alternate;
-}
-
-.blob-2 {
-	background: rgba(103, 23, 204, 0.15);
-	width: 80px;
-	height: 80px;
-	right: 40px;
-	top: 40px;
-	animation: floatBlob 6s infinite alternate-reverse;
-}
-
-@keyframes floatBlob {
-	0% { transform: translate(0, 0) scale(1); }
-	100% { transform: translate(10px, 10px) scale(1.1); }
-}
-
-/* Stat Cards */
-.stat-card-inner {
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	padding: 1.5rem;
 	display: flex;
 	flex-direction: column;
-	height: 100%;
-	justify-content: space-between;
-	gap: var(--space-2);
+	gap: .8rem;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.stat-header {
+.stat-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.stat-main {
 	display: flex;
+	align-items: flex-start;
 	justify-content: space-between;
-	align-items: center;
+	width: 100%;
+}
+
+.stat-info {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
 }
 
 .stat-label {
-	font-size: var(--fs-sm);
+	font-size: 0.875rem;
 	font-weight: var(--fw-semibold);
 	color: var(--text-muted);
+}
+
+.stat-value {
+	font-family: var(--font-title);
+	font-size: 1.75rem;
+	font-weight: var(--fw-bold);
+	color: var(--text-main);
+	line-height: 1.1;
 }
 
 .stat-icon-wrapper {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 42px;
-	height: 42px;
-	border-radius: var(--radius-md);
-	background: rgba(255, 255, 255, 0.5);
-	box-shadow: inset 0 2px 4px rgba(66, 97, 237, 0.05);
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	flex-shrink: 0;
 }
 
 .stat-icon {
-	width: 22px;
-	height: 22px;
+	width: 24px;
+	height: 24px;
 }
 
-.stat-body {
-	margin-top: auto;
-}
-
-.stat-value {
-	font-family: var(--font-widget);
-	font-size: var(--fs-2xl);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-	line-height: 1;
-}
+.text-teal { color: #00C0FA; background: rgba(0, 192, 250, 0.1); }
+.text-emerald { color: #10B981; background: rgba(16, 185, 129, 0.1); }
+.text-amber { color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
 
 .stat-footer {
-	font-size: var(--fs-xs);
-	color: var(--text-light);
-	font-weight: var(--fw-medium);
-	margin-top: 2px;
+	border-top: 1px solid var(--border-color);
+	padding-top: 1rem;
+	display: flex;
+	align-items: center;
+}
+
+.trend-text {
+	font-size: 0.8125rem;
+	color: var(--text-muted);
 }
 
 .trend-badge {
 	display: inline-block;
-	padding: 0.15rem 0.5rem;
-	border-radius: var(--radius-sm);
+	padding: 0.2rem 0.6rem;
+	border-radius: var(--radius-full);
 	font-weight: var(--fw-semibold);
+	font-size: 0.75rem;
 }
 
 .trend-badge--success {
 	background: rgba(16, 185, 129, 0.1);
 	color: #059669;
-}
-
-.stat-card--teal .stat-icon {
-	filter: invert(59%) sepia(93%) saturate(1915%) hue-rotate(167deg) brightness(101%) contrast(101%);
-}
-.stat-card--emerald .stat-icon {
-	filter: invert(34%) sepia(85%) saturate(3015%) hue-rotate(222deg) brightness(98%) contrast(93%);
-}
-.stat-card--amber .stat-icon {
-	filter: invert(19%) sepia(88%) saturate(3663%) hue-rotate(265deg) brightness(85%) contrast(108%);
-}
-
-.stat-card--teal .stat-icon-wrapper {
-	background: rgba(0, 192, 250, 0.1);
-	border: 1px solid rgba(0, 192, 250, 0.15);
-}
-.stat-card--emerald .stat-icon-wrapper {
-	background: rgba(66, 97, 237, 0.1);
-	border: 1px solid rgba(66, 97, 237, 0.15);
-}
-.stat-card--amber .stat-icon-wrapper {
-	background: rgba(103, 23, 204, 0.1);
-	border: 1px solid rgba(103, 23, 204, 0.15);
 }
 
 /* Department Section */
@@ -401,19 +311,6 @@ onMounted(loadDashboard);
 	margin-bottom: var(--space-3);
 }
 
-.section-title {
-	font-size: var(--fs-lg);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-	margin-bottom: 2px;
-}
-
-.section-subtitle {
-	font-size: var(--fs-sm);
-	color: var(--text-muted);
-	margin: 0;
-}
-
 .dept-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -423,8 +320,18 @@ onMounted(loadDashboard);
 .dept-card {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-2);
+	gap: 1.25rem;
 	background: var(--bg-card);
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-lg);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	padding: 1.5rem;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.dept-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .dept-header {
@@ -459,7 +366,7 @@ onMounted(loadDashboard);
 
 .progress-bar {
 	height: 100%;
-	background: linear-gradient(90deg, #00C0FA 0%, #4261ED 50%, #6717CC 100%);
+	background: linear-gradient(90deg, #00c0fa 0%, #4261ed 100%);
 	border-radius: var(--radius-full);
 	transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -472,36 +379,9 @@ onMounted(loadDashboard);
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-	.bento-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
-	.welcome-card {
-		grid-column: span 2;
-	}
-	.stat-card--amber {
-		grid-column: span 2;
-	}
-}
-
 @media (max-width: 640px) {
-	.bento-grid {
+	.stat-grid {
 		grid-template-columns: 1fr;
-	}
-	.welcome-card {
-		grid-column: span 1;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: var(--space-3);
-	}
-	.welcome-content {
-		max-width: 100%;
-	}
-	.welcome-illustration {
-		display: none;
-	}
-	.stat-card--amber {
-		grid-column: span 1;
 	}
 	.dept-grid {
 		grid-template-columns: 1fr;

@@ -1,5 +1,12 @@
 <script setup>
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, TriangleAlert } from '@lucide/vue';
+import {
+	ChevronLeft,
+	ChevronRight,
+	Pencil,
+	Plus,
+	Search,
+	TriangleAlert,
+} from "@lucide/vue";
 
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
 
@@ -34,10 +41,7 @@ const {
 	searchQuery,
 	load: loadUsers,
 	handlePageChange,
-} = usePaginatedSearch(
-	(params) => userStore.fetchUser(params),
-	pagination,
-);
+} = usePaginatedSearch((params) => userStore.fetchUser(params), pagination);
 
 // ─── Trạng thái modal xoá ────────────────────────────────────────────────────
 
@@ -118,7 +122,13 @@ async function handleFormSubmit(submittedData) {
 				is_active: Boolean(submittedData.is_active),
 			},
 			{
-				fields: ["user_name", "email", "password", "role_id", "is_active"],
+				fields: [
+					"user_name",
+					"email",
+					"password",
+					"role_id",
+					"is_active",
+				],
 				transformValue: (key, value) => {
 					if (key === "role_id") return Number(value);
 					if (key === "is_active") return Boolean(value);
@@ -235,11 +245,22 @@ onMounted(async () => {
 						<!-- Loading skeleton rows -->
 						<template v-if="loading">
 							<tr v-for="i in 5" :key="'skeleton-' + i">
-								<td class="text-main fw-500" data-label="Tên người dùng">
-									<Skeleton type="text" width="130px" height="18px" />
+								<td
+									class="text-main fw-500"
+									data-label="Tên người dùng"
+								>
+									<Skeleton
+										type="text"
+										width="130px"
+										height="18px"
+									/>
 								</td>
 								<td data-label="Email">
-									<Skeleton type="text" width="200px" height="18px" />
+									<Skeleton
+										type="text"
+										width="200px"
+										height="18px"
+									/>
 								</td>
 								<td data-label="Trạng thái">
 									<Skeleton
@@ -265,18 +286,35 @@ onMounted(async () => {
 								<td data-label="Tên người dùng">
 									<div class="user-cell">
 										<div class="user-avatar">
-											{{ user.user_name.charAt(0).toUpperCase() }}
+											{{
+												user.user_name
+													.charAt(0)
+													.toUpperCase()
+											}}
 										</div>
 										<div class="user-details">
-											<span class="user-name-txt">{{ user.user_name }}</span>
-											<span class="user-role-badge" :class="`role-${user.role_id}`">
-												{{ user.role_id === 1 ? 'Quản trị' : user.role_id === 2 ? 'Quản lý' : 'Nhân viên' }}
+											<span class="user-name-txt">{{
+												user.user_name
+											}}</span>
+											<span
+												class="user-role-badge"
+												:class="`role-${user.role_id}`"
+											>
+												{{
+													user.role_id === 1
+														? "Quản trị"
+														: user.role_id === 2
+															? "Quản lý"
+															: "Nhân viên"
+												}}
 											</span>
 										</div>
 									</div>
 								</td>
 								<td data-label="Email">
-									<span class="text-main fw-500">{{ user.email }}</span>
+									<span class="text-main fw-500">{{
+										user.email
+									}}</span>
 								</td>
 								<td data-label="Trạng thái">
 									<span
@@ -287,7 +325,11 @@ onMounted(async () => {
 												: 'status-badge--inactive',
 										]"
 									>
-										{{ user.is_active ? "Hoạt động" : "Ngưng" }}
+										{{
+											user.is_active
+												? "Hoạt động"
+												: "Ngưng"
+										}}
 									</span>
 								</td>
 								<td class="text-right" data-label="Thao tác">
@@ -298,7 +340,7 @@ onMounted(async () => {
 											title="Chỉnh sửa"
 											@click="handleUpdate(user)"
 										>
-											<Pencil  />
+											<Pencil />
 										</button>
 										<button
 											v-if="canManageUsers"
@@ -306,7 +348,7 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(user)"
 										>
-											<TriangleAlert  />
+											<TriangleAlert />
 										</button>
 									</div>
 								</td>
@@ -331,7 +373,7 @@ onMounted(async () => {
 					:disabled="pagination.page === 1"
 					@click="handlePageChange(pagination.page - 1)"
 				>
-					<ChevronLeft  />
+					<ChevronLeft />
 				</button>
 				<div class="pagination__info">
 					Trang <span>{{ pagination.page }}</span> /
@@ -342,7 +384,7 @@ onMounted(async () => {
 					:disabled="pagination.page === pagination.totalPages"
 					@click="handlePageChange(pagination.page + 1)"
 				>
-					<ChevronRight  />
+					<ChevronRight />
 				</button>
 			</div>
 		</main>
@@ -385,7 +427,11 @@ onMounted(async () => {
 	width: 40px;
 	height: 40px;
 	border-radius: var(--radius-md);
-	background: linear-gradient(135deg, rgba(0, 192, 250, 0.12) 0%, rgba(66, 97, 237, 0.1) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(0, 192, 250, 0.12) 0%,
+		rgba(66, 97, 237, 0.1) 100%
+	);
 	color: var(--primary-color);
 	display: flex;
 	align-items: center;

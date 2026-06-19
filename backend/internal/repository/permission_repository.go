@@ -30,7 +30,7 @@ func (r *permissionRepository) GetPermissionCodes(userID uint) ([]string, error)
 	var codes []string
 	if err := r.db.Table("permissions").
 		Distinct().
-		Joins("JOIN role_permissions rp ON rp.permission_id = permissions.id AND rp.deleted_at IS NULL").
+		Joins("JOIN role_permissions rp ON rp.permission_id = permissions.id").
 		Joins("JOIN users u ON u.role_id = rp.role_id AND u.deleted_at IS NULL").
 		Where("u.id = ? AND permissions.deleted_at IS NULL", userID).
 		Pluck("permissions.code", &codes).Error; err != nil {
@@ -40,7 +40,7 @@ func (r *permissionRepository) GetPermissionCodes(userID uint) ([]string, error)
 	var userCodes []string
 	if err := r.db.Table("permissions").
 		Distinct().
-		Joins("JOIN user_permissions up ON up.permission_id = permissions.id AND up.deleted_at IS NULL").
+		Joins("JOIN user_permissions up ON up.permission_id = permissions.id").
 		Where("up.user_id = ? AND permissions.deleted_at IS NULL", userID).
 		Pluck("permissions.code", &userCodes).Error; err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (r *permissionRepository) SetUserPermissions(userID uint, permissionCodes [
 	}
 
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&model.UserPermission{}).Error; err != nil {
+		if err := tx.Where("user_id = ?", userID).Delete(&model.UserPermission{}).Error; err != nil {
 			return err
 		}
 
@@ -101,7 +101,7 @@ func (r *permissionRepository) HasPermission(userID uint, permissionCode string)
 
 	var roleCount int64
 	if err := r.db.Model(&model.Permission{}).
-		Joins("JOIN role_permissions rp ON rp.permission_id = permissions.id AND rp.deleted_at IS NULL").
+		Joins("JOIN role_permissions rp ON rp.permission_id = permissions.id").
 		Joins("JOIN users u ON u.role_id = rp.role_id AND u.deleted_at IS NULL").
 		Where("u.id = ? AND permissions.code = ?", userID, permissionCode).
 		Count(&roleCount).Error; err != nil {
@@ -113,7 +113,7 @@ func (r *permissionRepository) HasPermission(userID uint, permissionCode string)
 
 	var userCount int64
 	if err := r.db.Model(&model.Permission{}).
-		Joins("JOIN user_permissions up ON up.permission_id = permissions.id AND up.deleted_at IS NULL").
+		Joins("JOIN user_permissions up ON up.permission_id = permissions.id").
 		Where("up.user_id = ? AND permissions.code = ?", userID, permissionCode).
 		Count(&userCount).Error; err != nil {
 		return false, err

@@ -60,14 +60,14 @@ func RunMigrationsWithError(db *gorm.DB) error {
 		return fmt.Errorf("migrate auth tables: %w", err)
 	}
 
-	utils.Info("[MIGRATE] Migrating business tables (departments, employees)...")
+	utils.Info("[MIGRATE] Migrating business tables (departments, positions, employees)...")
 	origDisableFK := false
 	if db.Config != nil {
 		origDisableFK = db.DisableForeignKeyConstraintWhenMigrating
 		db.DisableForeignKeyConstraintWhenMigrating = true
 	}
 
-	if err := db.AutoMigrate(&model.Department{}, &model.Employee{}); err != nil {
+	if err := db.AutoMigrate(&model.Department{}, &model.Position{}, &model.Employee{}); err != nil {
 		return fmt.Errorf("migrate business tables: %w", err)
 	}
 
@@ -86,6 +86,11 @@ func RunMigrationsWithError(db *gorm.DB) error {
 	if !migratorInstance.HasConstraint(&model.Employee{}, "Department") {
 		if err := migratorInstance.CreateConstraint(&model.Employee{}, "Department"); err != nil {
 			return fmt.Errorf("create constraint Employee.Department: %w", err)
+		}
+	}
+	if !migratorInstance.HasConstraint(&model.Employee{}, "Position") {
+		if err := migratorInstance.CreateConstraint(&model.Employee{}, "Position"); err != nil {
+			return fmt.Errorf("create constraint Employee.Position: %w", err)
 		}
 	}
 	if !migratorInstance.HasConstraint(&model.Department{}, "Manager") {
@@ -130,6 +135,11 @@ func SeedDataWithError(db *gorm.DB) error {
 		utils.Info("[SEED] Seeding departments...")
 		if err := seedDepartments(ctx); err != nil {
 			return fmt.Errorf("seed departments: %w", err)
+		}
+
+		utils.Info("[SEED] Seeding positions...")
+		if err := seedPositions(ctx); err != nil {
+			return fmt.Errorf("seed positions: %w", err)
 		}
 
 		utils.Info("[SEED] Seeding users...")
@@ -273,6 +283,29 @@ func seedDepartments(ctx *gorm.DB) error {
 	return nil
 }
 
+func seedPositions(ctx *gorm.DB) error {
+	positions := []model.Position{
+		{Name: "Head of Engineering", Description: "Quản lý phòng Công nghệ thông tin"},
+		{Name: "HR Manager", Description: "Quản lý phòng Nhân sự"},
+		{Name: "Backend Developer", Description: "Lập trình viên Backend"},
+	}
+
+	for _, p := range positions {
+		var existing model.Position
+		err := ctx.Where("name = ?", p.Name).First(&existing).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := ctx.Create(&p).Error; err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func seedUsers(ctx *gorm.DB) error {
 	var adminRole, hrRole, empRole model.Role
 	if err := ctx.Where("name = ?", "admin").First(&adminRole).Error; err != nil {
@@ -362,6 +395,12 @@ func seedEmployees(ctx *gorm.DB) error {
 		}
 		item.Employee.DepartmentID = dept.ID
 
+		var pos model.Position
+		if err := ctx.Where("name = ?", item.PositionName).First(&pos).Error; err != nil {
+			return fmt.Errorf("position not found for seed: %s", item.PositionName)
+		}
+		item.Employee.PositionID = pos.ID
+
 		if item.Employee.BirthDate != nil {
 			username := resolveSeedUsername(item)
 			if username == "" {
@@ -387,6 +426,9 @@ func seedEmployees(ctx *gorm.DB) error {
 			update := map[string]interface{}{}
 			if existing.UserID == nil && item.Employee.UserID != nil {
 				update["user_id"] = item.Employee.UserID
+			}
+			if existing.PositionID == 0 {
+				update["position_id"] = pos.ID
 			}
 			if len(update) > 0 {
 				if err := ctx.Model(&existing).Updates(update).Error; err != nil {
@@ -439,6 +481,7 @@ type seedEmployeeInfo struct {
 	Employee       model.Employee
 	RoleName       string
 	DepartmentCode string
+	PositionName   string
 	IsManager      bool
 	DemoUsername   string
 }
@@ -456,9 +499,9 @@ func getSeedEmployeeInfo() []seedEmployeeInfo {
 	b3 := time.Date(1993, 11, 7, 0, 0, 0, 0, time.UTC)
 
 	return []seedEmployeeInfo{
-		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc AD", Phone: "0912345678", Position: "Head of Engineering", Salary: 47000000, JoinDate: time.Date(2017, 4, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "admin", DepartmentCode: "IT", IsManager: true, DemoUsername: "chiquoc23AD"},
-		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc HR", Phone: "0912345681", Position: "HR Manager", Salary: 33000000, JoinDate: time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "hr", DepartmentCode: "HR", IsManager: true, DemoUsername: "chiquoc23HR"},
-		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc EMP", Phone: "0912345680", Position: "Backend Developer", Salary: 28000000, JoinDate: time.Date(2022, 9, 5, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "FIN", DemoUsername: "chiquoc23EMP"},
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc AD", Phone: "0912345678", Salary: 47000000, JoinDate: time.Date(2017, 4, 1, 0, 0, 0, 0, time.UTC), BirthDate: &b1, Gender: "male", Status: "active"}, RoleName: "admin", DepartmentCode: "IT", PositionName: "Head of Engineering", IsManager: true, DemoUsername: "chiquoc23AD"},
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc HR", Phone: "0912345681", Salary: 33000000, JoinDate: time.Date(2020, 5, 10, 0, 0, 0, 0, time.UTC), BirthDate: &b2, Gender: "male", Status: "active"}, RoleName: "hr", DepartmentCode: "HR", PositionName: "HR Manager", IsManager: true, DemoUsername: "chiquoc23HR"},
+		{Employee: model.Employee{FirstName: "Chí", LastName: "Quốc EMP", Phone: "0912345680", Salary: 28000000, JoinDate: time.Date(2022, 9, 5, 0, 0, 0, 0, time.UTC), BirthDate: &b3, Gender: "female", Status: "active"}, RoleName: "employee", DepartmentCode: "FIN", PositionName: "Backend Developer", DemoUsername: "chiquoc23EMP"},
 	}
 }
 

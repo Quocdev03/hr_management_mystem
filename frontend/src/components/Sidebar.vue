@@ -33,6 +33,15 @@
 				<span>Phòng ban</span>
 			</router-link>
 			<router-link
+				v-if="canViewDepartmentList"
+				to="/positions"
+				class="nav-item"
+				active-class="active"
+			>
+				<Briefcase class="nav-icon" />
+				<span>Chức vụ</span>
+			</router-link>
+			<router-link
 				v-if="canManageUsers"
 				to="/users"
 				class="nav-item"
@@ -48,32 +57,36 @@
 		</nav>
 
 		<!-- Profile Section at bottom of Sidebar -->
-		<div class="sidebar-profile">
-			<div class="profile-details">
+		<div class="sidebar-footer">
+			<div class="sidebar-profile">
 				<div class="profile-avatar-circle">
 					{{ userName ? userName.charAt(0).toUpperCase() : "U" }}
 				</div>
 				<div class="profile-info">
-					<span class="profile-name">{{ userName }}</span>
-					<span class="profile-email">{{ userEmail }}</span>
+					<span class="profile-name" :title="userName">{{
+						userName
+					}}</span>
+					<span class="profile-email" :title="userEmail">{{
+						userEmail
+					}}</span>
 				</div>
+				<button
+					class="logout-btn"
+					@click="handleLogout"
+					title="Đăng xuất"
+					aria-label="Đăng xuất"
+				>
+					<LogOut class="logout-icon-svg" />
+				</button>
 			</div>
-			<button
-				class="logout-btn"
-				@click="handleLogout"
-				title="Đăng xuất"
-				aria-label="Đăng xuất"
-			>
-				<LogOut class="logout-icon-svg" />
-			</button>
 		</div>
 	</aside>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useAuthStore } from "@/store/auth";
-import { LayoutDashboard, Users, Building2, User, LogOut } from "@lucide/vue";
+import { LayoutDashboard, Users, Building2, User, LogOut, Briefcase } from "@lucide/vue";
 import { usePermissions } from "@/helpers/usePermissions";
 
 defineProps({ isOpen: { type: Boolean, default: false } });
@@ -97,6 +110,13 @@ const userEmail = computed(
 const userName = computed(
 	() => userFromStorage?.user_name ?? authStore.user?.user_name ?? "",
 );
+const userRole = computed(() => authStore.userProfile?.role_name ?? "");
+
+onMounted(() => {
+	if (!authStore.userProfile) {
+		authStore.profile();
+	}
+});
 
 const handleLogout = () => {
 	authStore.logout();
@@ -170,22 +190,34 @@ const handleLogout = () => {
 	color: var(--text-muted);
 	border-radius: var(--radius-md);
 	font-weight: var(--fw-medium);
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		opacity 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
 	text-decoration: none;
 	overflow: hidden;
 }
 
 .nav-icon {
-	width: 18px;
-	height: 18px;
+	width: 20px;
+	height: 20px;
 	color: currentColor;
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		opacity 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
 	z-index: 1;
 }
 
 .nav-item span {
 	z-index: 1;
-	font-size: var(--fs-sm);
+	font-size: var(--fs-base);
 }
 
 .nav-item:hover {
@@ -216,23 +248,23 @@ const handleLogout = () => {
 }
 
 /* Profile section pushed to the bottom of the sidebar */
-.sidebar-profile {
+.sidebar-footer {
 	margin-top: auto;
-	padding: var(--space-3);
 	border-top: 1px solid var(--border-color);
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-2);
+	background: transparent;
 	flex-shrink: 0;
 }
 
-.profile-details {
+.sidebar-profile {
 	display: flex;
 	align-items: center;
-	gap: var(--space-3);
-	overflow: hidden;
-	flex: 1;
+	padding: var(--space-3) var(--space-3);
+	gap: 12px;
+	transition: background-color 0.2s ease;
+}
+
+.sidebar-profile:hover {
+	background: var(--bg-lighter);
 }
 
 .profile-avatar-circle {
@@ -246,14 +278,20 @@ const handleLogout = () => {
 	justify-content: center;
 	font-weight: var(--fw-bold);
 	font-size: var(--fs-base);
-	box-shadow: 0 4px 10px rgba(66, 97, 237, 0.2);
+	box-shadow: 0 2px 6px rgba(66, 97, 237, 0.15);
 	flex-shrink: 0;
+	transition: transform 0.2s ease;
+}
+
+.sidebar-profile:hover .profile-avatar-circle {
+	transform: scale(1.05);
 }
 
 .profile-info {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	flex: 1;
 }
 
 .profile-name {
@@ -268,7 +306,7 @@ const handleLogout = () => {
 }
 
 .profile-email {
-	font-size: var(--fs-xs);
+	font-size: 11px;
 	color: var(--text-muted);
 	white-space: nowrap;
 	overflow: hidden;
@@ -279,28 +317,27 @@ const handleLogout = () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 34px;
-	height: 34px;
-	background: var(--bg-card);
-	border: 1px solid var(--border-color);
+	width: 32px;
+	height: 32px;
+	background: transparent;
+	border: none;
 	border-radius: var(--radius-md);
 	cursor: pointer;
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+	color: var(--text-light);
+	transition: all 0.2s ease;
 	flex-shrink: 0;
-	box-shadow: var(--shadow-sm);
 }
 
 .logout-btn:hover {
-	background: #fee2e2;
-	border-color: #fecaca;
+	background: rgba(225, 29, 72, 0.08);
 	color: var(--danger-color);
+	transform: scale(1.05);
 }
 
 .logout-icon-svg {
 	width: 16px;
 	height: 16px;
 	color: currentColor;
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 @media (max-width: 1024px) {

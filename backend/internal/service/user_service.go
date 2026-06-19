@@ -1,6 +1,7 @@
 package service
 
 import (
+	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/utils"
@@ -91,15 +92,7 @@ func (us *userService) Create(req model.CreateUserRequest) (*model.User, error) 
 }
 
 func (us *userService) GetUsers(query model.PaginationQuery) (*model.PaginatedResult, error) {
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 {
-		query.Limit = 10
-	}
-	if query.Limit > 100 {
-		query.Limit = 100
-	}
+	common.NormalizePagination(&query)
 
 	users, total, err := us.userRepo.FindAll(query)
 	if err != nil {
@@ -234,8 +227,8 @@ func (us *userService) DeleteUser(id uint) error {
 
 	err := us.userRepo.Delete(id)
 
-	if err := utils.InvalidateDashboardStats(context.Background(), us.rdb); err != nil {
-		utils.Error("không thể invalidate cache dashboard: %v", err)
+	if cacheErr := utils.InvalidateDashboardStats(context.Background(), us.rdb); cacheErr != nil {
+		utils.Error("không thể invalidate cache dashboard: %v", cacheErr)
 	}
 
 	return err

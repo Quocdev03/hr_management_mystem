@@ -5,6 +5,7 @@ const (
 	CachePatternEmployees   = "cache:/api/v1/employees*"
 	CachePatternUsers       = "cache:/api/v1/users*"
 	CachePatternDepartments = "cache:/api/v1/departments*"
+	CachePatternPositions   = "cache:/api/v1/positions*"
 )
 
 // Pattern groups để dùng với ClearMultipleCaches.

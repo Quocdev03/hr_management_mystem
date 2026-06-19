@@ -5,7 +5,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Ứng dụng Quản Lý Nhân Sự (HRM) full-stack với Backend Go (Gin, GORM, MySQL, Redis) và Frontend Vue.js 3 (Vite, Pinia, Vue Router). Hỗ trợ quản lý nhân viên, phòng ban, tài khoản và phân quyền truy cập chi tiết.
+Ứng dụng Quản Lý Nhân Sự (HRM) full-stack với Backend Go (Gin, GORM, MySQL, Redis) và Frontend Vue.js 3 (Vite, Pinia, Vue Router). Hỗ trợ quản lý nhân viên, phòng ban, chức vụ, tài khoản và phân quyền truy cập chi tiết.
 
 ---
 
@@ -27,7 +27,7 @@
 
 ---
 
-## 📖 Hướng Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## 📖 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
 
 Toàn bộ tài liệu hướng dẫn chi tiết đã được di chuyển sang thư mục [docs/](docs/):
 
@@ -81,15 +81,26 @@ Toàn bộ tài liệu hướng dẫn chi tiết đã được di chuyển sang 
 API được versioned tại `/api/v1`. Hầu hết endpoints yêu cầu JWT Bearer token trong header.
 
 | Method | Endpoint | Mô tả | Quyền truy cập |
-|--------|----------|-------|----------------|
+| :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/login` | Đăng nhập | Public |
 | `GET` | `/api/v1/auth/me` | Lấy thông tin tài khoản hiện tại | User đăng nhập |
 | `POST` | `/api/v1/auth/logout` | Đăng xuất (blacklist token) | User đăng nhập |
 | `POST` | `/api/v1/auth/refresh` | Làm mới access token | User đăng nhập |
 | `GET` | `/api/v1/employees` | Lấy danh sách nhân viên | `employee.read` |
+| `GET` | `/api/v1/employees/:id` | Lấy chi tiết nhân viên | `employee.read` |
 | `POST` | `/api/v1/employees` | Tạo mới nhân viên | `employee.create` |
-| `PUT/PATCH/DELETE` | `/api/v1/employees/:id` | Xem chi tiết, cập nhật, xóa nhân viên | `employee.read/update/delete` |
+| `PATCH` | `/api/v1/employees/:id` | Cập nhật nhân viên | `employee.update` |
+| `DELETE` | `/api/v1/employees/:id` | Xóa nhân viên | `employee.delete` |
 | `GET` | `/api/v1/departments` | Lấy danh sách phòng ban | `department.read` |
+| `GET` | `/api/v1/departments/:id` | Lấy chi tiết phòng ban | `department.read` |
+| `POST` | `/api/v1/departments` | Tạo mới phòng ban | `department.create` |
+| `PATCH` | `/api/v1/departments/:id` | Cập nhật phòng ban | `department.update` |
+| `DELETE` | `/api/v1/departments/:id` | Xóa phòng ban | `department.delete` |
+| `GET` | `/api/v1/positions` | Lấy danh sách chức vụ | `department.read` |
+| `GET` | `/api/v1/positions/:id` | Lấy chi tiết chức vụ | `department.read` |
+| `POST` | `/api/v1/positions` | Tạo mới chức vụ | `department.update` |
+| `PATCH` | `/api/v1/positions/:id` | Cập nhật chức vụ | `department.update` |
+| `DELETE` | `/api/v1/positions/:id` | Xóa chức vụ | `department.update` |
 | `GET` | `/api/v1/users` | Lấy danh sách tài khoản | `user.read` (Admin) |
 | `GET` | `/api/v1/dashboard/stats` | Lấy thống kê cho trang Dashboard | Đăng nhập |
 | `GET` | `/api/v1/health` | Kiểm tra trạng thái của server | Public |
@@ -99,7 +110,7 @@ API được versioned tại `/api/v1`. Hầu hết endpoints yêu cầu JWT Bea
 ## 🗄️ Redis Caching & Rate Limiting Strategy
 
 | Chức năng | Định dạng Key | TTL (Thời gian sống) | Mục đích |
-|-----------|---------------|----------------------|----------|
+| :--- | :--- | :--- | :--- |
 | Token Blacklist | `blacklist:{token}` | Tương ứng thời hạn token | Đăng xuất an toàn |
 | Rate Limit Login | `rate_limit:login:{IP}` | 1 phút | Chống brute-force đăng nhập |
 | Refresh Token | `refresh_token:{userID}` | 7 ngày | Token rotation, duy trì session |

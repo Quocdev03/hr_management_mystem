@@ -12,7 +12,7 @@ import { useUserStore } from "@/store/user";
 
 // ─── Component UI dùng chung ─────────────────────────────────────────────────
 import EmployeeModal from "@/components/EmployeeModal.vue";
-import EmployeeDetailDrawer from "@/components/EmployeeDetailDrawer.vue";
+import EmployeeDetailModal from "@/components/EmployeeDetailModal.vue";
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
@@ -98,7 +98,7 @@ function buildFormData(data = {}) {
 		last_name: d.last_name ?? "",
 		phone: d.phone ?? "",
 		department_id: d.department_id ?? "",
-		position: d.position ?? "",
+		position_id: d.position_id ?? "",
 		salary: d.salary ?? null,
 		join_date: d.join_date ?? "",
 		status: d.status ?? "active",
@@ -188,7 +188,7 @@ async function handleFormSubmit(submittedData) {
 				if (key === "user_id") {
 					return value == null || value === "" ? 0 : Number(value);
 				}
-				if (key === "department_id") {
+				if (key === "department_id" || key === "position_id") {
 					return Number(value);
 				}
 				return value;
@@ -357,7 +357,7 @@ onMounted(async () => {
 											{{ emp.department?.name || "N/A" }}
 										</span>
 										<span class="job-info__pos">
-											{{ emp.position || "Nhân viên" }}
+											{{ emp.position?.name || "Nhân viên" }}
 										</span>
 									</div>
 								</td>
@@ -449,8 +449,8 @@ onMounted(async () => {
 			@submit="handleFormSubmit"
 		/>
 
-		<!-- Subcomponent Detail Drawer -->
-		<EmployeeDetailDrawer
+		<!-- Subcomponent Detail Modal -->
+		<EmployeeDetailModal
 			:visible="isDetailModalVisible"
 			:employee="selectedEmployee"
 			@close="isDetailModalVisible = false"
@@ -498,32 +498,8 @@ onMounted(async () => {
 	flex-direction: column;
 }
 
-.user-info__name {
-	font-size: var(--fs-base);
-	font-weight: var(--fw-semibold);
-	margin: 0;
-	color: var(--text-main);
-}
-
-.user-info__email {
-	font-size: var(--fs-xs);
-	color: var(--text-muted);
-}
-
 .job-info {
 	display: flex;
 	flex-direction: column;
-}
-
-.job-info__dept {
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-semibold);
-	margin: 0;
-	color: var(--text-main);
-}
-
-.job-info__pos {
-	font-size: var(--fs-xs);
-	color: var(--text-muted);
 }
 </style>

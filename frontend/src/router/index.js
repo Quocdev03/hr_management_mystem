@@ -7,6 +7,7 @@ const EmployeeView = () => import("@/views/EmployeeView.vue");
 const DepartmentView = () => import("@/views/DepartmentView.vue");
 const ProfileView = () => import("@/views/ProfileView.vue");
 const UserView = () => import("@/views/UserView.vue");
+const PositionView = () => import("@/views/PositionView.vue");
 
 const router = createRouter({
 	history: createWebHistory(),
@@ -28,6 +29,12 @@ const router = createRouter({
 					path: "departments",
 					name: "departments",
 					component: DepartmentView,
+					meta: { permissions: ["department.read"] },
+				},
+				{
+					path: "positions",
+					name: "positions",
+					component: PositionView,
 					meta: { permissions: ["department.read"] },
 				},
 				{

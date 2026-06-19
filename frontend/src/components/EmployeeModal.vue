@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import ModalDialog from "./ModalDialog.vue";
+import { usePositionStore } from "@/store/position";
 
 const props = defineProps({
 	visible: { type: Boolean, required: true },
@@ -12,6 +13,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["close", "submit"]);
+
+const positionStore = usePositionStore();
+const positions = ref([]);
+const loadingPositions = ref(false);
 
 // Local state for form data
 const formData = ref(buildInitialFormData());
@@ -31,7 +36,7 @@ function buildInitialFormData(data = null) {
 		last_name: d.last_name ?? "",
 		phone: d.phone ?? "",
 		department_id: d.department_id ?? "",
-		position: d.position ?? "",
+		position_id: d.position_id ?? "",
 		salary: d.salary ?? null,
 		join_date: formatDateString(d.join_date) ?? "",
 		status: d.status ?? "active",
@@ -43,9 +48,22 @@ function buildInitialFormData(data = null) {
 // Watch visibility and editingEmployee to sync form data
 watch(
 	() => props.visible,
-	(isVisible) => {
+	async (isVisible) => {
 		if (isVisible) {
 			formData.value = buildInitialFormData(props.editingEmployee);
+			if (positions.value.length === 0) {
+				loadingPositions.value = true;
+				try {
+					const res = await positionStore.fetchPositions();
+					if (res.success) {
+						positions.value = res.data || [];
+					}
+				} catch (error) {
+					console.error("Lỗi tải chức vụ:", error);
+				} finally {
+					loadingPositions.value = false;
+				}
+			}
 		}
 	}
 );
@@ -59,8 +77,12 @@ watch(
 	}
 );
 
+
 function handleSubmit() {
-	emit("submit", { ...formData.value });
+	// Map position_id to number
+	const payload = { ...formData.value };
+	payload.position_id = payload.position_id ? Number(payload.position_id) : undefined;
+	emit("submit", payload);
 }
 
 function handleClose() {
@@ -165,13 +187,24 @@ function handleClose() {
 
 				<!-- Chức vụ -->
 				<div class="form-group">
-					<label class="form-label">Chức vụ</label>
-					<input
-						v-model="formData.position"
-						type="text"
+					<label class="form-label"
+						>Chức vụ <span class="required">*</span></label
+					>
+					<select
+						v-model="formData.position_id"
 						class="form-control"
-						placeholder="Ví dụ: Backend Developer"
-					/>
+						:disabled="loadingPositions"
+						required
+					>
+						<option value="" disabled>Chọn chức vụ</option>
+						<option
+							v-for="pos in positions"
+							:key="pos.id"
+							:value="pos.id"
+						>
+							{{ pos.name }}
+						</option>
+					</select>
 				</div>
 
 				<!-- Mức lương -->

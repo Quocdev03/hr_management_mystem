@@ -1,6 +1,7 @@
 package service
 
 import (
+	"chiquoc_hocgolang/internal/common"
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/repository"
 	"chiquoc_hocgolang/internal/utils"
@@ -89,16 +90,7 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 }
 
 func (ds *departmentService) GetDepartments(query model.PaginationQuery) (*model.PaginatedResult, error) {
-	// Chuẩn hoá phân trang
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 {
-		query.Limit = 10
-	}
-	if query.Limit > 100 {
-		query.Limit = 100
-	}
+	common.NormalizePagination(&query)
 
 	depts, total, err := ds.deptRepo.FindAll(query)
 	if err != nil {

@@ -1,5 +1,5 @@
 <script setup>
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import { Building2, ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 
 // ─── Icon SVG ────────────────────────────────────────────────────────────────
 
@@ -10,6 +10,7 @@ import { useEmployeeStore } from "@/store/employee";
 
 // ─── Component UI ────────────────────────────────────────────────────────────
 import DepartmentModal from "@/components/DepartmentModal.vue";
+import DepartmentDetailModal from "@/components/DepartmentDetailModal.vue";
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
@@ -32,6 +33,11 @@ const toast = useToast();
 const { canCrudDepartment } = usePermissions();
 const { departments, loading, pagination } = storeToRefs(departmentStore);
 const employeeOptions = ref([]);
+
+// ─── Trạng thái chi tiết phòng ban ──────────────────────────────────────────
+const isDetailModalVisible = ref(false);
+const selectedDepartment = ref(null);
+const detailLoading = ref(false);
 
 // ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
@@ -99,6 +105,25 @@ function handleDelete(department) {
 	deletingDepartment.value = department;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
 	isDeleteModalVisible.value = true;
+}
+
+// ─── Xem chi tiết phòng ban ──────────────────────────────────────────────────
+async function handleViewDetail(departmentId) {
+	detailLoading.value = true;
+	try {
+		const res = await departmentStore.fetchDepartmentByID(departmentId);
+		if (res.success) {
+			selectedDepartment.value = res.data;
+			isDetailModalVisible.value = true;
+		} else {
+			toast.error(res.message || "Không thể tải chi tiết phòng ban");
+		}
+	} catch (err) {
+		toast.error("Đã xảy ra lỗi khi tải chi tiết phòng ban");
+		console.error("handleViewDetail error:", err);
+	} finally {
+		detailLoading.value = false;
+	}
 }
 
 // ─── Xác nhận xoá ────────────────────────────────────────────────────────────
@@ -259,7 +284,12 @@ onMounted(async () => {
 
 			<!-- Actual department cards -->
 			<div v-else class="dept-bento-grid">
-				<div v-for="dept in departments" :key="dept.id" class="dept-bento-card">
+				<div
+					v-for="dept in departments"
+					:key="dept.id"
+					class="dept-bento-card"
+					@click="handleViewDetail(dept.id)"
+				>
 					<!-- Accent light border at top -->
 					<div class="dept-accent-bar"></div>
 					
@@ -290,14 +320,14 @@ onMounted(async () => {
 						<button
 							class="btn-icon btn-icon--edit"
 							title="Chỉnh sửa"
-							@click="handleEdit(dept)"
+							@click.stop="handleEdit(dept)"
 						>
 							<Pencil  />
 						</button>
 						<button
 							class="btn-icon btn-icon--delete"
 							title="Xoá"
-							@click="handleDelete(dept)"
+							@click.stop="handleDelete(dept)"
 						>
 							<Trash2  />
 						</button>
@@ -307,7 +337,7 @@ onMounted(async () => {
 				<!-- Empty State -->
 				<div v-if="departments.length === 0" class="empty-state-container">
 					<div class="empty-state">
-						<div class="empty-state__icon">🏢</div>
+						<Building2 class="empty-state__icon-svg" />
 						<p class="empty-state__text">
 							Không tìm thấy phòng ban nào phù hợp.
 						</p>
@@ -360,6 +390,13 @@ onMounted(async () => {
 			@confirm="confirmDelete"
 			@cancel="isDeleteModalVisible = false"
 		/>
+
+		<!-- Department Detail Modal -->
+		<DepartmentDetailModal
+			:visible="isDetailModalVisible"
+			:department="selectedDepartment"
+			@close="isDetailModalVisible = false"
+		/>
 	</div>
 </template>
 
@@ -406,6 +443,7 @@ onMounted(async () => {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);
+	cursor: pointer;
 }
 
 .dept-bento-card:hover {
@@ -523,6 +561,14 @@ onMounted(async () => {
 	display: flex;
 	justify-content: center;
 	margin-top: var(--space-2);
+}
+
+.empty-state__icon-svg {
+	width: 48px;
+	height: 48px;
+	color: var(--text-light);
+	margin-bottom: var(--space-2);
+	display: inline-block;
 }
 
 .pagination {

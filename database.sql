@@ -99,6 +99,20 @@ CREATE TABLE user_permissions (
 );
 
 -- ============================================================
+-- 5.5 BẢNG positions
+-- Thông tin các chức vụ trong phòng ban
+-- ============================================================
+
+CREATE TABLE positions (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL,
+    description   VARCHAR(255),
+    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    DATETIME NULL
+);
+
+-- ============================================================
 -- 6. BẢNG employees
 -- Thông tin chi tiết nhân viên
 -- ============================================================
@@ -107,10 +121,10 @@ CREATE TABLE employees (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     user_id       INT NULL,       -- NULL nếu chưa có tài khoản hệ thống
     department_id INT NOT NULL,
+    position_id   INT NOT NULL,
     first_name    VARCHAR(100) NOT NULL,
     last_name     VARCHAR(100) NOT NULL,
     phone         VARCHAR(20),
-    position      VARCHAR(100),
     salary        DECIMAL(15,2) DEFAULT 0,
     join_date     DATE DEFAULT (CURRENT_DATE),
     birth_date    DATE NULL,
@@ -127,7 +141,10 @@ CREATE TABLE employees (
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
 
     CONSTRAINT FK_employees_department
-        FOREIGN KEY (department_id) REFERENCES departments(id)
+        FOREIGN KEY (department_id) REFERENCES departments(id),
+
+    CONSTRAINT FK_employees_position
+        FOREIGN KEY (position_id) REFERENCES positions(id)
 );
 
 -- ============================================================
@@ -144,6 +161,9 @@ ALTER TABLE departments
 -- ============================================================
 
 CREATE INDEX IX_employees_department_id ON employees (department_id);
+CREATE INDEX IX_employees_position_id ON employees (position_id);
+
+CREATE INDEX IX_positions_deleted_at ON positions (deleted_at);
 CREATE INDEX IX_users_role_id ON users (role_id);
 CREATE INDEX IX_employees_deleted_at ON employees (deleted_at);
 CREATE INDEX IX_departments_deleted_at ON departments (deleted_at);

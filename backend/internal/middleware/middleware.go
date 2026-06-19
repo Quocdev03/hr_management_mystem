@@ -5,6 +5,7 @@ import (
 	"chiquoc_hocgolang/internal/utils"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -14,10 +15,12 @@ import (
 
 // Dùng constants để tránh typo khi get/set vào gin.Context
 const (
-	ContextKeyUserID   = "userID"
-	ContextKeyEmail    = "email"
-	ContextKeyRoleID   = "roleID"
-	ContextKeyRoleName = "roleName"
+	ContextKeyUserID             = "userID"
+	ContextKeyEmail              = "email"
+	ContextKeyRoleID             = "roleID"
+	ContextKeyRoleName           = "roleName"
+	ContextKeyTokenString        = "TokenString"
+	ContextKeyTokenRemainingTime = "TokenRemainingTime"
 )
 
 // Logger Middleware
@@ -50,10 +53,10 @@ func Recovery() gin.HandlerFunc {
 				// Log lỗi
 				utils.Error("Panic recovered: %v", err)
 
-				// Trả về 500 thay vì crash server
+				// Trả về 500 thay vì crash server — không leak thông tin nội bộ
 				ctx.JSON(http.StatusInternalServerError, utils.Response{
 					Success: false,
-					Message: fmt.Sprintf("Internal server error: %v", err),
+					Message: "Internal server error",
 				})
 				ctx.Abort()
 			}
@@ -96,8 +99,8 @@ func AuthJWT(cfg *config.JWTConfig, rdb *redis.Client) gin.HandlerFunc {
 		ctx.Set(ContextKeyRoleName, claims.RoleName)
 
 		// Set Token cho Logout
-		ctx.Set("TokenString", tokenString)
-		ctx.Set("TokenRemainingTime", time.Until(claims.ExpiresAt.Time))
+		ctx.Set(ContextKeyTokenString, tokenString)
+		ctx.Set(ContextKeyTokenRemainingTime, time.Until(claims.ExpiresAt.Time))
 
 		// Kiểm tra Token đã bị đăng xuất chưa (Blacklist)
 		if rdb != nil {
@@ -142,12 +145,33 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 	}
 }
 
-// Cross Cho phép cross-origin requests (cần thiết khi frontend ở domain khác)
+// CORS Cho phép cross-origin requests (cần thiết khi frontend ở domain khác)
+// Đọc CORS_ALLOWED_ORIGINS từ biến môi trường, mặc định là http://localhost:5173
 func CORS() gin.HandlerFunc {
+	allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if allowedOrigins == "" {
+		allowedOrigins = "http://localhost:5173"
+	}
+	originList := strings.Split(allowedOrigins, ",")
+	for i := range originList {
+		originList[i] = strings.TrimSpace(originList[i])
+	}
+
 	return func(ctx *gin.Context) {
-		ctx.Header("Access-Control-Allow-Origin", "*")
+		origin := ctx.GetHeader("Origin")
+		allowed := false
+		for _, o := range originList {
+			if o == "*" || o == origin {
+				allowed = true
+				break
+			}
+		}
+		if allowed {
+			ctx.Header("Access-Control-Allow-Origin", origin)
+		}
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		ctx.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
+		ctx.Header("Access-Control-Allow-Credentials", "true")
 
 		// Preflight request
 		if ctx.Request.Method == "OPTIONS" {

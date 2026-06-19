@@ -95,14 +95,14 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 // Logout godoc
 // POST /api/v1/auth/logout - cần JWT token
 func (h *AuthHandler) Logout(ctx *gin.Context) {
-	tokenStringVal, exists := ctx.Get("TokenString")
+	tokenStringVal, exists := ctx.Get(middleware.ContextKeyTokenString)
 	if !exists {
 		utils.Unauthorized(ctx, "Không tìm thấy token")
 		return
 	}
 	tokenString := tokenStringVal.(string)
 
-	remainingTimeVal, exists := ctx.Get("TokenRemainingTime")
+	remainingTimeVal, exists := ctx.Get(middleware.ContextKeyTokenRemainingTime)
 	if !exists {
 		utils.Unauthorized(ctx, "Không thể xác định thời gian hết hạn")
 		return

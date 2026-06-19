@@ -43,6 +43,7 @@ func main() {
 	deptRepo := repository.NewDepartmentRepository(db)
 	dashRepo := repository.NewDashboardsRepository(db)
 	permRepo := repository.NewPermissionRepository(db)
+	posRepo := repository.NewPositionRepository(db)
 
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, empRepo, permRepo, &cfg.JWT, rdb)
@@ -50,6 +51,7 @@ func main() {
 	empScv := service.NewEmployeeService(db, empRepo, deptRepo, userRepo, rdb)
 	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, rdb)
 	dashScv := service.NewDashboardService(dashRepo, rdb)
+	posScv := service.NewPositionService(db, posRepo)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
 	authHandler := handler.NewAuthHandler(authScv)
@@ -57,9 +59,10 @@ func main() {
 	empHandler := handler.NewEmployeeHandler(empScv)
 	deptHandler := handler.NewDepartmentHandler(deptScv)
 	dashHandler := handler.NewDashboardHandler(dashScv)
+	posHandler := handler.NewPositionHandler(posScv)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, permRepo)
+	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, posHandler, permRepo)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server
@@ -104,7 +107,6 @@ func main() {
 			log.Printf("failed to close database: %v", err)
 		}
 	}
-	// Đóng kết nối Redis
 	// Đóng kết nối Redis
 	if rdb != nil {
 		if err := rdb.Close(); err != nil {

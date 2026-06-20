@@ -356,15 +356,16 @@ onMounted(() => {
 	display: grid;
 	grid-template-columns: 400px 1fr;
 	gap: var(--space-3);
+	margin-top: var(--space-4);
 }
 
 .profile-card {
 	position: relative;
 	background: var(--bg-card);
 	border-radius: var(--radius-lg);
-	border: 1px solid rgba(66, 97, 237, 0.08);
-	box-shadow: 0 10px 30px rgba(66, 97, 237, 0.03), 0 1px 3px rgba(66, 97, 237, 0.01);
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1px solid var(--border-color);
+	box-shadow: var(--glass-shadow);
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 	overflow: hidden;
 }
 
@@ -382,8 +383,8 @@ onMounted(() => {
 
 .profile-card:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 20px 40px rgba(66, 97, 237, 0.08);
-	border-color: rgba(66, 97, 237, 0.15);
+	box-shadow: var(--glass-shadow-hover);
+	border-color: var(--border-hover);
 }
 
 .sidebar-card {
@@ -415,11 +416,11 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-weight: 800;
+	font-weight: var(--fw-bold);
 	font-size: 4.25rem;
 	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.2), inset 0 4px 10px rgba(255, 255, 255, 0.25);
 	margin: var(--space-3) auto;
-	transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+	transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
 	border: 4px solid rgba(255, 255, 255, 0.95);
 }
 
@@ -431,7 +432,7 @@ onMounted(() => {
 .user-name {
 	font-family: var(--font-title);
 	font-size: var(--fs-xl);
-	font-weight: 800;
+	font-weight: var(--fw-bold);
 	color: var(--text-main);
 	margin-bottom: var(--space-1);
 	letter-spacing: -0.01em;
@@ -497,7 +498,7 @@ onMounted(() => {
 	border-radius: var(--radius-md);
 	background: rgba(66, 97, 237, 0.02);
 	border: 1px solid transparent;
-	transition: all 0.2s ease;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .profile-stat-item:hover {
@@ -534,7 +535,7 @@ onMounted(() => {
 .card-header h3 {
 	font-family: var(--font-title);
 	font-size: var(--fs-lg);
-	font-weight: 800;
+	font-weight: var(--fw-bold);
 	color: var(--text-main);
 	margin: 0;
 	letter-spacing: -0.01em;
@@ -559,12 +560,12 @@ onMounted(() => {
 
 .info-group label {
 	display: block;
-	font-size: 11px;
-	font-weight: 800;
+	font-size: var(--fs-xxs);
+	font-weight: var(--fw-semibold);
 	color: var(--text-light);
 	text-transform: uppercase;
 	letter-spacing: 0.07em;
-	margin-bottom: 6px;
+	margin-bottom: var(--space-0-5);
 }
 
 .info-group .value {
@@ -576,7 +577,7 @@ onMounted(() => {
 	border-radius: var(--radius-md);
 	border: 1px solid rgba(66, 97, 237, 0.06);
 	box-shadow: inset 0 1px 2px rgba(66, 97, 237, 0.01);
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .info-group:hover .value {
@@ -588,7 +589,7 @@ onMounted(() => {
 .info-group .value.salary {
 	color: var(--success-color);
 	font-family: var(--font-widget);
-	font-weight: 800;
+	font-weight: var(--fw-bold);
 	background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(16, 185, 129, 0.03) 100%);
 	border-color: rgba(16, 185, 129, 0.12);
 }

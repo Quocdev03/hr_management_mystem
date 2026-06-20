@@ -303,7 +303,7 @@ onMounted(async () => {
 							<tr v-for="emp in employees" :key="emp.id">
 								<td data-label="Nhân viên">
 									<div class="user-info">
-										<div class="user-info__avatar">
+										<div class="avatar-gradient" style="width: 40px; height: 40px;">
 											{{
 												getInitials(
 													emp.first_name,
@@ -482,24 +482,6 @@ onMounted(async () => {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
-}
-
-.user-info__avatar {
-	width: 40px;
-	height: 40px;
-	border-radius: var(--radius-md);
-	background: linear-gradient(
-		135deg,
-		rgba(0, 192, 250, 0.12) 0%,
-		rgba(66, 97, 237, 0.1) 100%
-	);
-	color: var(--primary-color);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-bold);
-	flex-shrink: 0;
 }
 
 .user-info__details {

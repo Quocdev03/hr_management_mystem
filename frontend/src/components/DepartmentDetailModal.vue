@@ -6,7 +6,7 @@ import { Building2 } from "@lucide/vue";
 
 const props = defineProps({
 	visible: { type: Boolean, required: true },
-	department: { type: Object, default: null }
+	department: { type: Object, default: null },
 });
 
 const emit = defineEmits(["close"]);
@@ -40,7 +40,9 @@ const managerName = computed(() => {
 					<h3 class="detail-name">
 						{{ department.name }}
 					</h3>
-					<span class="detail-code">Mã phòng ban: {{ department.code }}</span>
+					<span class="detail-code"
+						>Mã phòng ban: {{ department.code }}</span
+					>
 				</div>
 			</div>
 
@@ -56,13 +58,24 @@ const managerName = computed(() => {
 			<div class="detail-section manager-section">
 				<h4 class="section-title">Trưởng phòng ban</h4>
 				<div class="manager-card" v-if="department.manager">
-					<div class="manager-avatar">
-						{{ getInitials(department.manager.first_name, department.manager.last_name) }}
+					<div class="avatar-gradient" style="width: 44px; height: 44px;">
+						{{
+							getInitials(
+								department.manager.first_name,
+								department.manager.last_name,
+							)
+						}}
 					</div>
 					<div class="manager-details">
 						<span class="manager-name-text">{{ managerName }}</span>
-						<span class="manager-subtext">{{ department.manager.position?.name || 'Trưởng phòng' }}</span>
-						<span class="manager-contact" v-if="department.manager.phone">SĐT: {{ department.manager.phone }}</span>
+						<span class="manager-subtext">{{
+							department.manager.position?.name || "Trưởng phòng"
+						}}</span>
+						<span
+							class="manager-contact"
+							v-if="department.manager.phone"
+							>SĐT: {{ department.manager.phone }}</span
+						>
 					</div>
 				</div>
 				<div class="empty-manager" v-else>
@@ -70,12 +83,13 @@ const managerName = computed(() => {
 				</div>
 			</div>
 
-
 			<!-- Employee List Section -->
 			<div class="detail-section">
-				<h4 class="section-title">Thành viên phòng ban ({{ employees.length }})</h4>
+				<h4 class="section-title">
+					Thành viên phòng ban ({{ employees.length }})
+				</h4>
 				<div class="employee-table-wrapper" v-if="employees.length > 0">
-					<table class="employee-table">
+					<table class="data-table">
 						<thead>
 							<tr>
 								<th>Nhân viên</th>
@@ -87,18 +101,37 @@ const managerName = computed(() => {
 						<tbody>
 							<tr v-for="emp in employees" :key="emp.id">
 								<td class="emp-cell">
-									<div class="emp-avatar">
-										{{ getInitials(emp.first_name, emp.last_name) }}
+									<div class="avatar-gradient" style="width: 28px; height: 28px; font-size: 11px;">
+										{{
+											getInitials(
+												emp.first_name,
+												emp.last_name,
+											)
+										}}
 									</div>
 									<div class="emp-info">
-										<span class="emp-name">{{ emp.first_name }} {{ emp.last_name }}</span>
+										<span class="emp-name"
+											>{{ emp.first_name }}
+											{{ emp.last_name }}</span
+										>
 									</div>
 								</td>
-								<td>{{ emp.position?.name || '—' }}</td>
-								<td>{{ emp.phone || '—' }}</td>
+								<td>{{ emp.position?.name || "—" }}</td>
+								<td>{{ emp.phone || "—" }}</td>
 								<td>
-									<span :class="['status-dot', emp.status === 'active' ? 'active' : 'inactive']"></span>
-									<span class="status-text">{{ emp.status === 'active' ? 'Đang làm việc' : 'Nghỉ việc' }}</span>
+									<span
+										:class="[
+											'status-dot',
+											emp.status === 'active'
+												? 'active'
+												: 'inactive',
+										]"
+									></span>
+									<span class="status-text">{{
+										emp.status === "active"
+											? "Đang làm việc"
+											: "Nghỉ việc"
+									}}</span>
 								</td>
 							</tr>
 						</tbody>
@@ -109,7 +142,7 @@ const managerName = computed(() => {
 				</div>
 			</div>
 		</div>
-		
+
 		<template #footer>
 			<button class="btn btn-secondary" @click="handleClose">Đóng</button>
 		</template>
@@ -117,11 +150,10 @@ const managerName = computed(() => {
 </template>
 
 <style scoped>
-
 .description-box {
 	font-size: var(--fs-sm);
 	color: var(--text-main);
-	background: #f8fafc;
+	background: var(--bg-lighter);
 	padding: var(--space-2) var(--space-3);
 	border-radius: var(--radius-md);
 	border: 1px solid var(--border-color);
@@ -136,21 +168,7 @@ const managerName = computed(() => {
 	background: rgba(66, 97, 237, 0.03);
 	padding: var(--space-2) var(--space-3);
 	border-radius: var(--radius-md);
-	border: 1px solid rgba(66, 97, 237, 0.08);
-}
-
-.manager-avatar {
-	width: 44px;
-	height: 44px;
-	border-radius: 8px;
-	background: var(--primary-gradient);
-	color: white;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: 800;
-	font-size: var(--fs-sm);
-	box-shadow: 0 2px 8px rgba(66, 97, 237, 0.2);
+	border: 1px solid var(--border-color);
 }
 
 .manager-details {
@@ -177,78 +195,30 @@ const managerName = computed(() => {
 	margin-top: 2px;
 }
 
-.empty-manager, .empty-employees {
+.empty-manager,
+.empty-employees {
 	padding: var(--space-2) var(--space-3);
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
-	background: #f8fafc;
+	background: var(--bg-lighter);
 	border-radius: var(--radius-md);
 	border: 1px dashed var(--border-color);
 	text-align: center;
 }
 
-/* Employee Table */
+/* Employee Table Wrapper */
 .employee-table-wrapper {
 	max-height: 250px;
 	overflow-y: auto;
 	border: 1px solid var(--border-color);
 	border-radius: var(--radius-md);
-	background: white;
-}
-
-.employee-table {
-	width: 100%;
-	border-collapse: collapse;
-	text-align: left;
-}
-
-.employee-table th {
-	padding: 8px 16px;
-	background: #f8fafc;
-	font-size: var(--fs-xs);
-	font-weight: 800;
-	color: var(--text-muted);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	border-bottom: 1px solid var(--border-color);
-	position: sticky;
-	top: 0;
-	z-index: 10;
-}
-
-.employee-table td {
-	padding: 10px 16px;
-	border-bottom: 1px solid var(--border-color);
-	font-size: var(--fs-sm);
-	vertical-align: middle;
-	color: var(--text-main);
-}
-
-.employee-table tbody tr:last-child td {
-	border-bottom: none;
-}
-
-.employee-table tbody tr:hover td {
-	background: #f4f7ff;
+	background: var(--bg-card);
 }
 
 .emp-cell {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-}
-
-.emp-avatar {
-	width: 28px;
-	height: 28px;
-	border-radius: 6px;
-	background: linear-gradient(135deg, rgba(0, 192, 250, 0.1) 0%, rgba(66, 97, 237, 0.08) 100%);
-	color: var(--primary-color);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 11px;
-	font-weight: 800;
 }
 
 .emp-info {
@@ -260,27 +230,8 @@ const managerName = computed(() => {
 	font-weight: var(--fw-semibold);
 }
 
-/* Status dots */
-.status-dot {
-	display: inline-block;
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	margin-right: 6px;
-}
-
-.status-dot.active {
-	background: var(--success-color);
-	box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-}
-
-.status-dot.inactive {
-	background: var(--text-light);
-}
-
 .status-text {
 	font-size: var(--fs-xs);
 	font-weight: var(--fw-medium);
 }
-
 </style>

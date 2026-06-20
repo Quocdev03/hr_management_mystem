@@ -5,7 +5,7 @@
 /* Shared Modal Footer */
 .modal-footer {
 	padding: 20px 24px;
-	background: #ffffff;
+	background: var(--bg-card);
 	border-top: 1px solid var(--border-color);
 	display: flex;
 	justify-content: flex-end;
@@ -80,21 +80,13 @@
 	gap: 12px;
 }
 
-.section-title {
-	font-size: var(--fs-base);
-	font-weight: 600;
-	color: var(--text-main);
-	margin: 0;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-}
+
 
 .detail-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
 	gap: 16px;
-	background: #f8faf9;
+	background: var(--bg-lighter);
 	padding: 16px;
 	border-radius: var(--radius-lg);
 	border: 1px solid var(--border-color);

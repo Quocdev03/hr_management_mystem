@@ -6,12 +6,12 @@ import {
 	formatDate,
 	formatStatus,
 	formatCurrency,
-	formatGender
+	formatGender,
 } from "@/helpers/formatters";
 
 const props = defineProps({
 	visible: { type: Boolean, required: true },
-	employee: { type: Object, default: null }
+	employee: { type: Object, default: null },
 });
 
 const emit = defineEmits(["close"]);
@@ -50,7 +50,9 @@ function handleClose() {
 				<div class="detail-list">
 					<div class="detail-item">
 						<span class="detail-label">Giới tính:</span>
-						<span class="detail-val">{{ formatGender(employee.gender) }}</span>
+						<span class="detail-val">{{
+							formatGender(employee.gender)
+						}}</span>
 					</div>
 					<div class="detail-item">
 						<span class="detail-label">Ngày sinh:</span>
@@ -131,7 +133,7 @@ function handleClose() {
 				</div>
 			</div>
 		</div>
-		
+
 		<template #footer>
 			<button class="btn btn-secondary" @click="handleClose">Đóng</button>
 		</template>
@@ -156,7 +158,8 @@ function handleClose() {
 .detail-position {
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
-}.detail-list {
+}
+.detail-list {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-2);

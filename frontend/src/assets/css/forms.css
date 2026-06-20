@@ -45,7 +45,7 @@
 	border-radius: var(--radius-md);
 	font-size: var(--fs-sm);
 	color: var(--text-main);
-	background: #ffffff;
+	background: var(--bg-card);
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 	font-family: inherit;
 }
@@ -61,10 +61,10 @@
 }
 
 .form-control:disabled {
-	background-color: #f1f5f9;
-	color: #64748b;
+	background-color: var(--bg-lighter);
+	color: var(--text-muted);
 	cursor: not-allowed;
-	border-color: #e2e8f0;
+	border-color: var(--border-color);
 }
 
 textarea.form-control {

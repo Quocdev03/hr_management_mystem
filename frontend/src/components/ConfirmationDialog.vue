@@ -6,25 +6,27 @@
 				class="confirm-overlay"
 				@click.self="$emit('cancel')"
 			>
-				<div class="confirm-container">
+				<div class="confirm-container animate__animated animate__zoomIn animate__fast">
 					<div class="confirm-body">
-						<div class="warning-icon">
-							<TriangleAlert />
+						<div class="confirm-icon" :class="[`confirm-icon--${variant}`]">
+							<TriangleAlert v-if="variant === 'danger'" />
+							<HelpCircle v-else />
 						</div>
 						<h3 class="confirm-title">{{ title }}</h3>
 						<p class="confirm-message">{{ message }}</p>
 					</div>
 
 					<div class="confirm-footer">
-						<button class="btn btn-cancel" @click="$emit('cancel')">
-							Hủy bỏ
+						<button class="btn btn-secondary" @click="$emit('cancel')">
+							{{ cancelText }}
 						</button>
 						<button
-							class="btn btn-delete"
+							class="btn"
+							:class="[variant === 'danger' ? 'btn-danger' : 'btn-primary']"
 							@click="$emit('confirm')"
 							:disabled="loading"
 						>
-							<span v-if="loading" class="spinner"></span>
+							<span v-if="loading" class="btn-spinner"></span>
 							<span>{{ confirmText }}</span>
 						</button>
 					</div>
@@ -35,13 +37,13 @@
 </template>
 
 <script setup>
-import { TriangleAlert } from "@lucide/vue";
+import { TriangleAlert, HelpCircle } from "@lucide/vue";
 
 const props = defineProps({
 	visible: Boolean,
 	title: {
 		type: String,
-		default: "Xác nhận xoá",
+		default: "Xác nhận",
 	},
 	message: {
 		type: String,
@@ -49,9 +51,17 @@ const props = defineProps({
 	},
 	confirmText: {
 		type: String,
-		default: "Xác nhận xoá",
+		default: "Xác nhận",
+	},
+	cancelText: {
+		type: String,
+		default: "Hủy bỏ",
 	},
 	loading: Boolean,
+	variant: {
+		type: String,
+		default: "danger", // danger | primary
+	},
 });
 
 const emit = defineEmits(["confirm", "cancel"]);
@@ -61,7 +71,9 @@ const emit = defineEmits(["confirm", "cancel"]);
 .confirm-overlay {
 	position: fixed;
 	inset: 0;
-	background: rgba(15, 23, 42, 0.25);
+	background: rgba(15, 23, 42, 0.3);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -70,14 +82,13 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-container {
-	background: #ffffff;
-	border: 1px solid rgba(66, 97, 237, 0.15);
+	background: var(--bg-card);
+	border: 1px solid var(--border-color);
 	border-radius: var(--radius-xl);
 	width: 100%;
 	max-width: 400px;
-	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.12);
+	box-shadow: var(--shadow-xl);
 	overflow: hidden;
-	animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .confirm-body {
@@ -88,105 +99,68 @@ const emit = defineEmits(["confirm", "cancel"]);
 	text-align: center;
 }
 
-.warning-icon {
+.confirm-icon {
 	width: 64px;
 	height: 64px;
-	background: rgba(225, 29, 72, 0.08);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 20px;
+	transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-container:hover .confirm-icon {
+	transform: scale(1.08);
+}
+
+.confirm-icon--danger {
+	background: var(--danger-light);
+	border: 1px solid rgba(225, 29, 72, 0.15);
 	box-shadow: 0 0 0 6px rgba(225, 29, 72, 0.04);
 }
 
-.warning-icon :deep(svg) {
+.confirm-icon--danger svg {
 	width: 32px;
 	height: 32px;
-	color: var(--danger-color, #e11d48);
-	stroke-width: 2.2px;
+	color: var(--danger-color);
+}
+
+.confirm-icon--primary {
+	background: var(--primary-light);
+	border: 1px solid rgba(66, 97, 237, 0.15);
+	box-shadow: 0 0 0 6px rgba(66, 97, 237, 0.04);
+}
+
+.confirm-icon--primary svg {
+	width: 32px;
+	height: 32px;
+	color: var(--primary-color);
 }
 
 .confirm-title {
 	font-family: var(--font-title);
-	font-size: var(--fs-xl);
-	font-weight: 700;
+	font-size: var(--fs-lg);
+	font-weight: var(--fw-bold);
 	color: var(--text-main);
-	margin: 0 0 12px 0;
+	margin: 0 0 10px 0;
 }
 
 .confirm-message {
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
-	line-height: 1.5;
 	margin: 0;
+	line-height: var(--lh-normal);
 }
 
 .confirm-footer {
-	padding: 20px 24px;
-	background: #ffffff;
+	background: var(--bg-card);
+	padding: 16px 24px;
 	display: flex;
-	justify-content:space-between;
+	justify-content: space-between;
 	gap: 12px;
 	border-top: 1px solid var(--border-color);
 	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-}
-
-.btn-cancel {
-	background: transparent;
-	border: 1px solid var(--border-color);
-	color: var(--text-main);
-}
-
-.btn-cancel:hover {
-	background: rgba(255, 255, 255, 0.8);
-	border-color: var(--border-hover);
-	color: var(--text-main);
-}
-
-.btn-delete {
-	background: var(--danger-color);
-	border: 1px solid var(--danger-color);
-	color: white;
-	box-shadow: 0 4px 14px rgba(225, 29, 72, 0.2);
-}
-
-.btn-delete:hover:not(:disabled) {
-	background: var(--danger-hover);
-	border-color: var(--danger-hover);
-	box-shadow: 0 6px 20px rgba(225, 29, 72, 0.3);
-}
-
-.btn-delete:disabled {
-	opacity: 0.7;
-	cursor: not-allowed;
-}
-
-.spinner {
-	width: 16px;
-	height: 16px;
-	border: 2px solid rgba(255, 255, 255, 0.3);
-	border-radius: 50%;
-	border-top-color: #fff;
-	animation: spin 0.8s linear infinite;
-	margin-right: 8px;
-}
-
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-@keyframes popIn {
-	from {
-		transform: scale(0.95) translateY(10px);
-		opacity: 0;
-	}
-	to {
-		transform: scale(1) translateY(0);
-		opacity: 1;
-	}
 }
 
 /* Animations overlay */

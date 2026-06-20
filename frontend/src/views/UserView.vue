@@ -13,6 +13,7 @@ import {
 // ─── Component UI dùng chung ─────────────────────────────────────────────────
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import UserModal from "@/components/UserModal.vue";
+import UserDetailModal from "@/components/UserDetailModal.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
@@ -61,6 +62,16 @@ const currentUserId = ref(null);
 
 // Form data snapshot for modal initialization
 const editingUser = ref(null);
+
+// ─── Trạng thái modal chi tiết ────────────────────────────────────────────────
+
+const isDetailModalVisible = ref(false);
+const userToView = ref(null);
+
+function handleViewDetail(user) {
+	userToView.value = user;
+	isDetailModalVisible.value = true;
+}
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
 
@@ -243,10 +254,10 @@ onMounted(async () => {
 
 						<!-- Actual rows when loaded -->
 						<template v-else>
-							<tr v-for="user in users" :key="user.id">
+							<tr v-for="user in users" :key="user.id" @click="handleViewDetail(user)" style="cursor: pointer;">
 								<td data-label="Tên người dùng">
 									<div class="user-cell">
-										<div class="user-avatar">
+										<div class="avatar-gradient" style="width: 40px; height: 40px;">
 											{{
 												user.user_name
 													.charAt(0)
@@ -258,17 +269,21 @@ onMounted(async () => {
 												user.user_name
 											}}</span>
 											<span
-									class="user-role-badge"
-									:class="`role-${user.role_id}`"
-								>
-									{{
-										user.role?.name?.toLowerCase() === 'admin'
-											? "Quản trị"
-											: user.role?.name?.toLowerCase() === 'hr'
-												? "Quản lý"
-												: "Nhân viên"
-									}}
-								</span>
+												class="badge"
+												:class="{
+													'badge--danger': user.role_id === 1,
+													'badge--purple': user.role_id === 2,
+													'badge--primary': user.role_id === 3
+												}"
+											>
+												{{
+													user.role?.name?.toLowerCase() === 'admin'
+														? "Quản trị"
+														: user.role?.name?.toLowerCase() === 'hr'
+															? "Quản lý"
+															: "Nhân viên"
+												}}
+											</span>
 										</div>
 									</div>
 								</td>
@@ -299,7 +314,7 @@ onMounted(async () => {
 											v-if="canManageUsers"
 											class="btn-icon btn-icon--edit"
 											title="Chỉnh sửa"
-											@click="handleUpdate(user)"
+											@click.stop="handleUpdate(user)"
 										>
 											<Pencil />
 										</button>
@@ -307,7 +322,7 @@ onMounted(async () => {
 											v-if="canManageUsers"
 											class="btn-icon btn-icon--delete"
 											title="Xoá"
-											@click="handleDelete(user)"
+											@click.stop="handleDelete(user)"
 										>
 											<TriangleAlert />
 										</button>
@@ -359,6 +374,13 @@ onMounted(async () => {
 			@cancel="isDeleteModalVisible = false"
 		/>
 
+		<!-- Modals -->
+		<UserDetailModal
+			:visible="isDetailModalVisible"
+			:user="userToView"
+			@close="isDetailModalVisible = false"
+		/>
+
 		<!-- Form Modal Subcomponent -->
 		<UserModal
 			:visible="isModalVisible"
@@ -384,24 +406,6 @@ onMounted(async () => {
 	gap: var(--space-2);
 }
 
-.user-avatar {
-	width: 40px;
-	height: 40px;
-	border-radius: var(--radius-md);
-	background: linear-gradient(
-		135deg,
-		rgba(0, 192, 250, 0.12) 0%,
-		rgba(66, 97, 237, 0.1) 100%
-	);
-	color: var(--primary-color);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-bold);
-	flex-shrink: 0;
-}
-
 .user-details {
 	display: flex;
 	flex-direction: column;
@@ -411,28 +415,5 @@ onMounted(async () => {
 .user-name-txt {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
-}
-
-.user-role-badge {
-	font-size: var(--fs-xs);
-	font-weight: var(--fw-semibold);
-	padding: 0.15rem 0.5rem;
-	border-radius: var(--radius-sm);
-	width: max-content;
-}
-
-.user-role-badge.role-1 {
-	background: rgba(139, 92, 246, 0.1);
-	color: var(--color-purple);
-}
-
-.user-role-badge.role-2 {
-	background: rgba(217, 119, 6, 0.1);
-	color: var(--color-amber);
-}
-
-.user-role-badge.role-3 {
-	background: rgba(66, 97, 237, 0.1);
-	color: var(--primary-color);
 }
 </style>

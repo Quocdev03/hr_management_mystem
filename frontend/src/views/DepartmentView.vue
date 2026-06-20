@@ -231,7 +231,7 @@ onMounted(async () => {
 			<!-- Loading skeleton grid -->
 			<div v-if="loading" class="bento-grid">
 				<div
-					v-for="i in 6"
+					v-for="i in 3"
 					:key="'skeleton-dept-' + i"
 					class="bento-card"
 				>
@@ -300,7 +300,7 @@ onMounted(async () => {
 					</div>
 
 					<div class="dept-bento-manager">
-						<div class="manager-avatar">
+						<div class="avatar-gradient" style="width: 36px; height: 36px; font-size: var(--fs-xs);">
 							{{
 								dept.manager
 									? getInitials(
@@ -429,25 +429,7 @@ onMounted(async () => {
 	background: rgba(255, 255, 255, 0.45);
 	padding: var(--space-2);
 	border-radius: var(--radius-md);
-	border: 1px solid rgba(66, 97, 237, 0.08);
-}
-
-.manager-avatar {
-	width: 36px;
-	height: 36px;
-	border-radius: var(--radius-md);
-	background: linear-gradient(
-		135deg,
-		rgba(0, 192, 250, 0.12) 0%,
-		rgba(66, 97, 237, 0.1) 100%
-	);
-	color: var(--primary-color);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: var(--fw-bold);
-	font-size: var(--fs-xs);
-	flex-shrink: 0;
+	border: 1px solid var(--border-color);
 }
 
 .manager-info {
@@ -490,18 +472,6 @@ onMounted(async () => {
 	color: var(--text-light);
 	margin-bottom: var(--space-2);
 	display: inline-block;
-}
-
-.pagination {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-2) var(--space-4);
-	background: var(--bg-card);
-	border: var(--glass-border);
-	border-radius: var(--radius-md);
-	box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 640px) {

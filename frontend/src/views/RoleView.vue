@@ -1,5 +1,5 @@
 <script setup>
-import { ShieldCheck, Plus, Pencil, Trash2, ShieldAlert } from "@lucide/vue";
+import { ShieldCheck, Plus, Pencil, Trash2, ShieldAlert, Lock, Shield, UserCog, Eye } from "@lucide/vue";
 import { useRoleStore } from "@/store/role";
 import { storeToRefs } from "pinia";
 import { ref, onMounted, computed } from "vue";
@@ -89,6 +89,21 @@ const isSystemRole = (name) => {
 	const l = name.toLowerCase();
 	return l === "admin" || l === "hr" || l === "employee";
 };
+
+// Map role name to a color theme
+const getRoleTheme = (name) => {
+	const l = name.toLowerCase();
+	if (l === "admin") return "admin";
+	if (l === "hr") return "hr";
+	if (l === "employee") return "employee";
+	return "custom";
+};
+
+// Friendly initial(s) for role avatar
+const getRoleInitial = (name) => {
+	if (!name) return "?";
+	return name.trim().substring(0, 2).toUpperCase();
+};
 </script>
 
 <template>
@@ -109,32 +124,56 @@ const isSystemRole = (name) => {
 			</button>
 		</header>
 
+		<!-- Stats summary strip -->
+		<div v-if="!loading && roles.length > 0" class="role-stats-strip">
+			<div class="role-stat-item">
+				<span class="role-stat-value">{{ roles.length }}</span>
+				<span class="role-stat-label">Vai trò</span>
+			</div>
+			<div class="role-stat-divider"></div>
+			<div class="role-stat-item">
+				<span class="role-stat-value">{{
+					roles.filter((r) => isSystemRole(r.name)).length
+				}}</span>
+				<span class="role-stat-label">Hệ thống</span>
+			</div>
+			<div class="role-stat-divider"></div>
+			<div class="role-stat-item">
+				<span class="role-stat-value">{{
+					roles.filter((r) => !isSystemRole(r.name)).length
+				}}</span>
+				<span class="role-stat-label">Tùy chỉnh</span>
+			</div>
+		</div>
+
 		<!-- Bento Grid của Vai trò -->
 		<main class="bento-container">
 			<!-- Loading Skeleton Grid -->
 			<div v-if="loading" class="bento-grid">
 				<div
-					v-for="i in 4"
+					v-for="i in 3"
 					:key="'skeleton-role-' + i"
 					class="bento-card"
 				>
-					<div class="bento-header">
-						<Skeleton type="text" width="50%" height="22px" />
-						<Skeleton type="badge" width="40px" height="24px" />
+					<div class="bento-accent-bar"></div>
+					<div class="role-card-top">
+						<Skeleton type="circle" width="52px" height="52px" />
+						<div class="role-card-title-group">
+							<Skeleton type="text" width="60%" height="20px" style="margin-bottom: 8px" />
+							<Skeleton type="badge" width="60px" height="22px" />
+						</div>
 					</div>
 					<div class="bento-body">
-						<Skeleton
-							type="text"
-							width="100%"
-							height="14px"
-							style="margin-bottom: 8px"
-						/>
+						<Skeleton type="text" width="100%" height="14px" style="margin-bottom: 8px" />
 						<Skeleton type="text" width="80%" height="14px" />
 					</div>
-					<div class="role-bento-permissions">
-						<Skeleton type="badge" width="80px" height="20px" />
-						<Skeleton type="badge" width="60px" height="20px" />
-						<Skeleton type="badge" width="70px" height="20px" />
+					<div class="role-perm-section">
+						<Skeleton type="text" width="40%" height="12px" style="margin-bottom: 10px" />
+						<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+							<Skeleton type="badge" width="72px" height="22px" />
+							<Skeleton type="badge" width="56px" height="22px" />
+							<Skeleton type="badge" width="64px" height="22px" />
+						</div>
 					</div>
 					<div class="bento-actions">
 						<Skeleton type="btn" />
@@ -148,28 +187,58 @@ const isSystemRole = (name) => {
 				<div
 					v-for="role in roles"
 					:key="role.id"
-					class="bento-card"
+					class="bento-card role-card"
+					:class="`role-card--${getRoleTheme(role.name)}`"
 					@click="handleViewDetail(role)"
 					style="cursor: pointer"
 				>
 					<!-- Accent bar -->
 					<div
 						class="bento-accent-bar"
-						:class="{
-							'bento-accent-bar--system': isSystemRole(role.name),
-						}"
+						:class="`bento-accent-bar--${getRoleTheme(role.name)}`"
 					></div>
 
-					<div class="bento-header">
-						<h3 class="bento-name">{{ role.name }}</h3>
-						<span
-							v-if="isSystemRole(role.name)"
-							class="role-badge role-badge--system"
+					<!-- Card top: avatar + title -->
+					<div class="role-card-top">
+						<div
+							class="role-avatar"
+							:class="`role-avatar--${getRoleTheme(role.name)}`"
 						>
-							Hệ thống
-						</span>
+							<Shield
+								v-if="role.name.toLowerCase() === 'admin'"
+								class="role-avatar-icon"
+							/>
+							<UserCog
+								v-else-if="role.name.toLowerCase() === 'hr'"
+								class="role-avatar-icon"
+							/>
+							<ShieldCheck
+								v-else-if="
+									role.name.toLowerCase() === 'employee'
+								"
+								class="role-avatar-icon"
+							/>
+							<span v-else class="role-avatar-initials">{{
+								getRoleInitial(role.name)
+							}}</span>
+						</div>
+
+						<div class="role-card-title-group">
+							<h3 class="bento-name">{{ role.name }}</h3>
+							<span
+								v-if="isSystemRole(role.name)"
+								class="role-badge role-badge--system"
+							>
+								<Lock class="role-badge-icon" />
+								Hệ thống
+							</span>
+							<span v-else class="role-badge role-badge--custom">
+								Tùy chỉnh
+							</span>
+						</div>
 					</div>
 
+					<!-- Description -->
 					<div class="bento-body">
 						<p class="bento-desc">
 							{{
@@ -179,43 +248,59 @@ const isSystemRole = (name) => {
 						</p>
 					</div>
 
-					<div class="role-bento-permissions">
-						<span class="permission-label">Quyền hạn:</span>
+					<!-- Permissions Section -->
+					<div class="role-perm-section">
+						<div class="role-perm-header">
+							<span class="perm-label-text">Quyền hạn</span>
+							<span
+								class="perm-count-badge"
+								v-if="role.name.toLowerCase() !== 'admin'"
+							>
+								{{
+									role.permissions?.length || 0
+								}}
+								quyền
+							</span>
+							<span v-else class="perm-count-badge perm-count-badge--full">
+								Toàn quyền
+							</span>
+						</div>
+
 						<div class="permission-tags">
+							<!-- Admin special case -->
 							<span
 								v-if="role.name.toLowerCase() === 'admin'"
 								class="perm-tag perm-tag--admin"
 							>
-								Toàn quyền
+								✦ Tất cả quyền hạn
 							</span>
+
+							<!-- Normal permissions -->
 							<template v-else>
 								<span
-									v-for="perm in (
-										role.permissions || []
-									).slice(0, 5)"
+									v-for="perm in (role.permissions || []).slice(0, 4)"
 									:key="perm"
 									class="perm-tag"
 								>
 									{{ perm }}
 								</span>
 								<span
-									v-if="(role.permissions?.length || 0) > 5"
+									v-if="(role.permissions?.length || 0) > 4"
 									class="perm-tag perm-tag--more"
 									:title="
 										(role.permissions || [])
-											.slice(5)
+											.slice(4)
 											.join(', ')
 									"
 								>
-									+{{ role.permissions.length - 5 }}
+									+{{ role.permissions.length - 4 }} khác
 								</span>
 								<span
 									v-if="
 										!role.permissions ||
 										role.permissions.length === 0
 									"
-									class="text-muted"
-									style="font-style: italic; font-size: 12px"
+									class="perm-tag perm-tag--empty"
 								>
 									Chưa được cấp quyền
 								</span>
@@ -223,7 +308,15 @@ const isSystemRole = (name) => {
 						</div>
 					</div>
 
+					<!-- Actions -->
 					<div class="bento-actions">
+						<button
+							class="btn-icon btn-icon--view"
+							title="Xem chi tiết"
+							@click.stop="handleViewDetail(role)"
+						>
+							<Eye />
+						</button>
 						<button
 							class="btn-icon btn-icon--edit"
 							title="Chỉnh sửa"
@@ -245,10 +338,22 @@ const isSystemRole = (name) => {
 				<!-- Empty State -->
 				<div v-if="roles.length === 0" class="empty-state-container">
 					<div class="empty-state">
-						<ShieldAlert class="empty-state__icon-svg" />
+						<div class="empty-state-icon-wrap">
+							<ShieldAlert class="empty-state__icon-svg" />
+						</div>
+						<h3 class="empty-state__title">Chưa có vai trò nào</h3>
 						<p class="empty-state__text">
-							Không tìm thấy vai trò nào.
+							Tạo vai trò đầu tiên để bắt đầu phân quyền cho
+							người dùng.
 						</p>
+						<button
+							class="btn btn-primary"
+							@click="openCreateModal"
+							style="margin-top: 1.5rem"
+						>
+							<Plus class="btn__icon" />
+							Thêm vai trò mới
+						</button>
 					</div>
 				</div>
 			</div>
@@ -281,59 +386,235 @@ const isSystemRole = (name) => {
 </template>
 
 <style scoped>
-.title-icon {
-	width: 28px;
+/* ── View wrapper ─────────────────────────────────────────── */
+.role-view {
+	padding-bottom: var(--space-4);
+}
+
+/* ── Stats strip ─────────────────────────────────────────── */
+.role-stats-strip {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-top: var(--space-3);
+	background: var(--bg-card);
+	border: var(--glass-border);
+	border-radius: var(--radius-lg);
+	padding: var(--space-2) var(--space-3);
+	box-shadow: var(--glass-shadow);
+	width: fit-content;
+}
+
+.role-stat-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.role-stat-value {
+	font-size: var(--fs-xl);
+	font-weight: var(--fw-bold);
+	color: var(--primary-color);
+	line-height: 1;
+}
+
+.role-stat-label {
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
+	font-weight: var(--fw-medium);
+}
+
+.role-stat-divider {
+	width: 1px;
 	height: 28px;
+	background: var(--border-color);
+}
+
+/* ── Bento accent bar variants ───────────────────────────── */
+.bento-accent-bar--admin {
+	background: linear-gradient(90deg, var(--danger-color), #f43f5e, #fb923c);
+}
+.bento-accent-bar--hr {
+	background: linear-gradient(90deg, var(--purple-color), #a78bfa);
+}
+.bento-accent-bar--employee {
+	background: linear-gradient(90deg, var(--primary-color), #38bdf8);
+}
+.bento-accent-bar--custom {
+	background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+}
+
+/* ── Role Card ───────────────────────────────────────────── */
+/* Subtle hover glow per theme */
+.role-card--admin:hover {
+	border-color: rgba(225, 29, 72, 0.18) !important;
+	box-shadow:
+		0 20px 40px rgba(225, 29, 72, 0.08),
+		0 4px 12px rgba(225, 29, 72, 0.04) !important;
+}
+.role-card--hr:hover {
+	border-color: rgba(124, 58, 237, 0.18) !important;
+	box-shadow:
+		0 20px 40px rgba(124, 58, 237, 0.08),
+		0 4px 12px rgba(124, 58, 237, 0.04) !important;
+}
+.role-card--employee:hover {
+	border-color: rgba(66, 97, 237, 0.18) !important;
+	box-shadow:
+		0 20px 40px rgba(66, 97, 237, 0.08),
+		0 4px 12px rgba(66, 97, 237, 0.04) !important;
+}
+
+/* ── Role card top: avatar + title ───────────────────────── */
+.role-card-top {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
+}
+
+.role-avatar {
+	width: 52px;
+	height: 52px;
+	border-radius: var(--radius-md);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	position: relative;
+}
+
+.role-avatar--admin {
+	background: var(--danger-light);
+	color: var(--danger-color);
+}
+.role-avatar--hr {
+	background: var(--purple-light);
+	color: var(--purple-color);
+}
+.role-avatar--employee {
+	background: var(--primary-light);
+	color: var(--primary-color);
+}
+.role-avatar--custom {
+	background: var(--primary-light);
 	color: var(--primary-color);
 }
 
-.bento-accent-bar--system {
-	background: linear-gradient(90deg, var(--danger-color), #ff8a8a);
+.role-avatar-icon {
+	width: 24px;
+	height: 24px;
 }
 
+.role-avatar-initials {
+	font-size: 15px;
+	font-weight: var(--fw-bold);
+	letter-spacing: 0.03em;
+}
+
+.role-card-title-group {
+	flex: 1;
+	min-width: 0;
+}
+
+.bento-name {
+	font-family: var(--font-title);
+	font-size: var(--fs-lg);
+	font-weight: var(--fw-bold);
+	color: var(--text-main);
+	margin: 0 0 6px 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── Role badges ─────────────────────────────────────────── */
 .role-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	font-size: 11px;
-	padding: 2px 8px;
-	border-radius: var(--radius-sm);
-	font-weight: var(--fw-medium);
+	padding: 3px 8px;
+	border-radius: var(--radius-full);
+	font-weight: var(--fw-semibold);
+	line-height: 1;
+}
+
+.role-badge-icon {
+	width: 10px;
+	height: 10px;
 }
 
 .role-badge--system {
 	background: rgba(225, 29, 72, 0.08);
 	color: var(--danger-color);
+	border: 1px solid rgba(225, 29, 72, 0.15);
 }
 
-.role-bento-permissions {
-	margin-bottom: var(--space-4);
+.role-badge--custom {
+	background: rgba(66, 97, 237, 0.08);
+	color: var(--primary-color);
+	border: 1px solid rgba(66, 97, 237, 0.15);
+}
+
+/* ── Permissions section ─────────────────────────────────── */
+.role-perm-section {
+	margin-bottom: var(--space-3);
 	background: var(--bg-lighter);
-	padding: var(--space-3);
+	padding: 10px 12px;
 	border-radius: var(--radius-md);
 	border: 1px dashed var(--border-color);
 }
 
-.permission-label {
-	display: block;
-	font-size: 12px;
-	font-weight: var(--fw-medium);
-	color: var(--text-light);
+.role-perm-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	margin-bottom: 8px;
+}
+
+.perm-label-text {
+	font-size: 11px;
+	font-weight: var(--fw-semibold);
+	color: var(--text-light);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.perm-count-badge {
+	font-size: 11px;
+	font-weight: var(--fw-semibold);
+	color: var(--primary-color);
+	background: rgba(66, 97, 237, 0.08);
+	padding: 2px 7px;
+	border-radius: var(--radius-full);
+}
+
+.perm-count-badge--full {
+	color: #e11d48;
+	background: rgba(225, 29, 72, 0.08);
 }
 
 .permission-tags {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: 5px;
 }
 
 .perm-tag {
-	padding: 3px 8px;
+	padding: 3px 9px;
 	background: #ffffff;
 	border: 1px solid var(--border-color);
-	border-radius: var(--radius-sm);
+	border-radius: var(--radius-full);
 	font-size: 11px;
 	font-weight: var(--fw-medium);
 	color: var(--text-main);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	white-space: nowrap;
+	max-width: 120px;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .perm-tag--admin {
@@ -341,44 +622,73 @@ const isSystemRole = (name) => {
 	border-color: rgba(225, 29, 72, 0.2);
 	color: var(--danger-color);
 	font-weight: var(--fw-semibold);
+	max-width: none;
 }
 
 .perm-tag--more {
-	background: var(--bg-light);
-	color: var(--text-muted);
+	background: rgba(66, 97, 237, 0.06);
+	border-color: rgba(66, 97, 237, 0.15);
+	color: var(--primary-color);
 	cursor: help;
+	font-weight: var(--fw-semibold);
 }
 
+.perm-tag--empty {
+	font-style: italic;
+	color: var(--text-light);
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+	font-size: 11px;
+}
+
+/* ── Action buttons ──────────────────────────────────────── */
+.btn-icon--view:hover {
+	border-color: var(--primary-color);
+	background: rgba(66, 97, 237, 0.06);
+}
+.btn-icon--view:hover svg {
+	color: var(--primary-color);
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
 .empty-state-container {
 	grid-column: 1 / -1;
 	display: flex;
 	justify-content: center;
-	padding: var(--space-6) 0;
+	padding: var(--space-8) 0;
 }
 
-.empty-state {
+.empty-state-icon-wrap {
+	width: 80px;
+	height: 80px;
+	border-radius: var(--radius-xl);
+	background: rgba(66, 97, 237, 0.06);
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	text-align: center;
+	justify-content: center;
+	margin-bottom: var(--space-3);
+	border: 1px dashed var(--border-hover);
 }
 
 .empty-state__icon-svg {
-	width: 64px;
-	height: 64px;
-	color: var(--border-hover);
-	margin-bottom: var(--space-3);
+	width: 36px;
+	height: 36px;
+	color: var(--text-light);
 }
 
-.empty-state__text {
-	font-size: var(--fs-base);
-	color: var(--text-muted);
-	margin: 0;
+.empty-state__title {
+	font-size: var(--fs-lg);
+	font-weight: var(--fw-bold);
+	color: var(--text-main);
+	margin: 0 0 8px 0;
 }
 
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-	.role-bento-grid {
-		grid-template-columns: 1fr;
+	.role-stats-strip {
+		width: 100%;
+		justify-content: space-around;
 	}
 }
 </style>

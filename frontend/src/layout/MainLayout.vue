@@ -18,11 +18,11 @@ const closeSidebar = () => {
 	<div class="layout" :class="{ 'sidebar-open': isSidebarOpen }">
 		<!-- Sidebar on the left (full height) -->
 		<Sidebar :is-open="isSidebarOpen" @close="closeSidebar"></Sidebar>
-		
+
 		<div class="main-wrapper">
 			<!-- Header above the main content -->
 			<Header @toggle="toggleSidebar"></Header>
-			
+
 			<main class="content">
 				<router-view />
 			</main>
@@ -40,7 +40,7 @@ const closeSidebar = () => {
 <style scoped>
 .layout {
 	display: flex;
-	flex-direction: row; /* Sidebar left, Content area right */
+	flex-direction: row;
 	height: 100vh;
 	width: 100vw;
 	overflow: hidden;
@@ -53,6 +53,7 @@ const closeSidebar = () => {
 	flex-direction: column;
 	flex: 1;
 	overflow-y: auto;
+	scrollbar-gutter: stable;
 	height: 100%;
 	background: var(--bg-main);
 	-webkit-overflow-scrolling: touch;

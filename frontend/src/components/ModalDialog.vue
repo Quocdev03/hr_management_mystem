@@ -2,7 +2,7 @@
 	<Teleport to="body">
 		<Transition name="modal-fade">
 			<div v-if="visible" class="modal-overlay" @click.self="$emit('close')">
-				<div class="modal-container" :class="[size]" :style="customStyle">
+				<div class="modal-container animate__animated animate__zoomIn animate__fast" :class="[size]" :style="customStyle">
 					<!-- Header -->
 					<div class="modal-header">
 						<div class="header-content">
@@ -80,7 +80,6 @@ const customStyle = computed(() => {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	animation: slideUp 0.3s ease-out;
 	transform: translateZ(0);
 	will-change: transform;
 }
@@ -159,17 +158,6 @@ const customStyle = computed(() => {
 .modal-fade-enter-from,
 .modal-fade-leave-to {
 	opacity: 0;
-}
-
-@keyframes slideUp {
-	from {
-		transform: translateY(20px);
-		opacity: 0;
-	}
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
 }
 
 @media (max-width: 640px) {

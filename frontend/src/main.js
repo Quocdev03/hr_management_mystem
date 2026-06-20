@@ -1,6 +1,7 @@
 import "./assets/css/reset.css";
 import "./assets/css/main.css";
 import "vue-toastification/dist/index.css";
+import "animate.css/animate.min.css";
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";

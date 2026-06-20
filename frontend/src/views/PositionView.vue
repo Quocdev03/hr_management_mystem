@@ -1,5 +1,12 @@
 <script setup>
-import { Briefcase, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from '@lucide/vue';
+import {
+	Briefcase,
+	ChevronLeft,
+	ChevronRight,
+	Pencil,
+	Plus,
+	Trash2,
+} from "@lucide/vue";
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 import { usePositionStore } from "@/store/position";
@@ -16,7 +23,6 @@ import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
 import { usePermissions } from "@/helpers/usePermissions";
 
-
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
 const positionStore = usePositionStore();
 const toast = useToast();
@@ -29,8 +35,6 @@ const { positions, loading } = storeToRefs(positionStore);
 // ─── Modal thêm/sửa ──────────────────────────────────────────────────────────
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
-
-
 
 // ─── Trạng thái local ────────────────────────────────────────────────────────
 const editingPosition = ref(null);
@@ -120,7 +124,11 @@ async function handleFormSubmit(submittedData) {
 			return;
 		}
 
-		toast.success(isEditMode.value ? "Cập nhật chức vụ thành công" : "Tạo chức vụ mới thành công");
+		toast.success(
+			isEditMode.value
+				? "Cập nhật chức vụ thành công"
+				: "Tạo chức vụ mới thành công",
+		);
 		closeModal();
 		await loadPositions();
 	} catch (err) {
@@ -159,14 +167,19 @@ onMounted(async () => {
 		<main class="bento-container">
 			<!-- Loading Skeletons -->
 			<div v-if="loading" class="bento-grid">
-				<div v-for="i in 4" :key="'skeleton-' + i" class="bento-card">
+				<div v-for="i in 3" :key="'skeleton-' + i" class="bento-card">
 					<div class="bento-accent-bar"></div>
 					<div class="bento-header">
 						<Skeleton type="circle" width="36px" height="36px" />
 						<Skeleton type="text" width="60%" height="22px" />
 					</div>
 					<div class="bento-body">
-						<Skeleton type="text" width="100%" height="16px" style="margin-bottom: 8px" />
+						<Skeleton
+							type="text"
+							width="100%"
+							height="16px"
+							style="margin-bottom: 8px"
+						/>
 						<Skeleton type="text" width="80%" height="16px" />
 					</div>
 					<div class="bento-actions" v-if="canCrudPosition">
@@ -180,20 +193,23 @@ onMounted(async () => {
 			<div v-else class="bento-grid">
 				<div v-for="pos in positions" :key="pos.id" class="bento-card">
 					<div class="bento-accent-bar"></div>
-					
+
 					<div class="bento-header">
-						<div class="pos-icon-container">
+						<div class="avatar-gradient" style="width: 36px; height: 36px;">
 							<Briefcase class="pos-icon" />
 						</div>
 						<h3 class="bento-name">{{ pos.name }}</h3>
 					</div>
-					
+
 					<div class="bento-body">
 						<p class="bento-desc">
-							{{ pos.description || 'Không có mô tả chi tiết cho chức vụ này.' }}
+							{{
+								pos.description ||
+								"Không có mô tả chi tiết cho chức vụ này."
+							}}
 						</p>
 					</div>
-					
+
 					<div v-if="canCrudPosition" class="bento-actions">
 						<button
 							class="btn-icon btn-icon--edit"
@@ -213,13 +229,21 @@ onMounted(async () => {
 				</div>
 
 				<!-- Trạng thái trống -->
-				<div v-if="positions.length === 0" class="empty-state-container">
+				<div
+					v-if="positions.length === 0"
+					class="empty-state-container"
+				>
 					<div class="empty-state">
 						<Briefcase class="empty-state__icon-svg" />
 						<p class="empty-state__text">
 							Chưa có chức vụ nào trong hệ thống.
 						</p>
-						<button v-if="canCrudPosition" class="btn btn-primary" @click="handleAdd" style="margin-top: 1rem;">
+						<button
+							v-if="canCrudPosition"
+							class="btn btn-primary"
+							@click="handleAdd"
+							style="margin-top: 1rem"
+						>
 							<Plus class="btn__icon" /> Thêm chức vụ
 						</button>
 					</div>
@@ -254,22 +278,6 @@ onMounted(async () => {
 	padding-bottom: var(--space-4);
 }
 
-.pos-icon-container {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 36px;
-	height: 36px;
-	border-radius: var(--radius-md);
-	background: linear-gradient(
-		135deg,
-		rgba(0, 192, 250, 0.12) 0%,
-		rgba(66, 97, 237, 0.1) 100%
-	);
-	color: var(--primary-color);
-	flex-shrink: 0;
-}
-
 .pos-icon {
 	width: 18px;
 	height: 18px;
@@ -282,22 +290,10 @@ onMounted(async () => {
 	padding: var(--space-6) 0;
 }
 
-.empty-state {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-}
-
 .empty-state__icon-svg {
 	width: 64px;
 	height: 64px;
 	color: var(--border-hover);
 	margin-bottom: var(--space-3);
-}
-
-.empty-state__text {
-	color: var(--text-muted);
-	font-size: var(--fs-md);
 }
 </style>

@@ -72,22 +72,19 @@
 					{{ userName ? userName.charAt(0).toUpperCase() : "U" }}
 				</div>
 				<div class="profile-info">
-					<span class="profile-name" :title="userName">{{
-						userName
-					}}</span>
-					<span class="profile-email" :title="userEmail">{{
-						userEmail
-					}}</span>
+					<span class="profile-name" :title="userName">{{ userName }}</span>
+					<span v-if="userRole" class="profile-role">{{ userRole }}</span>
+					<span v-else class="profile-email" :title="userEmail">{{ userEmail }}</span>
 				</div>
-				<button
-					class="logout-btn"
-					@click="handleLogout"
-					title="Đăng xuất"
-					aria-label="Đăng xuất"
-				>
-					<LogOut class="logout-icon-svg" />
-				</button>
 			</div>
+			<button
+				class="logout-btn"
+				@click="handleLogout"
+				aria-label="Đăng xuất"
+			>
+				<LogOut class="logout-icon-svg" />
+				<span>Đăng xuất</span>
+			</button>
 		</div>
 	</aside>
 </template>
@@ -270,29 +267,35 @@ const handleLogout = () => {
 	box-shadow: 2px 0 8px rgba(66, 97, 237, 0.3);
 }
 
-/* Profile section pushed to the bottom of the sidebar */
+/* ── Sidebar Footer ────────────────────────────────── */
 .sidebar-footer {
 	margin-top: auto;
 	border-top: 1px solid var(--border-color);
-	background: transparent;
+	background: var(--bg-lighter);
 	flex-shrink: 0;
+	padding: var(--space-2) var(--space-3);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
 }
 
 .sidebar-profile {
 	display: flex;
 	align-items: center;
-	padding: var(--space-3) var(--space-3);
-	gap: 12px;
+	gap: 10px;
+	padding: 6px 8px;
+	border-radius: var(--radius-md);
 	transition: background-color 0.2s ease;
+	cursor: default;
 }
 
 .sidebar-profile:hover {
-	background: var(--bg-lighter);
+	background: rgba(66, 97, 237, 0.05);
 }
 
 .profile-avatar-circle {
-	width: 36px;
-	height: 36px;
+	width: 40px;
+	height: 40px;
 	border-radius: var(--radius-md);
 	background: var(--primary-gradient);
 	color: white;
@@ -301,13 +304,17 @@ const handleLogout = () => {
 	justify-content: center;
 	font-weight: var(--fw-bold);
 	font-size: var(--fs-base);
-	box-shadow: 0 2px 6px rgba(66, 97, 237, 0.15);
+	box-shadow:
+		0 0 0 2px var(--bg-lighter),
+		0 0 0 3px rgba(66, 97, 237, 0.25);
 	flex-shrink: 0;
-	transition: transform 0.2s ease;
+	transition: box-shadow 0.2s ease;
 }
 
 .sidebar-profile:hover .profile-avatar-circle {
-	transform: scale(1.05);
+	box-shadow:
+		0 0 0 2px var(--bg-lighter),
+		0 0 0 3px rgba(66, 97, 237, 0.5);
 }
 
 .profile-info {
@@ -315,17 +322,31 @@ const handleLogout = () => {
 	flex-direction: column;
 	overflow: hidden;
 	flex: 1;
+	gap: 2px;
 }
 
 .profile-name {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
 	color: var(--text-main);
-	line-height: var(--lh-tight);
+	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	margin-bottom: 2px;
+}
+
+.profile-role {
+	font-size: 11px;
+	font-weight: var(--fw-medium);
+	color: var(--primary-color);
+	background: rgba(66, 97, 237, 0.08);
+	padding: 1px 6px;
+	border-radius: var(--radius-full);
+	width: fit-content;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
 }
 
 .profile-email {
@@ -340,25 +361,35 @@ const handleLogout = () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 35px;
-	height: 35px;
-	border: 1px solid #e2c5c5;
-	border-radius: var(--radius-sm);
+	gap: 8px;
+	width: 100%;
+	height: 38px;
+	border: 1px solid rgba(225, 29, 72, 0.2);
+	border-radius: var(--radius-md);
 	cursor: pointer;
-	color: var(--text-light);
-	transition: all 0.2s ease;
-		background: rgba(225, 29, 72, 0.08);
+	background: rgba(225, 29, 72, 0.05);
 	color: var(--danger-color);
+	font-size: var(--fs-sm);
+	font-weight: var(--fw-medium);
+	transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-	transform: scale(1.05);
+	background: rgba(225, 29, 72, 0.1);
+	border-color: rgba(225, 29, 72, 0.35);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 10px rgba(225, 29, 72, 0.12);
+}
+
+.logout-btn:active {
+	transform: translateY(0);
 }
 
 .logout-icon-svg {
-	width: 16px;
-	height: 16px;
+	width: 15px;
+	height: 15px;
 	color: currentColor;
+	flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {

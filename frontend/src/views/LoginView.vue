@@ -106,7 +106,7 @@ function togglePasswordVisibility() {
 					:disabled="loading"
 				>
 					<span v-if="!loading">Đăng Nhập</span>
-					<span v-else class="loader"></span>
+					<span v-else class="btn-spinner"></span>
 				</button>
 			</form>
 		</section>
@@ -194,18 +194,6 @@ function togglePasswordVisibility() {
 	padding: var(--space-5);
 	box-shadow: 0 20px 50px rgba(66, 97, 237, 0.15);
 	z-index: 2;
-	animation: fadeInCard 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes fadeInCard {
-	from {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
 }
 
 .logo-section {
@@ -349,21 +337,6 @@ function togglePasswordVisibility() {
 .forgot-password:hover {
 	color: var(--primary-hover);
 	text-decoration: underline;
-}
-
-.loader {
-	width: 20px;
-	height: 20px;
-	border: 2px solid rgba(255, 255, 255, 0.4);
-	border-radius: var(--radius-full);
-	border-top-color: white;
-	animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
 }
 
 @media (max-width: 480px) {

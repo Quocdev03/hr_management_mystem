@@ -15,15 +15,18 @@ defineEmits(["toggle"]);
 
 <style scoped>
 .header {
-	display: none; /* Hidden on desktop */
+	display: none;
 	align-items: center;
 	gap: var(--space-3);
 	height: var(--header-height-sm, 56px);
-	padding: 0 var(--space-3);
-	background: var(--bg-card);
-	border-bottom: 1px solid var(--border-color);
-	z-index: 10;
-	flex-shrink: 0;
+	padding:var(--space-4) var(--space-3);
+	background: rgba(255, 255, 255, 0.65);
+	backdrop-filter: saturate(180%) blur(16px);
+	-webkit-backdrop-filter: saturate(180%) blur(16px);
+	border-bottom: var(--glass-border);
+	z-index: 50;
+	position: sticky;
+	top: 0;
 }
 
 .menu-btn {

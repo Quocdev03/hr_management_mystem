@@ -148,14 +148,7 @@ const customStyle = computed(() => {
 	font-size: var(--fs-base); /* 16px-17px */
 }
 
-.modal-footer {
-	padding: var(--space-3) var(--space-4);
-	border-top: 1px solid var(--border-color);
-	background: #f8faf9;
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--space-2);
-}
+
 
 /* Animations */
 .modal-fade-enter-active,

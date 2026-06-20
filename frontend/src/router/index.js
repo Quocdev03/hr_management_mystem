@@ -8,6 +8,7 @@ const DepartmentView = () => import("@/views/DepartmentView.vue");
 const ProfileView = () => import("@/views/ProfileView.vue");
 const UserView = () => import("@/views/UserView.vue");
 const PositionView = () => import("@/views/PositionView.vue");
+const RoleView = () => import("@/views/RoleView.vue");
 
 const router = createRouter({
 	history: createWebHistory(),
@@ -48,6 +49,12 @@ const router = createRouter({
 					name: "users",
 					component: UserView,
 					meta: { roles: ["admin"], permissions: ["user.read"] },
+				},
+				{
+					path: "roles",
+					name: "roles",
+					component: RoleView,
+					meta: { roles: ["admin"], permissions: ["user.read", "user.update"] },
 				},
 				{ path: "me", name: "me", component: ProfileView },
 			],

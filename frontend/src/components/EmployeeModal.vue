@@ -102,7 +102,7 @@ function handleClose() {
 		size="lg"
 		@close="handleClose"
 	>
-		<form @submit.prevent="handleSubmit" class="employee-form">
+		<form @submit.prevent="handleSubmit" class="form-wrapper">
 			<div class="form-grid">
 				<!-- Họ & Tên -->
 				<div class="form-group">
@@ -263,33 +263,29 @@ function handleClose() {
 				</select>
 			</div>
 
-			<div class="form-actions">
-				<button
-					type="button"
-					class="btn btn--secondary"
-					@click="handleClose"
-				>
-					Hủy bỏ
-				</button>
-				<button
-					type="submit"
-					class="btn btn--primary"
-					:disabled="loading"
-				>
-					<span v-if="loading" class="spinner"></span>
-					{{ isEditMode ? "Lưu thay đổi" : "Thêm nhân viên" }}
-				</button>
-			</div>
 		</form>
+		<template #footer>
+			<button
+				type="button"
+				class="btn btn-secondary"
+				@click="handleClose"
+			>
+				Hủy bỏ
+			</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				:disabled="loading"
+				@click="handleSubmit"
+			>
+				<span v-if="loading" class="btn-spinner"></span>
+				{{ isEditMode ? "Lưu thay đổi" : "Thêm nhân viên" }}
+			</button>
+		</template>
 	</ModalDialog>
 </template>
 
 <style scoped>
-.employee-form {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-4);
-}
 
 .form-group--disabled {
 	opacity: 0.7;

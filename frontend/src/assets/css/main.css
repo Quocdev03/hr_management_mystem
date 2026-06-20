@@ -1,10 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+@import "./forms.css";
+@import "./buttons.css";
+@import "./modals.css";
+@import "./bento.css";
+
 :root {
 	/* Base units */
 	--space-unit: 8px;
-
-	/* Breakpoints */
 
 	/* Font weights */
 	--fw-medium: 500;
@@ -59,24 +62,16 @@
 	--header-height: 64px;
 
 	/* Colors */
-	--primary-color: #4261ed; /* Electric Blue */
-	--primary-hover: #2e4dd1; /* Deep Royal Blue */
+	--primary-color: #4261ed;
+	--primary-hover: #2e4dd1;
 	--primary-glow: rgba(66, 97, 237, 0.12);
 	--success-color: #10b981;
-	--danger-color: #e11d48; /* Rose 600 */
-	--danger-hover: #be123c; /* Rose 700 */
+	--danger-color: #e11d48;
+	--danger-hover: #be123c;
 	--color-amber: #f59e0b;
 	--color-purple: #6717cc;
-	--primary-gradient: linear-gradient(
-		135deg,
-		#00c0fa 0%,
-		#4261ed 100%
-	);
-	--primary-gradient-hover: linear-gradient(
-		135deg,
-		#00ace0 0%,
-		#2e4dd1 100%
-	);
+	--primary-gradient: linear-gradient(135deg, #00c0fa 0%, #4261ed 100%);
+	--primary-gradient-hover: linear-gradient(135deg, #00ace0 0%, #2e4dd1 100%);
 
 	/* Text Colors */
 	--text-main: #1e293b; /* Slate 800 */
@@ -190,123 +185,6 @@ a:hover {
 }
 .fw-500 {
 	font-weight: var(--fw-medium);
-}
-
-/* ===== Nút bấm (Buttons) ===== */
-.btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	padding: 0.65rem 1.25rem;
-	border: 1px solid transparent;
-	border-radius: var(--radius-md);
-	font-weight: var(--fw-semibold);
-	cursor: pointer;
-	transition:
-		background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	font-size: var(--fs-base);
-	font-family: var(--font-body);
-}
-
-.btn:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-.btn--primary {
-	background: var(--primary-gradient);
-	color: white;
-	border: none;
-	box-shadow: 0 4px 14px rgba(66, 97, 237, 0.25);
-}
-
-.btn--primary:hover:not(:disabled) {
-	background: var(--primary-gradient-hover);
-	transform: translateY(-1px);
-	box-shadow: 0 6px 20px rgba(66, 97, 237, 0.35);
-}
-
-.btn--secondary {
-	background: rgba(255, 255, 255, 0.5);
-	color: var(--text-muted);
-	border: 1px solid var(--border-color);
-}
-
-.btn--secondary:hover:not(:disabled) {
-	background: rgba(255, 255, 255, 0.8);
-	border-color: var(--border-hover);
-	color: var(--text-main);
-}
-
-/* ===== Form Elements ===== */
-.form-group {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.form-label {
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-semibold);
-	color: var(--text-muted);
-}
-
-.form-control {
-	width: 100%;
-	padding: 0.75rem 1rem;
-	border: 1px solid rgba(66, 97, 237, 0.15);
-	border-radius: var(--radius-md);
-	font-size: var(--fs-base);
-	background: #f8fafc;
-	transition:
-		background-color 0.2s,
-		border-color 0.2s,
-		color 0.2s,
-		opacity 0.2s,
-		transform 0.2s,
-		box-shadow 0.2s;
-	outline: none;
-	color: var(--text-main);
-	font-family: var(--font-body);
-}
-
-.form-control:focus {
-	background: #ffffff;
-	border-color: var(--primary-color);
-	box-shadow: 0 0 0 4px var(--primary-glow);
-}
-
-.form-control::placeholder {
-	color: var(--text-light);
-}
-
-/* ===== Layout: Modals ===== */
-.modal {
-	position: fixed;
-	inset: 0;
-	background: rgba(15, 23, 42, 0.4);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 1000;
-	padding: 1.5rem;
-}
-
-@keyframes slideUp {
-	from {
-		transform: translateY(20px);
-		opacity: 0;
-	}
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
 }
 
 /* ===== Skeleton Loader Animation ===== */
@@ -597,25 +475,6 @@ a:hover {
 	height: 18px;
 }
 
-.form-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: var(--space-3);
-}
-
-.form-group--full {
-	grid-column: 1 / -1;
-}
-
-.form-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--space-2);
-	margin-top: var(--space-2);
-	padding-top: var(--space-3);
-	border-top: var(--glass-border);
-}
-
 /* Status Badges */
 .status-badge {
 	padding: 0.35rem 1rem;
@@ -713,88 +572,6 @@ a:hover {
 		border-top: 1px solid var(--border-color);
 		padding-top: var(--space-2);
 	}
-}
-
-/* Slide Drawer Styles */
-.drawer-backdrop {
-	position: fixed;
-	inset: 0;
-	background: rgba(15, 23, 42, 0.6);
-	z-index: 1000;
-	opacity: 0;
-	visibility: hidden;
-	transition:
-		background-color 0.3s ease,
-		border-color 0.3s ease,
-		color 0.3s ease,
-		opacity 0.3s ease,
-		transform 0.3s ease,
-		box-shadow 0.3s ease;
-}
-
-.drawer-backdrop.is-active {
-	opacity: 1;
-	visibility: visible;
-}
-
-.drawer-content {
-	position: fixed;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	width: 100%;
-	max-width: 500px;
-	background: var(--bg-card);
-	border-left: var(--glass-border);
-	box-shadow: -10px 0 30px rgba(66, 97, 237, 0.08);
-	z-index: 1001;
-	transform: translateX(100%);
-	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-}
-
-.drawer-content.is-active {
-	transform: translateX(0);
-}
-
-.drawer-header {
-	padding: var(--space-3) var(--space-4);
-	border-bottom: 1px solid var(--border-color);
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	background: var(--bg-lighter);
-}
-
-.drawer-title {
-	font-size: var(--fs-lg);
-	font-weight: var(--fw-bold);
-	margin: 0;
-}
-
-.drawer-close {
-	background: none;
-	border: none;
-	cursor: pointer;
-	font-size: 1.5rem;
-	color: var(--text-muted);
-	padding: var(--space-1);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: color 0.2s;
-}
-
-.drawer-close:hover {
-	color: var(--text-main);
-}
-
-.drawer-body {
-	flex: 1;
-	padding: var(--space-4);
-	overflow-y: auto;
 }
 
 /* ===== Global Typography & Component Standardization ===== */

@@ -9,15 +9,21 @@
 				<div class="confirm-container">
 					<div class="confirm-body">
 						<div class="warning-icon">
-							<TriangleAlert  />
+							<TriangleAlert />
 						</div>
 						<h3 class="confirm-title">{{ title }}</h3>
 						<p class="confirm-message">{{ message }}</p>
 					</div>
-					
+
 					<div class="confirm-footer">
-						<button class="btn btn-cancel" @click="$emit('cancel')">Hủy bỏ</button>
-						<button class="btn btn-delete" @click="$emit('confirm')" :disabled="loading">
+						<button class="btn btn-cancel" @click="$emit('cancel')">
+							Hủy bỏ
+						</button>
+						<button
+							class="btn btn-delete"
+							@click="$emit('confirm')"
+							:disabled="loading"
+						>
 							<span v-if="loading" class="spinner"></span>
 							<span>{{ confirmText }}</span>
 						</button>
@@ -29,7 +35,7 @@
 </template>
 
 <script setup>
-import { TriangleAlert } from '@lucide/vue';
+import { TriangleAlert } from "@lucide/vue";
 
 const props = defineProps({
 	visible: Boolean,
@@ -85,20 +91,20 @@ const emit = defineEmits(["confirm", "cancel"]);
 .warning-icon {
 	width: 64px;
 	height: 64px;
-	background-color: rgba(225, 29, 72, 0.1);
+	background: rgba(225, 29, 72, 0.08);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 20px;
-	padding: 14px;
-	border: 8px solid rgba(225, 29, 72, 0.05);
+	box-shadow: 0 0 0 6px rgba(225, 29, 72, 0.04);
 }
 
-.warning-icon img {
-	width: 100%;
-	height: 100%;
-	filter: invert(24%) sepia(87%) saturate(2258%) hue-rotate(330deg) brightness(95%) contrast(92%); /* Rose filter */
+.warning-icon :deep(svg) {
+	width: 32px;
+	height: 32px;
+	color: var(--danger-color, #e11d48);
+	stroke-width: 2.2px;
 }
 
 .confirm-title {
@@ -117,33 +123,19 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-footer {
-	padding: 16px 24px;
-	background: #f8faf9;
+	padding: 20px 24px;
+	background: #ffffff;
 	display: flex;
-	justify-content: center;
+	justify-content:space-between;
 	gap: 12px;
 	border-top: 1px solid var(--border-color);
-}
-
-.btn {
-	padding: 10px 16px;
-	border-radius: 8px;
-	font-weight: 600;
-	font-size: var(--fs-sm);
-	cursor: pointer;
-	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border: none;
+	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 .btn-cancel {
-	background: rgba(255, 255, 255, 0.5);
+	background: transparent;
 	border: 1px solid var(--border-color);
-	color: var(--text-muted);
-	flex: 1;
-	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	color: var(--text-main);
 }
 
 .btn-cancel:hover {
@@ -156,7 +148,6 @@ const emit = defineEmits(["confirm", "cancel"]);
 	background: var(--danger-color);
 	border: 1px solid var(--danger-color);
 	color: white;
-	flex: 1;
 	box-shadow: 0 4px 14px rgba(225, 29, 72, 0.2);
 }
 
@@ -182,7 +173,9 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 @keyframes spin {
-	to { transform: rotate(360deg); }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 @keyframes popIn {

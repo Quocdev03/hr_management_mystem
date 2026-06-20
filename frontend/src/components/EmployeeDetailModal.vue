@@ -6,6 +6,7 @@ import {
 	formatDate,
 	formatStatus,
 	formatCurrency,
+	formatGender
 } from "@/helpers/formatters";
 
 const props = defineProps({
@@ -49,13 +50,7 @@ function handleClose() {
 				<div class="detail-list">
 					<div class="detail-item">
 						<span class="detail-label">Giới tính:</span>
-						<span class="detail-val">{{
-							employee.gender === "male"
-								? "Nam"
-								: employee.gender === "female"
-									? "Nữ"
-									: "Khác"
-						}}</span>
+						<span class="detail-val">{{ formatGender(employee.gender) }}</span>
 					</div>
 					<div class="detail-item">
 						<span class="detail-label">Ngày sinh:</span>
@@ -138,21 +133,12 @@ function handleClose() {
 		</div>
 		
 		<template #footer>
-			<button class="btn btn--secondary" @click="handleClose">Đóng</button>
+			<button class="btn btn-secondary" @click="handleClose">Đóng</button>
 		</template>
 	</ModalDialog>
 </template>
 
 <style scoped>
-.detail-header {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	margin-bottom: var(--space-4);
-	padding-bottom: var(--space-3);
-	border-bottom: 1px solid var(--border-color);
-}
-
 .detail-avatar {
 	width: 64px;
 	height: 64px;
@@ -167,29 +153,10 @@ function handleClose() {
 	box-shadow: 0 4px 10px rgba(66, 97, 237, 0.2);
 }
 
-.detail-title-info {
-	display: flex;
-	flex-direction: column;
-}
-
-.detail-name {
-	font-size: var(--fs-lg);
-	font-weight: var(--fw-bold);
-	margin: 0;
-}
-
 .detail-position {
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
-}
-
-.detail-section {
-	margin-bottom: var(--space-4);
-}
-
-
-
-.detail-list {
+}.detail-list {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-2);

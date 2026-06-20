@@ -1,8 +1,12 @@
 package repository
 
 import (
-	"chiquoc_hocgolang/internal/model"
+	"context"
+	"fmt"
+	"time"
 
+	"chiquoc_hocgolang/internal/model"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -15,11 +19,12 @@ type PermissionRepository interface {
 }
 
 type permissionRepository struct {
-	db *gorm.DB
+	db  *gorm.DB
+	rdb *redis.Client
 }
 
-func NewPermissionRepository(db *gorm.DB) PermissionRepository {
-	return &permissionRepository{db: db}
+func NewPermissionRepository(db *gorm.DB, rdb *redis.Client) PermissionRepository {
+	return &permissionRepository{db: db, rdb: rdb}
 }
 
 func (r *permissionRepository) GetPermissionCodes(userID uint) ([]string, error) {
@@ -76,20 +81,26 @@ func (r *permissionRepository) SetUserPermissions(userID uint, permissionCodes [
 			return err
 		}
 
-		if len(permissionCodes) == 0 {
-			return nil
-		}
-
-		var perms []model.Permission
-		if err := tx.Where("code IN ?", permissionCodes).Find(&perms).Error; err != nil {
-			return err
-		}
-
-		for _, perm := range perms {
-			if err := tx.Create(&model.UserPermission{UserID: userID, PermissionID: perm.ID}).Error; err != nil {
+		if len(permissionCodes) > 0 {
+			var perms []model.Permission
+			if err := tx.Where("code IN ?", permissionCodes).Find(&perms).Error; err != nil {
 				return err
 			}
+
+			for _, perm := range perms {
+				if err := tx.Create(&model.UserPermission{UserID: userID, PermissionID: perm.ID}).Error; err != nil {
+					return err
+				}
+			}
 		}
+
+		// Invalidate cache
+		if r.rdb != nil {
+			ctx := context.Background()
+			cacheKey := fmt.Sprintf("permissions:user:%d", userID)
+			r.rdb.Del(ctx, cacheKey)
+		}
+
 		return nil
 	})
 }
@@ -99,25 +110,54 @@ func (r *permissionRepository) HasPermission(userID uint, permissionCode string)
 		return false, nil
 	}
 
-	var roleCount int64
-	if err := r.db.Model(&model.Permission{}).
-		Joins("JOIN role_permissions rp ON rp.permission_id = permissions.id").
-		Joins("JOIN users u ON u.role_id = rp.role_id AND u.deleted_at IS NULL").
-		Where("u.id = ? AND permissions.code = ?", userID, permissionCode).
-		Count(&roleCount).Error; err != nil {
-		return false, err
-	}
-	if roleCount > 0 {
-		return true, nil
+	cacheKey := fmt.Sprintf("permissions:user:%d", userID)
+
+	// 1. Kiểm tra Redis Cache
+	if r.rdb != nil {
+		ctx := context.Background()
+		exists, err := r.rdb.Exists(ctx, cacheKey).Result()
+		if err == nil && exists > 0 {
+			// Cache hit
+			isMember, err := r.rdb.SIsMember(ctx, cacheKey, permissionCode).Result()
+			if err == nil {
+				return isMember, nil
+			}
+		}
 	}
 
-	var userCount int64
-	if err := r.db.Model(&model.Permission{}).
-		Joins("JOIN user_permissions up ON up.permission_id = permissions.id").
-		Where("up.user_id = ? AND permissions.code = ?", userID, permissionCode).
-		Count(&userCount).Error; err != nil {
+	// 2. Cache miss -> Lấy tất cả quyền của User từ DB
+	userPerms, err := r.GetPermissionCodes(userID)
+	if err != nil {
 		return false, err
 	}
 
-	return userCount > 0, nil
+	// 3. Đưa vào Redis Cache (Set)
+	if r.rdb != nil && len(userPerms) > 0 {
+		ctx := context.Background()
+		// Convert []string to []interface{} for SAdd
+		var members []interface{}
+		for _, p := range userPerms {
+			members = append(members, p)
+		}
+		
+		// Pipeline để SADD và EXPIRE atomatically
+		pipe := r.rdb.Pipeline()
+		pipe.SAdd(ctx, cacheKey, members...)
+		pipe.Expire(ctx, cacheKey, 24*time.Hour)
+		_, _ = pipe.Exec(ctx) // Ignore cache write errors
+	} else if r.rdb != nil && len(userPerms) == 0 {
+		// Tránh cache stampede bằng cách cache mảng rỗng (với SADD 1 phần tử rác, hoặc dùng chuỗi rỗng)
+		ctx := context.Background()
+		r.rdb.SAdd(ctx, cacheKey, "_empty_")
+		r.rdb.Expire(ctx, cacheKey, 24*time.Hour)
+	}
+
+	// 4. Kiểm tra quyền
+	for _, p := range userPerms {
+		if p == permissionCode {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

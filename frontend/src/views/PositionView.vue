@@ -1,5 +1,5 @@
 <script setup>
-import { Briefcase, ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import { Briefcase, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from '@lucide/vue';
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 import { usePositionStore } from "@/store/position";
@@ -15,14 +15,13 @@ import { storeToRefs } from "pinia";
 import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
 import { usePermissions } from "@/helpers/usePermissions";
-import { buildPatchPayload } from "@/helpers/buildPatchPayload";
+
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
 const positionStore = usePositionStore();
 const toast = useToast();
 
 const { canCrudDepartment } = usePermissions();
-// Dùng chung quyền CrudDepartment cho Positions như backend config (RequirePermission("department.update"))
 const canCrudPosition = computed(() => canCrudDepartment.value);
 
 const { positions, loading } = storeToRefs(positionStore);
@@ -31,18 +30,7 @@ const { positions, loading } = storeToRefs(positionStore);
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
 
-// ─── Tìm kiếm cục bộ (Client-side Search) ──────────────────────────────────────
-const searchQuery = ref("");
 
-const filteredPositions = computed(() => {
-	const query = searchQuery.value.trim().toLowerCase();
-	if (!query) return positions.value;
-	return positions.value.filter(
-		(pos) =>
-			pos.name.toLowerCase().includes(query) ||
-			(pos.description && pos.description.toLowerCase().includes(query))
-	);
-});
 
 // ─── Trạng thái local ────────────────────────────────────────────────────────
 const editingPosition = ref(null);
@@ -116,21 +104,10 @@ async function handleFormSubmit(submittedData) {
 		let res;
 
 		if (isEditMode.value) {
-			const original = {
-				name: editingPosition.value?.name ?? "",
-				description: editingPosition.value?.description ?? "",
-			};
-			const payload = buildPatchPayload(original, submittedData, {
-				fields: ["name", "description"],
+			res = await positionStore.updatePosition(editingPosition.value.id, {
+				name: submittedData.name?.trim(),
+				description: submittedData.description?.trim(),
 			});
-
-			if (Object.keys(payload).length === 0) {
-				toast.info("Không có thay đổi nào được thực hiện");
-				closeModal();
-				return;
-			}
-
-			res = await positionStore.updatePosition(editingPosition.value.id, payload);
 		} else {
 			res = await positionStore.createPosition({
 				name: submittedData.name.trim(),
@@ -166,12 +143,12 @@ onMounted(async () => {
 				<h1 class="page-title">Quản lý chức vụ</h1>
 				<p class="page-subtitle">
 					Hệ thống có tổng cộng
-					<span>{{ filteredPositions.length }}</span> chức vụ
+					<span>{{ positions.length }}</span> chức vụ
 				</p>
 			</div>
 			<button
 				v-if="canCrudPosition"
-				class="btn btn--primary"
+				class="btn btn-primary"
 				@click="handleAdd"
 			>
 				<Plus class="btn__icon" />
@@ -179,97 +156,74 @@ onMounted(async () => {
 			</button>
 		</header>
 
-		<main class="content-card">
-			<!-- Công cụ tìm kiếm -->
-			<div class="toolbar">
-				<div class="search-box">
-					<Search class="search-box__icon" />
-					<input
-						v-model="searchQuery"
-						class="form-control search-box__input"
-						placeholder="Tìm tên chức vụ hoặc mô tả..."
-					/>
+		<main class="bento-container">
+			<!-- Loading Skeletons -->
+			<div v-if="loading" class="bento-grid">
+				<div v-for="i in 4" :key="'skeleton-' + i" class="bento-card">
+					<div class="bento-accent-bar"></div>
+					<div class="bento-header">
+						<Skeleton type="circle" width="36px" height="36px" />
+						<Skeleton type="text" width="60%" height="22px" />
+					</div>
+					<div class="bento-body">
+						<Skeleton type="text" width="100%" height="16px" style="margin-bottom: 8px" />
+						<Skeleton type="text" width="80%" height="16px" />
+					</div>
+					<div class="bento-actions" v-if="canCrudPosition">
+						<Skeleton type="btn" />
+						<Skeleton type="btn" />
+					</div>
 				</div>
 			</div>
 
-			<!-- Bảng hiển thị -->
-			<div class="table-responsive responsive-table-to-cards">
-				<table class="data-table">
-					<thead>
-						<tr>
-							<th>Tên chức vụ</th>
-							<th>Mô tả</th>
-							<th v-if="canCrudPosition" class="text-right">Thao tác</th>
-						</tr>
-					</thead>
-					<tbody>
-						<!-- Loading Skeletons -->
-						<template v-if="loading">
-							<tr v-for="i in 4" :key="'skeleton-' + i">
-								<td data-label="Tên chức vụ">
-									<div class="position-cell">
-										<Skeleton type="circle" width="36px" height="36px" />
-										<Skeleton type="text" width="150px" height="18px" />
-									</div>
-								</td>
-								<td data-label="Mô tả">
-									<Skeleton type="text" width="300px" height="18px" />
-								</td>
-								<td v-if="canCrudPosition" class="text-right" data-label="Thao tác">
-									<div class="action-group">
-										<Skeleton type="btn" />
-										<Skeleton type="btn" />
-									</div>
-								</td>
-							</tr>
-						</template>
+			<!-- Actual Data -->
+			<div v-else class="bento-grid">
+				<div v-for="pos in positions" :key="pos.id" class="bento-card">
+					<div class="bento-accent-bar"></div>
+					
+					<div class="bento-header">
+						<div class="pos-icon-container">
+							<Briefcase class="pos-icon" />
+						</div>
+						<h3 class="bento-name">{{ pos.name }}</h3>
+					</div>
+					
+					<div class="bento-body">
+						<p class="bento-desc">
+							{{ pos.description || 'Không có mô tả chi tiết cho chức vụ này.' }}
+						</p>
+					</div>
+					
+					<div v-if="canCrudPosition" class="bento-actions">
+						<button
+							class="btn-icon btn-icon--edit"
+							title="Chỉnh sửa"
+							@click="handleEdit(pos)"
+						>
+							<Pencil />
+						</button>
+						<button
+							class="btn-icon btn-icon--delete"
+							title="Xoá"
+							@click="handleDelete(pos)"
+						>
+							<Trash2 />
+						</button>
+					</div>
+				</div>
 
-						<!-- Dữ liệu thực tế -->
-						<template v-else>
-							<tr v-for="pos in filteredPositions" :key="pos.id">
-								<td data-label="Tên chức vụ">
-									<div class="position-cell">
-										<div class="position-icon-container">
-											<Briefcase class="pos-icon" />
-										</div>
-										<span class="position-name-text">{{ pos.name }}</span>
-									</div>
-								</td>
-								<td data-label="Mô tả">
-									<span class="text-muted description-text">{{ pos.description || 'Chưa có mô tả' }}</span>
-								</td>
-								<td v-if="canCrudPosition" class="text-right" data-label="Thao tác">
-									<div class="action-group">
-										<button
-											class="btn-icon btn-icon--edit"
-											title="Chỉnh sửa"
-											@click="handleEdit(pos)"
-										>
-											<Pencil />
-										</button>
-										<button
-											class="btn-icon btn-icon--delete"
-											title="Xoá"
-											@click="handleDelete(pos)"
-										>
-											<Trash2 />
-										</button>
-									</div>
-								</td>
-							</tr>
-
-							<!-- Trạng thái trống -->
-							<tr v-if="filteredPositions.length === 0">
-								<td colspan="3" class="empty-state">
-									<div class="empty-state__icon">💼</div>
-									<p class="empty-state__text">
-										Không tìm thấy chức vụ nào.
-									</p>
-								</td>
-							</tr>
-						</template>
-					</tbody>
-				</table>
+				<!-- Trạng thái trống -->
+				<div v-if="positions.length === 0" class="empty-state-container">
+					<div class="empty-state">
+						<Briefcase class="empty-state__icon-svg" />
+						<p class="empty-state__text">
+							Chưa có chức vụ nào trong hệ thống.
+						</p>
+						<button v-if="canCrudPosition" class="btn btn-primary" @click="handleAdd" style="margin-top: 1rem;">
+							<Plus class="btn__icon" /> Thêm chức vụ
+						</button>
+					</div>
+				</div>
 			</div>
 		</main>
 
@@ -300,13 +254,7 @@ onMounted(async () => {
 	padding-bottom: var(--space-4);
 }
 
-.position-cell {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-}
-
-.position-icon-container {
+.pos-icon-container {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -315,8 +263,8 @@ onMounted(async () => {
 	border-radius: var(--radius-md);
 	background: linear-gradient(
 		135deg,
-		rgba(66, 97, 237, 0.1) 0%,
-		rgba(0, 192, 250, 0.05) 100%
+		rgba(0, 192, 250, 0.12) 0%,
+		rgba(66, 97, 237, 0.1) 100%
 	);
 	color: var(--primary-color);
 	flex-shrink: 0;
@@ -327,18 +275,29 @@ onMounted(async () => {
 	height: 18px;
 }
 
-.position-name-text {
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-semibold);
-	color: var(--text-main);
+.empty-state-container {
+	grid-column: 1 / -1;
+	display: flex;
+	justify-content: center;
+	padding: var(--space-6) 0;
 }
 
-.description-text {
-	font-size: var(--fs-sm);
-	display: -webkit-box;
-	-webkit-line-clamp: 2;
-	line-clamp: 2;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
+.empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+
+.empty-state__icon-svg {
+	width: 64px;
+	height: 64px;
+	color: var(--border-hover);
+	margin-bottom: var(--space-3);
+}
+
+.empty-state__text {
+	color: var(--text-muted);
+	font-size: var(--fs-md);
 }
 </style>

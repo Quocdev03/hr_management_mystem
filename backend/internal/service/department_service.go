@@ -50,12 +50,10 @@ func (ds *departmentService) CreateDepartment(req model.CreateDepartmentRequest)
 	req.Description = strings.TrimSpace(req.Description)
 
 	// Kiểm tra tên phòng ban đã tồn tại chưa
-	if existingDepts, _, err := ds.deptRepo.FindAll(model.PaginationQuery{Page: 1, Limit: 100, Search: req.Name}); err == nil {
-		for _, d := range existingDepts {
-			if strings.EqualFold(d.Name, req.Name) {
-				return nil, fmt.Errorf("tên phòng ban '%s' đã tồn tại", req.Name)
-			}
-		}
+	if existingDept, err := ds.deptRepo.FindByName(req.Name); err == nil && existingDept != nil {
+		return nil, fmt.Errorf("tên phòng ban '%s' đã tồn tại", req.Name)
+	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("lỗi kiểm tra tên phòng ban: %w", err)
 	}
 
 	// Kiểm tra code phòng ban đã tồn tại chưa
@@ -119,6 +117,7 @@ func (ds *departmentService) GetDepartmentByID(id uint) (*model.Department, erro
 		}
 		return nil, err
 	}
+
 	return dept, nil
 }
 
@@ -149,15 +148,12 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 			}
 
 			if !strings.EqualFold(name, dept.Name) {
-				existingDepts, _, err := txDeptRepo.FindAll(model.PaginationQuery{
-					Page: 1, Limit: 100, Search: name,
-				})
-				if err == nil {
-					for _, d := range existingDepts {
-						if strings.EqualFold(d.Name, name) && d.ID != id {
-							return fmt.Errorf("tên phòng ban '%s' đã tồn tại", name)
-						}
+				if existingDept, err := txDeptRepo.FindByName(name); err == nil && existingDept != nil {
+					if existingDept.ID != id {
+						return fmt.Errorf("tên phòng ban '%s' đã tồn tại", name)
 					}
+				} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("lỗi kiểm tra tên phòng ban: %w", err)
 				}
 				updates["name"] = name
 			}
@@ -186,6 +182,10 @@ func (ds *departmentService) UpdateDepartment(id uint, req model.UpdateDepartmen
 							return errors.New("không tìm thấy nhân viên được chỉ định làm quản lý")
 						}
 						return fmt.Errorf("lỗi khi tìm nhân viên quản lý: %w", err)
+					}
+
+					if emp.Status != "active" {
+						return errors.New("chỉ có thể chọn nhân viên đang làm việc làm trưởng phòng")
 					}
 
 					if emp.DepartmentID != id {

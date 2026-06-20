@@ -111,77 +111,12 @@ const managerName = computed(() => {
 		</div>
 		
 		<template #footer>
-			<button class="btn btn--secondary" @click="handleClose">Đóng</button>
+			<button class="btn btn-secondary" @click="handleClose">Đóng</button>
 		</template>
 	</ModalDialog>
 </template>
 
 <style scoped>
-.detail-body {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-3);
-}
-
-.detail-header {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	padding-bottom: var(--space-3);
-	border-bottom: 1px solid var(--border-color);
-}
-
-.detail-icon {
-	width: 56px;
-	height: 56px;
-	background: var(--primary-gradient);
-	border-radius: var(--radius-md);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: var(--fs-xl);
-	box-shadow: 0 4px 12px rgba(66, 97, 237, 0.2);
-}
-
-.detail-icon-svg {
-	width: 26px;
-	height: 26px;
-	color: white;
-}
-
-.detail-title-info {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-.detail-name {
-	font-size: var(--fs-lg);
-	font-weight: 800;
-	color: var(--text-main);
-	margin: 0;
-}
-
-.detail-code {
-	font-size: var(--fs-sm);
-	color: var(--text-muted);
-	font-weight: var(--fw-medium);
-}
-
-.detail-section {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-2);
-}
-
-.section-title {
-	font-size: var(--fs-xs);
-	font-weight: var(--fw-bold);
-	color: var(--text-muted);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	margin: 0 0 2px 0;
-}
 
 .description-box {
 	font-size: var(--fs-sm);

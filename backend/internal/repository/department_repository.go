@@ -13,6 +13,7 @@ type DepartmentRepository interface {
 	FindAll(query model.PaginationQuery) ([]model.Department, int64, error)
 	FindByID(id uint) (*model.Department, error)
 	FindByCode(code string) (*model.Department, error)
+	FindByName(name string) (*model.Department, error)
 	FindByManagerID(managerID uint) (*model.Department, error)
 	Update(id uint, updates map[string]interface{}) error
 	UpdateManager(departmentID uint, managerID *uint) error
@@ -41,10 +42,7 @@ func (r *departmentRepository) FindAll(query model.PaginationQuery) ([]model.Dep
 	var total int64
 
 	db := r.db.Model(&model.Department{}).
-		Preload("Manager").
-		Preload("Manager.User").
-		Preload("Manager.Department").
-		Preload("Manager.Position")
+		Preload("Manager")
 
 	// Tìm kiếm theo tên hoặc mã phòng ban
 	if query.Search != "" {
@@ -56,7 +54,9 @@ func (r *departmentRepository) FindAll(query model.PaginationQuery) ([]model.Dep
 	}
 
 	// Lấy tổng số record sau khi filter
-	db.Count(&total)
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	// Phân trang: offset = (page-1)  * limit
 	offset := (query.Page - 1) * query.Limit
@@ -84,6 +84,16 @@ func (r *departmentRepository) FindByID(id uint) (*model.Department, error) {
 func (r *departmentRepository) FindByCode(code string) (*model.Department, error) {
 	var dept model.Department
 	err := r.db.Where("code = ?", code).First(&dept).Error
+	if err != nil {
+		return nil, err
+	}
+	return &dept, nil
+}
+
+func (r *departmentRepository) FindByName(name string) (*model.Department, error) {
+	var dept model.Department
+	// Sử dụng LOWER để case-insensitive compare, nhưng phải là exact match
+	err := r.db.Where("LOWER(name) = LOWER(?)", name).First(&dept).Error
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +129,6 @@ func (r *departmentRepository) UpdateManager(departmentID uint, managerID *uint)
 }
 
 func (r *departmentRepository) Delete(id uint) error {
-	// Soft delete: GORM tự set deleted_at thay vì xóa thật
 	return r.db.Delete(&model.Department{}, id).Error
 }
 

@@ -60,7 +60,7 @@ function handleClose() {
 		size="lg"
 		@close="handleClose"
 	>
-		<form @submit.prevent="handleSubmit" class="position-form">
+		<form @submit.prevent="handleSubmit" class="form-wrapper">
 			<div class="form-grid">
 				<div class="form-group form-group--full">
 					<label class="form-label"
@@ -85,31 +85,24 @@ function handleClose() {
 				</div>
 			</div>
 
-			<div class="form-actions">
-				<button
-					type="button"
-					class="btn btn--secondary"
-					@click="handleClose"
-				>
-					Hủy bỏ
-				</button>
-				<button
-					type="submit"
-					class="btn btn--primary"
-					:disabled="loading"
-				>
-					<span v-if="loading" class="spinner"></span>
-					{{ isEditMode ? "Lưu thay đổi" : "Thêm chức vụ" }}
-				</button>
-			</div>
 		</form>
+		<template #footer>
+			<button
+				type="button"
+				class="btn btn-secondary"
+				@click="handleClose"
+			>
+				Hủy bỏ
+			</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				:disabled="loading"
+				@click="handleSubmit"
+			>
+				<span v-if="loading" class="btn-spinner"></span>
+				{{ isEditMode ? "Lưu thay đổi" : "Thêm chức vụ" }}
+			</button>
+		</template>
 	</ModalDialog>
 </template>
-
-<style scoped>
-.position-form {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-4);
-}
-</style>

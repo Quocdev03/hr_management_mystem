@@ -43,6 +43,15 @@
 			</router-link>
 			<router-link
 				v-if="canManageUsers"
+				to="/roles"
+				class="nav-item"
+				active-class="active"
+			>
+				<ShieldCheck class="nav-icon" />
+				<span>Vai trò</span>
+			</router-link>
+			<router-link
+				v-if="canManageUsers"
 				to="/users"
 				class="nav-item"
 				active-class="active"
@@ -86,7 +95,15 @@
 <script setup>
 import { computed, onMounted } from "vue";
 import { useAuthStore } from "@/store/auth";
-import { LayoutDashboard, Users, Building2, User, LogOut, Briefcase } from "@lucide/vue";
+import {
+	LayoutDashboard,
+	Users,
+	Building2,
+	User,
+	LogOut,
+	Briefcase,
+	ShieldCheck,
+} from "@lucide/vue";
 import { usePermissions } from "@/helpers/usePermissions";
 
 defineProps({ isOpen: { type: Boolean, default: false } });
@@ -235,6 +252,12 @@ const handleLogout = () => {
 	font-weight: var(--fw-semibold);
 }
 
+.nav-item.active .nav-icon {
+	color: var(--primary-color);
+	filter: drop-shadow(0 2px 8px rgba(66, 97, 237, 0.4));
+	transform: scale(1.1);
+}
+
 .nav-item.active::before {
 	content: "";
 	position: absolute;
@@ -317,20 +340,18 @@ const handleLogout = () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
-	background: transparent;
-	border: none;
-	border-radius: var(--radius-md);
+	width: 35px;
+	height: 35px;
+	border: 1px solid #e2c5c5;
+	border-radius: var(--radius-sm);
 	cursor: pointer;
 	color: var(--text-light);
 	transition: all 0.2s ease;
-	flex-shrink: 0;
+		background: rgba(225, 29, 72, 0.08);
+	color: var(--danger-color);
 }
 
 .logout-btn:hover {
-	background: rgba(225, 29, 72, 0.08);
-	color: var(--danger-color);
 	transform: scale(1.05);
 }
 

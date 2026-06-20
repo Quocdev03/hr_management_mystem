@@ -42,8 +42,9 @@ func main() {
 	empRepo := repository.NewEmployeeRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	dashRepo := repository.NewDashboardsRepository(db)
-	permRepo := repository.NewPermissionRepository(db)
+	permRepo := repository.NewPermissionRepository(db, rdb)
 	posRepo := repository.NewPositionRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
 
 	// Services - chứa business logic
 	authScv := service.NewAuthService(userRepo, empRepo, permRepo, &cfg.JWT, rdb)
@@ -52,6 +53,7 @@ func main() {
 	deptScv := service.NewDepartmentService(db, deptRepo, empRepo, rdb)
 	dashScv := service.NewDashboardService(dashRepo, rdb)
 	posScv := service.NewPositionService(db, posRepo)
+	roleScv := service.NewRoleService(roleRepo, userRepo, rdb)
 
 	// Handlers - nhận HTTP request, gọi service, trả response
 	authHandler := handler.NewAuthHandler(authScv)
@@ -60,9 +62,10 @@ func main() {
 	deptHandler := handler.NewDepartmentHandler(deptScv)
 	dashHandler := handler.NewDashboardHandler(dashScv)
 	posHandler := handler.NewPositionHandler(posScv)
+	roleHandler := handler.NewRoleHandler(roleScv)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, posHandler, permRepo)
+	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, posHandler, roleHandler, permRepo)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server

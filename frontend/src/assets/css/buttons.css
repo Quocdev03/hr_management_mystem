@@ -1,0 +1,75 @@
+/* ==========================================================================
+   Global Button Styles (Extracted from Modals)
+   ========================================================================== */
+
+.btn {
+	padding: 15px 20px;
+	border-radius: var(--radius-md);
+	font-weight: 600;
+	font-size: var(--fs-sm);
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+}
+
+.btn:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.btn-primary {
+	background: var(--primary-color);
+	color: #fff;
+	box-shadow: 0 4px 12px rgba(66, 97, 237, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: var(--primary-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 16px rgba(66, 97, 237, 0.35);
+}
+
+.btn-primary:active:not(:disabled) {
+	transform: translateY(1px);
+	box-shadow: 0 2px 6px rgba(66, 97, 237, 0.2);
+}
+
+.btn-secondary {
+	background: transparent;
+	border: 1px solid var(--border-color);
+	color: var(--text-main);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	background: var(--bg-light);
+	border-color: var(--border-hover);
+}
+
+.btn-danger {
+	background: var(--danger-color);
+	color: #fff;
+	box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+}
+
+.btn-danger:hover:not(:disabled) {
+	background: var(--danger-hover);
+	box-shadow: 0 6px 16px rgba(225, 29, 72, 0.3);
+}
+
+/* Spinner for loading state inside buttons */
+.btn-spinner {
+	width: 16px;
+	height: 16px;
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	border-radius: 50%;
+	border-top-color: #fff;
+	animation: btn-spin 0.8s linear infinite;
+	margin-right: 8px;
+}
+
+@keyframes btn-spin {
+	to { transform: rotate(360deg); }
+}

@@ -130,7 +130,12 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		userRole := roleName.(string)
+		userRole, ok := roleName.(string)
+		if !ok {
+			utils.Unauthorized(ctx, "User role type is invalid")
+			ctx.Abort()
+			return
+		}
 
 		// Kiểm tra role có trong danh sách allowed không
 		for _, allowed := range allowedRoles {

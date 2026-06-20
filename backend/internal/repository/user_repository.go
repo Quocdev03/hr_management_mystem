@@ -112,7 +112,6 @@ func (r *userRepository) FindUsersWithoutEmployee() ([]model.User, error) {
 		Model(&model.User{}).
 		Joins("LEFT JOIN employees ON employees.user_id = users.id").
 		Where("employees.user_id IS NULL").
-		Preload("Role").
 		Order("users.created_at DESC").
 		Find(&users).Error
 

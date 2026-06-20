@@ -1,0 +1,92 @@
+/* ==========================================================================
+   Global Forms Styles (Extracted from Modals)
+   ========================================================================== */
+
+.form-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 20px;
+}
+
+.form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.form-group--full {
+	grid-column: 1 / -1;
+}
+
+.form-label {
+	font-weight: 600;
+	font-size: var(--fs-sm);
+	color: var(--text-main);
+	display: flex;
+	align-items: center;
+}
+
+.required {
+	color: var(--danger-color);
+	margin-left: 4px;
+	font-weight: bold;
+}
+
+.form-control {
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-md);
+	font-size: var(--fs-sm);
+	color: var(--text-main);
+	background: #ffffff;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	font-family: inherit;
+}
+
+.form-control::placeholder {
+	color: var(--text-light);
+}
+
+.form-control:focus {
+	outline: none;
+	border-color: var(--primary-color);
+	box-shadow: 0 0 0 3px rgba(66, 97, 237, 0.1);
+}
+
+.form-control:disabled {
+	background-color: #f1f5f9;
+	color: #64748b;
+	cursor: not-allowed;
+	border-color: #e2e8f0;
+}
+
+textarea.form-control {
+	resize: vertical;
+	min-height: 80px;
+}
+
+select.form-control {
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	padding-right: 40px;
+}
+
+.helper-text {
+	font-size: 12px;
+	color: var(--text-muted);
+	margin: 6px 0 0 0;
+	line-height: 1.4;
+}
+
+.helper-text--warning {
+	color: #d97706; /* Amber 600 */
+}

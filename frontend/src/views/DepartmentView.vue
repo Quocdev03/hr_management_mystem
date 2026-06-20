@@ -1,14 +1,18 @@
 <script setup>
-import { Building2, ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import {
+	Building2,
+	ChevronLeft,
+	ChevronRight,
+	Pencil,
+	Plus,
+	Trash2,
+} from "@lucide/vue";
 
-// ─── Icon SVG ────────────────────────────────────────────────────────────────
-
-// ─── Store ───────────────────────────────────────────────────────────────────
 import { useDepartmentStore } from "@/store/department";
-import { useDashboardStore } from "@/store/dashboard";
+
 import { useEmployeeStore } from "@/store/employee";
 
-// ─── Component UI ────────────────────────────────────────────────────────────
+// ─── Component UI
 import DepartmentModal from "@/components/DepartmentModal.vue";
 import DepartmentDetailModal from "@/components/DepartmentDetailModal.vue";
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
@@ -21,12 +25,10 @@ import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 import { usePermissions } from "@/helpers/usePermissions";
-import { buildPatchPayload } from "@/helpers/buildPatchPayload";
 import { getInitials } from "@/helpers/formatters";
 
 // ─── Khởi tạo ────────────────────────────────────────────────────────────────
 const departmentStore = useDepartmentStore();
-const dashboardStore = useDashboardStore();
 const employeeStore = useEmployeeStore();
 const toast = useToast();
 
@@ -43,12 +45,8 @@ const detailLoading = ref(false);
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
 
-// ─── Tìm kiếm & phân trang ───────────────────────────────────────────────────
-const {
-	searchQuery,
-	load: loadDepartments,
-	handlePageChange,
-} = usePaginatedSearch(
+// ───phân trang ───────────────────────────────────────────────────
+const { load: loadDepartments, handlePageChange } = usePaginatedSearch(
 	(params) => departmentStore.fetchDepartments(params),
 	pagination,
 );
@@ -83,7 +81,9 @@ const departmentEmployees = computed(() => {
 		return [];
 	}
 	return employeeOptions.value.filter(
-		(emp) => emp.department_id === editingDepartment.value.id,
+		(emp) =>
+			emp.department_id === editingDepartment.value.id &&
+			emp.status === "active",
 	);
 });
 
@@ -159,35 +159,17 @@ async function handleFormSubmit(submittedData) {
 		let res;
 
 		if (isEditMode.value) {
-			const original = {
-				name: editingDepartment.value?.name ?? "",
-				description: editingDepartment.value?.description ?? "",
-				manager_id:
-					editingDepartment.value?.manager_id ??
-					editingDepartment.value?.manager?.id ??
-					null,
-			};
-			const payload = buildPatchPayload(original, submittedData, {
-				fields: ["name", "description", "manager_id"],
-				transformValue: (key, value) => {
-					if (key === "manager_id") {
-						return value == null || value === ""
-							? 0
-							: Number(value);
-					}
-					return value;
-				},
-			});
-
-			if (Object.keys(payload).length === 0) {
-				toast.info("Không có dữ liệu thay đổi");
-				formLoading.value = false;
-				return;
-			}
-
 			res = await departmentStore.updateDepartment(
 				editingDepartment.value.id,
-				payload,
+				{
+					name: submittedData.name?.trim(),
+					description: submittedData.description?.trim(),
+					manager_id:
+						submittedData.manager_id == null ||
+						submittedData.manager_id === ""
+							? 0
+							: Number(submittedData.manager_id),
+				},
 			);
 		} else {
 			res = await departmentStore.createDepartment({
@@ -219,7 +201,7 @@ async function handleFormSubmit(submittedData) {
 
 // ─── Khởi tạo trang ──────────────────────────────────────────────────────────
 onMounted(async () => {
-	await Promise.all([loadDepartments(), dashboardStore.fetchDashboard()]);
+	await loadDepartments();
 });
 </script>
 
@@ -230,12 +212,13 @@ onMounted(async () => {
 				<h1 class="page-title">Quản lý phòng ban</h1>
 				<p class="page-subtitle">
 					Hệ thống có tổng cộng
-					<span>{{ pagination.total || departments.length }}</span> phòng ban
+					<span>{{ pagination.total || departments.length }}</span>
+					phòng ban
 				</p>
 			</div>
 			<button
 				v-if="canCrudDepartment"
-				class="btn btn--primary"
+				class="btn btn-primary"
 				@click="handleAdd"
 			>
 				<Plus class="btn__icon" />
@@ -243,39 +226,48 @@ onMounted(async () => {
 			</button>
 		</header>
 
-		<!-- Toolbar Search Card -->
-		<div class="search-card">
-			<div class="search-box">
-				<Search class="search-box__icon" />
-				<input
-					v-model="searchQuery"
-					class="form-control search-box__input"
-					placeholder="Tìm tên hoặc mã phòng ban..."
-				/>
-			</div>
-		</div>
-
 		<!-- Bento Grid of Departments -->
-		<main class="dept-bento-container">
+		<main class="bento-container">
 			<!-- Loading skeleton grid -->
-			<div v-if="loading" class="dept-bento-grid">
-				<div v-for="i in 6" :key="'skeleton-dept-' + i" class="dept-bento-card">
-					<div class="dept-bento-header">
+			<div v-if="loading" class="bento-grid">
+				<div
+					v-for="i in 6"
+					:key="'skeleton-dept-' + i"
+					class="bento-card"
+				>
+					<div class="bento-header">
 						<Skeleton type="text" width="60%" height="22px" />
 						<Skeleton type="badge" width="60px" height="24px" />
 					</div>
-					<div class="dept-bento-body">
-						<Skeleton type="text" width="100%" height="16px" style="margin-bottom: 8px" />
+					<div class="bento-body">
+						<Skeleton
+							type="text"
+							width="100%"
+							height="16px"
+							style="margin-bottom: 8px"
+						/>
 						<Skeleton type="text" width="80%" height="16px" />
 					</div>
 					<div class="dept-bento-manager">
 						<Skeleton type="avatar" />
-						<div style="flex: 1; display: flex; flex-direction: column; gap: var(--space-1); margin-left: 8px;">
+						<div
+							style="
+								flex: 1;
+								display: flex;
+								flex-direction: column;
+								gap: var(--space-1);
+								margin-left: 8px;
+							"
+						>
 							<Skeleton type="text" width="40%" />
 							<Skeleton type="text" width="70%" />
 						</div>
 					</div>
-					<div v-if="canCrudDepartment" class="dept-bento-actions">
+					<div
+						v-if="canCrudDepartment"
+						class="bento-actions"
+						style="margin-top: var(--space-3)"
+					>
 						<Skeleton type="btn" />
 						<Skeleton type="btn" />
 					</div>
@@ -283,59 +275,82 @@ onMounted(async () => {
 			</div>
 
 			<!-- Actual department cards -->
-			<div v-else class="dept-bento-grid">
+			<div v-else class="bento-grid">
 				<div
 					v-for="dept in departments"
 					:key="dept.id"
-					class="dept-bento-card"
+					class="bento-card"
 					@click="handleViewDetail(dept.id)"
 				>
 					<!-- Accent light border at top -->
-					<div class="dept-accent-bar"></div>
-					
-					<div class="dept-bento-header">
-						<h3 class="dept-bento-name">{{ dept.name }}</h3>
+					<div class="bento-accent-bar"></div>
+
+					<div class="bento-header">
+						<h3 class="bento-name">{{ dept.name }}</h3>
 						<span class="dept-code">{{ dept.code }}</span>
 					</div>
-					
-					<div class="dept-bento-body">
-						<p class="dept-bento-desc">
-							{{ dept.description || "Không có mô tả chi tiết cho phòng ban này." }}
+
+					<div class="bento-body">
+						<p class="bento-desc">
+							{{
+								dept.description ||
+								"Không có mô tả chi tiết cho phòng ban này."
+							}}
 						</p>
 					</div>
-					
+
 					<div class="dept-bento-manager">
 						<div class="manager-avatar">
-							{{ dept.manager ? getInitials(dept.manager.first_name, dept.manager.last_name) : '?' }}
+							{{
+								dept.manager
+									? getInitials(
+											dept.manager.first_name,
+											dept.manager.last_name,
+										)
+									: "?"
+							}}
 						</div>
 						<div class="manager-info">
 							<span class="manager-label">Trưởng phòng</span>
 							<span class="manager-name">
-								{{ dept.manager ? dept.manager.first_name + " " + dept.manager.last_name : "Chưa bổ nhiệm" }}
+								{{
+									dept.manager
+										? dept.manager.first_name +
+											" " +
+											dept.manager.last_name
+										: "Chưa bổ nhiệm"
+								}}
 							</span>
 						</div>
 					</div>
-					
-					<div v-if="canCrudDepartment" class="dept-bento-actions">
+
+					<div
+						v-if="canCrudDepartment"
+						class="bento-actions"
+						style="margin-top: var(--space-3)"
+					>
 						<button
 							class="btn-icon btn-icon--edit"
 							title="Chỉnh sửa"
 							@click.stop="handleEdit(dept)"
 						>
-							<Pencil  />
+							<Pencil />
 						</button>
 						<button
 							class="btn-icon btn-icon--delete"
 							title="Xoá"
 							@click.stop="handleDelete(dept)"
 						>
-							<Trash2  />
+							<Trash2 />
 						</button>
 					</div>
 				</div>
 
 				<!-- Empty State -->
-				<div v-if="departments.length === 0" class="empty-state-container">
+				<div
+					v-if="departments.length === 0"
+					class="empty-state-container"
+				>
 					<div class="empty-state">
 						<Building2 class="empty-state__icon-svg" />
 						<p class="empty-state__text">
@@ -353,7 +368,7 @@ onMounted(async () => {
 						:disabled="pagination.page === 1"
 						@click="handlePageChange(pagination.page - 1)"
 					>
-						<ChevronLeft  />
+						<ChevronLeft />
 					</button>
 					<div class="pagination__info">
 						Trang <span>{{ pagination.page }}</span> /
@@ -364,7 +379,7 @@ onMounted(async () => {
 						:disabled="pagination.page === pagination.totalPages"
 						@click="handlePageChange(pagination.page + 1)"
 					>
-						<ChevronRight  />
+						<ChevronRight />
 					</button>
 				</div>
 			</div>
@@ -405,95 +420,8 @@ onMounted(async () => {
 	padding-bottom: var(--space-4);
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-3);
 }
 
-/* Search bar glass container */
-.search-card {
-	background: var(--bg-card);
-	border: var(--glass-border);
-	border-radius: var(--radius-md);
-	box-shadow: var(--shadow-sm);
-	padding: var(--space-3);
-}
-
-
-/* Bento Grid */
-.dept-bento-container {
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-4);
-}
-
-.dept-bento-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-	gap: var(--space-3);
-}
-
-.dept-bento-card {
-	background: var(--bg-card);
-	border: var(--glass-border);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--glass-shadow);
-	padding: var(--space-3);
-	transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	position: relative;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-3);
-	cursor: pointer;
-}
-
-.dept-bento-card:hover {
-	transform: translateY(-4px);
-	box-shadow: var(--glass-shadow-hover);
-}
-
-.dept-accent-bar {
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 4px;
-	background: var(--primary-gradient);
-}
-
-.dept-bento-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	gap: var(--space-2);
-	margin-top: 4px;
-}
-
-.dept-bento-name {
-	font-family: var(--font-title);
-	font-size: var(--fs-base);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-	margin: 0;
-	line-height: var(--lh-tight);
-}
-
-.dept-bento-body {
-	flex: 1;
-}
-
-.dept-bento-desc {
-	font-size: var(--fs-sm);
-	color: var(--text-muted);
-	line-height: var(--lh-normal);
-	margin: 0;
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-}
-
-/* Manager Card Sub-Component */
 .dept-bento-manager {
 	display: flex;
 	align-items: center;
@@ -508,7 +436,11 @@ onMounted(async () => {
 	width: 36px;
 	height: 36px;
 	border-radius: var(--radius-md);
-	background: linear-gradient(135deg, rgba(0, 192, 250, 0.12) 0%, rgba(66, 97, 237, 0.1) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(0, 192, 250, 0.12) 0%,
+		rgba(66, 97, 237, 0.1) 100%
+	);
 	color: var(--primary-color);
 	display: flex;
 	align-items: center;
@@ -541,22 +473,11 @@ onMounted(async () => {
 	text-overflow: ellipsis;
 }
 
-/* Actions at the bottom of card */
-.dept-bento-actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: 0.5rem;
-	border-top: 1px solid var(--border-color);
-	padding-top: var(--space-2);
-	margin-top: auto;
-}
-
 .empty-state-container {
 	grid-column: 1 / -1;
 	padding: var(--space-8) 0;
 }
 
-/* Pagination container */
 .pagination-container {
 	display: flex;
 	justify-content: center;

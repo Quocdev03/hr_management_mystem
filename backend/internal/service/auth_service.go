@@ -47,7 +47,8 @@ func NewAuthService(userRepo repository.UserRepository, empRepo repository.Emplo
 // Logout xử lý đăng xuất bằng cách blacklist access token và xóa refresh token.
 func (au *authService) Logout(tokenString string, remainingTime time.Duration, refreshToken string) error {
 	if au.rdb == nil {
-		return errors.New("redis client is not initialized")
+		utils.Warn("Redis is nil in Logout. Cannot blacklist token or remove refresh token")
+		return nil
 	}
 	ctx := context.Background()
 
@@ -107,12 +108,17 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 	}
 	user.Permissions = permissions
 
+	roleName := ""
+	if user.Role != nil {
+		roleName = user.Role.Name
+	}
+
 	// Tạo jwt token chứa thông tin user và role.
 	token, err := utils.GenerateToken(
 		user.ID,
 		user.Email,
 		user.RoleID,
-		user.Role.Name,
+		roleName,
 		au.jwtCfg.SecretKey,
 		au.jwtCfg.ExpireHour,
 	)
@@ -125,7 +131,7 @@ func (au *authService) Login(req model.LoginRequest) (*model.LoginResponse, erro
 		user.ID,
 		user.Email,
 		user.RoleID,
-		user.Role.Name,
+		roleName,
 		au.jwtCfg.SecretKey,
 		au.jwtCfg.RefreshExpireDay,
 	)
@@ -198,12 +204,17 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 	}
 	user.Permissions = permissions
 
+	roleName := ""
+	if user.Role != nil {
+		roleName = user.Role.Name
+	}
+
 	// 6. Tạo access token mới.
 	newAccessToken, err := utils.GenerateToken(
 		user.ID,
 		user.Email,
 		user.RoleID,
-		user.Role.Name,
+		roleName,
 		au.jwtCfg.SecretKey,
 		au.jwtCfg.ExpireHour,
 	)
@@ -216,7 +227,7 @@ func (au *authService) RefreshToken(refreshTokenString string) (*model.LoginResp
 		user.ID,
 		user.Email,
 		user.RoleID,
-		user.Role.Name,
+		roleName,
 		au.jwtCfg.SecretKey,
 		au.jwtCfg.RefreshExpireDay,
 	)

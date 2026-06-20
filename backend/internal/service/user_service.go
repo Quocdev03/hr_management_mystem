@@ -155,7 +155,7 @@ func (us *userService) UpdateUser(id uint, req model.UpdateUserRequest, requeste
 	// Logic kiểm tra phân quyền an toàn.
 	// 1. Ngăn tự đổi quyền bản thân HOẶC đổi quyền của Admin khác.
 	if req.RoleID != nil && *req.RoleID != user.RoleID {
-		if user.RoleID == 1 || user.ID == requesterID {
+		if (user.Role != nil && strings.EqualFold(user.Role.Name, "admin")) || user.ID == requesterID {
 			return nil, errors.New("không thể tự thay đổi quyền của mình hoặc của Admin khác")
 		}
 	}
@@ -265,8 +265,8 @@ func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string, 
 		return nil, err
 	}
 
-	// 2. Ngăn chỉnh sửa quyền hạn của Admin chính trị hệ thống (RoleID == 1)
-	if targetUser.RoleID == 1 {
+	// 2. Ngăn chỉnh sửa quyền hạn của Admin quản trị hệ thống
+	if targetUser.Role != nil && strings.EqualFold(targetUser.Role.Name, "admin") {
 		return nil, errors.New("không thể sửa đổi quyền hạn của quản trị viên hệ thống")
 	}
 

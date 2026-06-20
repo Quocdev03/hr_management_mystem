@@ -1,0 +1,42 @@
+# ────────────────────────────────────────────────────────────────────────────
+# air — Go Hot Reload Configuration
+# ────────────────────────────────────────────────────────────────────────────
+# Docs: https://github.com/air-verse/air
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Lệnh build
+  cmd = "go build -o ./tmp/main ./cmd/server/main.go"
+  # Binary để chạy sau khi build
+  bin = "./tmp/main"
+  # Thư mục cần theo dõi
+  include_dir = ["cmd", "internal"]
+  # Extension cần theo dõi
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  # Thư mục bỏ qua
+  exclude_dir = ["tmp", "vendor", "testdata"]
+  # File bỏ qua
+  exclude_file = []
+  # Delay trước khi rebuild (ms)
+  delay = 1000
+  # Dừng process cũ trước khi chạy mới
+  stop_on_error = true
+  # Tắt log build thành công
+  send_interrupt = false
+  kill_delay = "0.5s"
+
+[log]
+  time = false
+  main_only = false
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  # Dọn dẹp tmp khi exit
+  clean_on_exit = true

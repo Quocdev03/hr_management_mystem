@@ -33,20 +33,95 @@ const clearAuthData = () => {
   }
 };
 
-// Request Interceptor: Tự động gắn Access Token vào Header
-api.interceptors.request.use((config) => {
+/**
+ * Kiểm tra JWT token còn hạn hay không dựa trên payload `exp`.
+ * Thêm buffer 30 giây để tránh gửi request ngay sát thời điểm hết hạn.
+ * @param {string} token - JWT string
+ * @returns {boolean} true nếu token đã hết hạn (hoặc không hợp lệ)
+ */
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (!payload?.exp) return false; // Không có exp → coi như còn hạn
+    return Date.now() >= (payload.exp - 30) * 1000; // buffer 30 giây
+  } catch {
+    return false; // Parse lỗi → để server xử lý
+  }
+};
+
+/**
+ * Thực hiện refresh token và cập nhật localStorage.
+ * Trả về access_token mới hoặc throw nếu thất bại.
+ */
+const doRefresh = async () => {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) throw new Error('Không có refresh token');
+
+  const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
+    refresh_token: refreshToken,
+  });
+
+  if (!res.data?.success) throw new Error('Làm mới token thất bại');
+
+  const { access_token, refresh_token: newRefreshToken, user } = res.data.data;
+  localStorage.setItem('access_token', access_token);
+  localStorage.setItem('refresh_token', newRefreshToken);
+  localStorage.setItem('user', JSON.stringify(user));
+  return access_token;
+};
+
+/**
+ * Gán Authorization header cho config (hỗ trợ cả Axios AxiosHeaders lẫn plain object).
+ */
+const setAuthHeader = (config, token) => {
+  if (config.headers && typeof config.headers.set === 'function') {
+    config.headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    config.headers = config.headers || {};
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+};
+
+// Request Interceptor: Gắn token và kiểm tra hết hạn trước khi request rời đi.
+// Nếu token đã hết hạn → chặn request, refresh proactively, rồi mới gửi.
+// Điều này tránh "Thundering Herd": nhiều request đồng thời cùng nhận 401 từ server.
+api.interceptors.request.use(async (config) => {
+  const isRefreshEndpoint = config.url?.includes('/auth/refresh');
   const token = localStorage.getItem('access_token');
 
-  if (token) {
-    if (config.headers && typeof config.headers.set === 'function') {
-      config.headers.set('Authorization', `Bearer ${token}`);
-    } else {
-      config.headers = config.headers || {};
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+  if (!token || isRefreshEndpoint) {
+    return config;
   }
 
-  return config;
+  // Token còn hạn → gắn bình thường
+  if (!isTokenExpired(token)) {
+    setAuthHeader(config, token);
+    return config;
+  }
+
+  // Token hết hạn → refresh proactively
+  if (isRefreshing) {
+    // Đã có refresh đang chạy → xếp hàng chờ token mới
+    const newToken = await new Promise((resolve, reject) => {
+      failedQueue.push({ resolve, reject });
+    });
+    setAuthHeader(config, newToken);
+    return config;
+  }
+
+  isRefreshing = true;
+  try {
+    const newToken = await doRefresh();
+    processQueue(null, newToken);
+    setAuthHeader(config, newToken);
+    return config;
+  } catch (err) {
+    processQueue(err, null);
+    clearAuthData();
+    return Promise.reject(err);
+  } finally {
+    isRefreshing = false;
+  }
 });
 
 // Response Interceptor: Chuẩn hóa dữ liệu trả về và xử lý lỗi tập trung
@@ -75,12 +150,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const isRefreshEndpoint = originalRequest?.url?.includes('/auth/refresh');
 
-    // Xử lý 401: thử làm mới Access Token trước khi redirect.
+    // Xử lý 401 fallback: token hợp lệ khi gửi nhưng server từ chối (edge case).
+    // Trường hợp phổ biến đã được xử lý proactively ở request interceptor.
     if (status === 401 && originalRequest && !originalRequest._retry && !isRefreshEndpoint) {
-      const refreshToken = localStorage.getItem('refresh_token');
-
-      // Không có refresh token → xóa session và redirect.
-      if (!refreshToken) {
+      if (!localStorage.getItem('refresh_token')) {
         clearAuthData();
         return Promise.reject(new Error(message));
       }
@@ -91,43 +164,20 @@ api.interceptors.response.use(
           const token = await new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           });
-          if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
-            originalRequest.headers.set('Authorization', `Bearer ${token}`);
-          } else {
-            originalRequest.headers = originalRequest.headers || {};
-            originalRequest.headers['Authorization'] = `Bearer ${token}`;
-          }
+          setAuthHeader(originalRequest, token);
           return api(originalRequest);
         } catch (err) {
           return Promise.reject(err);
         }
       }
 
-      // Bắt đầu refresh token.
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
-
-        if (!res.data?.success) {
-          throw new Error('Làm mới token thất bại');
-        }
-
-        const { access_token, refresh_token: newRefreshToken, user } = res.data.data;
-        localStorage.setItem('access_token', access_token);
-        localStorage.setItem('refresh_token', newRefreshToken);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        processQueue(null, access_token);
-        if (originalRequest.headers && typeof originalRequest.headers.set === 'function') {
-          originalRequest.headers.set('Authorization', `Bearer ${access_token}`);
-        } else {
-          originalRequest.headers = originalRequest.headers || {};
-          originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
-        }
+        const newToken = await doRefresh();
+        processQueue(null, newToken);
+        setAuthHeader(originalRequest, newToken);
         return api(originalRequest);
       } catch (err) {
         processQueue(err, null);

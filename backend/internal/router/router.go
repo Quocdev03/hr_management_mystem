@@ -23,6 +23,7 @@ func SetupRouter(
 	dashB *handler.DashboardHandler,
 	userHandler *handler.UserHandler,
 	posHandler *handler.PositionHandler,
+	roleHandler *handler.RoleHandler,
 	permRepo repository.PermissionRepository,
 ) *gin.Engine {
 
@@ -55,10 +56,10 @@ func SetupRouter(
 	auth := v1.Group("/auth")
 	{
 		// POST /auth/login — Đăng nhập, rate limit 5 lượt/phút
-		auth.POST("/login", middleware.RateLimiter(rdb, 5, time.Minute), authHandler.Login)
+		auth.POST("/login", middleware.RateLimiter(rdb, 5, time.Minute, "login"), authHandler.Login)
 
 		// POST /auth/refresh — Làm mới access token, rate limit 10 lượt/phút
-		auth.POST("/refresh", middleware.RateLimiter(rdb, 10, time.Minute), authHandler.Refresh)
+		auth.POST("/refresh", middleware.RateLimiter(rdb, 10, time.Minute, "refresh"), authHandler.Refresh)
 
 		// GET /auth/me — Lấy hồ sơ người dùng (cần JWT)
 		auth.GET("/me", middleware.AuthJWT(&cfg.JWT, rdb), authHandler.GetProfile)
@@ -240,6 +241,32 @@ func SetupRouter(
 			middleware.RequirePermission(permRepo, "department.update"),
 			middleware.ClearMultipleCaches(rdb, middleware.CachePatternDepartments, middleware.CachePatternEmployees, middleware.CachePatternPositions),
 			posHandler.DeletePosition,
+		)
+	}
+
+	// ── Roles (/roles) ──────────────────────────────────────────────────
+	// Quản lý vai trò (chỉ admin được phép)
+	roles := protected.Group("/roles")
+	{
+		roles.GET("",
+			middleware.RequirePermission(permRepo, "user.read"), // admin
+			roleHandler.GetAllRoles,
+		)
+		roles.GET("/:id",
+			middleware.RequirePermission(permRepo, "user.read"),
+			roleHandler.GetRoleByID,
+		)
+		roles.POST("",
+			middleware.RequirePermission(permRepo, "user.update"),
+			roleHandler.CreateRole,
+		)
+		roles.PATCH("/:id",
+			middleware.RequirePermission(permRepo, "user.update"),
+			roleHandler.UpdateRole,
+		)
+		roles.DELETE("/:id",
+			middleware.RequirePermission(permRepo, "user.update"),
+			roleHandler.DeleteRole,
 		)
 	}
 

@@ -1,5 +1,13 @@
 <script setup>
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import {
+	ChevronLeft,
+	ChevronRight,
+	Eye,
+	Pencil,
+	Plus,
+	Search,
+	Trash2,
+} from "@lucide/vue";
 
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { ref, onMounted } from "vue";
@@ -17,17 +25,10 @@ import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
 // Helper tiện ích
-import {
-	getInitials,
-	formatDate,
-	formatStatus,
-} from "@/helpers/formatters";
+import { getInitials, formatDate, formatStatus } from "@/helpers/formatters";
 import { useModalState } from "@/helpers/useModalState";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 import { usePermissions } from "@/helpers/usePermissions";
-import { buildPatchPayload } from "@/helpers/buildPatchPayload";
-
-// Icon SVG
 
 // ─── Khởi tạo store & tiện ích ───────────────────────────────────────────────
 
@@ -88,25 +89,6 @@ function handleViewDetails(emp) {
 	isDetailModalVisible.value = true;
 }
 
-// ─── Khởi tạo dữ liệu form mặc định ──────────────────────────────────────────
-
-function buildFormData(data = {}) {
-	const d = data ?? {};
-	return {
-		user_id: d.user_id ?? null,
-		first_name: d.first_name ?? "",
-		last_name: d.last_name ?? "",
-		phone: d.phone ?? "",
-		department_id: d.department_id ?? "",
-		position_id: d.position_id ?? "",
-		salary: d.salary ?? null,
-		join_date: d.join_date ?? "",
-		status: d.status ?? "active",
-		gender: d.gender ?? "",
-		birth_date: d.birth_date ?? "",
-	};
-}
-
 // ─── Tải dữ liệu liên quan ───────────────────────────────────────────────────
 
 async function loadFormRelations(force = false) {
@@ -114,7 +96,7 @@ async function loadFormRelations(force = false) {
 
 	try {
 		await Promise.all([
-			departmentStore.fetchDepartments(),
+			departmentStore.fetchDepartments({ limit: 100 }),
 			userStore.fetchUsersWithoutEmployee(),
 		]);
 		relationsLoaded.value = true;
@@ -159,86 +141,53 @@ async function confirmDelete() {
 	toast.success(res.message);
 	isDeleteModalVisible.value = false;
 	deletingEmployee.value = null;
-	await Promise.all([
-		loadEmployees(pagination.value.page),
-		departmentStore.fetchDepartments({
-			page: departmentStore.pagination.page,
-			limit: departmentStore.pagination.limit,
-		}),
-	]);
+	await loadEmployees(pagination.value.page);
 }
 
 async function handleFormSubmit(submittedData) {
 	formLoading.value = true;
+
+	// Chuẩn hoá chung một payload
+	const payload = { ...submittedData };
+	payload.department_id = payload.department_id
+		? Number(payload.department_id)
+		: undefined;
+	payload.position_id = payload.position_id
+		? Number(payload.position_id)
+		: undefined;
+
+	// user_id: khi tạo mới dùng null nếu không chọn, khi sửa dùng 0 để backend clear khoá ngoại
+	if (payload.user_id) {
+		payload.user_id = Number(payload.user_id);
+	} else {
+		payload.user_id = isEditMode.value ? 0 : null;
+	}
+
 	let res;
-
-	if (isEditMode.value === true) {
-		const original = buildFormData(editingEmployee.value);
-		
-		// Map values from database object for diffing
-		const normalizedOriginal = {
-			...original,
-			birth_date: editingEmployee.value?.birth_date?.split("T")[0] ?? "",
-			join_date: editingEmployee.value?.join_date?.split("T")[0] ?? "",
-		};
-
-		const payload = buildPatchPayload(normalizedOriginal, submittedData, {
-			fields: Object.keys(original),
-			transformValue: (key, value) => {
-				if (key === "user_id") {
-					return value == null || value === "" ? 0 : Number(value);
-				}
-				if (key === "department_id" || key === "position_id") {
-					return Number(value);
-				}
-				return value;
-			},
-		});
-
-		if (Object.keys(payload).length === 0) {
-			toast.info("Không có dữ liệu thay đổi");
-			formLoading.value = false;
-			return;
-		}
-
+	if (isEditMode.value) {
 		res = await employeeStore.updateEmployee(
 			editingEmployee.value.id,
 			payload,
 		);
 	} else {
-		const data = { ...submittedData };
-		data.user_id =
-			data.user_id !== "" && data.user_id != null
-				? Number(data.user_id)
-				: null;
-
-		data.department_id =
-			data.department_id !== "" ? Number(data.department_id) : undefined;
-
-		res = await employeeStore.createEmployee(data);
+		res = await employeeStore.createEmployee(payload);
 	}
 
 	formLoading.value = false;
 
-	if (res.success === false) {
+	if (!res.success) {
 		toast.error(res.message);
 		return;
 	}
 
 	relationsLoaded.value = false;
-
-	if (isEditMode.value === true) {
-		toast.success(res.message);
-	}
+	toast.success(
+		res.message ||
+			(isEditMode.value ? "Cập nhật thành công" : "Thêm mới thành công"),
+	);
 
 	closeModal();
-	await Promise.all([
-		loadEmployees(pagination.value.page),
-		departmentStore.fetchDepartments({
-			page: departmentStore.pagination.page,
-			limit: departmentStore.pagination.limit,
-		}),
-	]);
+	await loadEmployees(pagination.value.page);
 }
 
 onMounted(async () => {
@@ -258,7 +207,7 @@ onMounted(async () => {
 			</div>
 			<button
 				v-if="canCreateEmployee"
-				class="btn btn--primary"
+				class="btn btn-primary"
 				@click="handleAdd"
 			>
 				<Plus class="btn__icon" />
@@ -299,22 +248,48 @@ onMounted(async () => {
 								<td data-label="Nhân viên">
 									<div class="user-info">
 										<Skeleton type="avatar" />
-										<div class="user-info__details" style="width: 150px; display: flex; flex-direction: column; gap: var(--space-1);">
+										<div
+											class="user-info__details"
+											style="
+												width: 150px;
+												display: flex;
+												flex-direction: column;
+												gap: var(--space-1);
+											"
+										>
 											<Skeleton type="text" width="80%" />
 											<Skeleton type="text" width="50%" />
 										</div>
 									</div>
 								</td>
-								<td data-label="Liên hệ"><Skeleton type="text" width="100px" /></td>
+								<td data-label="Liên hệ">
+									<Skeleton type="text" width="100px" />
+								</td>
 								<td data-label="Phòng ban / Chức vụ">
-									<div class="job-info" style="width: 120px; display: flex; flex-direction: column; gap: var(--space-1);">
+									<div
+										class="job-info"
+										style="
+											width: 120px;
+											display: flex;
+											flex-direction: column;
+											gap: var(--space-1);
+										"
+									>
 										<Skeleton type="text" width="70%" />
 										<Skeleton type="text" width="50%" />
 									</div>
 								</td>
-								<td data-label="Ngày vào làm"><Skeleton type="text" width="80px" /></td>
-								<td data-label="Trạng thái"><Skeleton type="badge" /></td>
-								<td v-if="hasAnyEmployeeAction" class="text-right" data-label="Thao tác">
+								<td data-label="Ngày vào làm">
+									<Skeleton type="text" width="80px" />
+								</td>
+								<td data-label="Trạng thái">
+									<Skeleton type="badge" />
+								</td>
+								<td
+									v-if="hasAnyEmployeeAction"
+									class="text-right"
+									data-label="Thao tác"
+								>
 									<div class="action-group">
 										<Skeleton type="btn" />
 										<Skeleton type="btn" />
@@ -329,16 +304,28 @@ onMounted(async () => {
 								<td data-label="Nhân viên">
 									<div class="user-info">
 										<div class="user-info__avatar">
-											{{ getInitials(emp.first_name, emp.last_name) }}
+											{{
+												getInitials(
+													emp.first_name,
+													emp.last_name,
+												)
+											}}
 										</div>
 										<div class="user-info__details">
 											<span class="user-info__name">
-												{{ emp.first_name }} {{ emp.last_name }}
+												{{ emp.first_name }}
+												{{ emp.last_name }}
 											</span>
-											<span v-if="emp.user" class="user-info__email">
+											<span
+												v-if="emp.user"
+												class="user-info__email"
+											>
 												{{ emp.user.email }}
 											</span>
-											<span v-else class="user-info__email">
+											<span
+												v-else
+												class="user-info__email"
+											>
 												Chưa liên kết tài khoản
 											</span>
 										</div>
@@ -357,22 +344,37 @@ onMounted(async () => {
 											{{ emp.department?.name || "N/A" }}
 										</span>
 										<span class="job-info__pos">
-											{{ emp.position?.name || "Nhân viên" }}
+											{{
+												emp.position?.name ||
+												"Nhân viên"
+											}}
 										</span>
 									</div>
 								</td>
 
-								<td data-label="Ngày vào làm" class="text-muted">
+								<td
+									data-label="Ngày vào làm"
+									class="text-muted"
+								>
 									{{ formatDate(emp.join_date) }}
 								</td>
 
 								<td data-label="Trạng thái">
-									<span :class="['status-badge', `status-badge--${emp.status}`]">
+									<span
+										:class="[
+											'status-badge',
+											`status-badge--${emp.status}`,
+										]"
+									>
 										{{ formatStatus(emp.status) }}
 									</span>
 								</td>
 
-								<td v-if="hasAnyEmployeeAction" class="text-right" data-label="Thao tác">
+								<td
+									v-if="hasAnyEmployeeAction"
+									class="text-right"
+									data-label="Thao tác"
+								>
 									<div class="action-group">
 										<button
 											v-if="canViewEmployeeDetail(emp.id)"
@@ -380,7 +382,7 @@ onMounted(async () => {
 											title="Xem chi tiết"
 											@click="handleViewDetails(emp)"
 										>
-											<Eye  />
+											<Eye />
 										</button>
 										<button
 											v-if="canEditEmployee"
@@ -388,7 +390,7 @@ onMounted(async () => {
 											title="Chỉnh sửa"
 											@click="handleEdit(emp)"
 										>
-											<Pencil  />
+											<Pencil />
 										</button>
 										<button
 											v-if="canDeleteEmployee"
@@ -396,14 +398,17 @@ onMounted(async () => {
 											title="Xoá"
 											@click="handleDelete(emp)"
 										>
-											<Trash2  />
+											<Trash2 />
 										</button>
 									</div>
 								</td>
 							</tr>
 
 							<tr v-if="employees.length === 0">
-								<td :colspan="hasAnyEmployeeAction ? 6 : 5" class="empty-state">
+								<td
+									:colspan="hasAnyEmployeeAction ? 6 : 5"
+									class="empty-state"
+								>
 									<div class="empty-state__icon">👥</div>
 									<p class="empty-state__text">
 										Không có dữ liệu nhân viên nào phù hợp.
@@ -421,7 +426,7 @@ onMounted(async () => {
 					:disabled="pagination.page === 1"
 					@click="handlePageChange(pagination.page - 1)"
 				>
-					<ChevronLeft  />
+					<ChevronLeft />
 				</button>
 				<div class="pagination__info">
 					Trang <span>{{ pagination.page }}</span> /
@@ -432,7 +437,7 @@ onMounted(async () => {
 					:disabled="pagination.page === pagination.totalPages"
 					@click="handlePageChange(pagination.page + 1)"
 				>
-					<ChevronRight  />
+					<ChevronRight />
 				</button>
 			</div>
 		</main>
@@ -483,7 +488,11 @@ onMounted(async () => {
 	width: 40px;
 	height: 40px;
 	border-radius: var(--radius-md);
-	background: linear-gradient(135deg, rgba(0, 192, 250, 0.12) 0%, rgba(66, 97, 237, 0.1) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(0, 192, 250, 0.12) 0%,
+		rgba(66, 97, 237, 0.1) 100%
+	);
 	color: var(--primary-color);
 	display: flex;
 	align-items: center;

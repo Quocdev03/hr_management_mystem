@@ -10,7 +10,7 @@ import (
 )
 
 // RateLimiter áp dụng giới hạn tần suất yêu cầu sử dụng Redis (Fixed Window Algorithm)
-func RateLimiter(rdb *redis.Client, limit int, window time.Duration) gin.HandlerFunc {
+func RateLimiter(rdb *redis.Client, limit int, window time.Duration, prefix string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if rdb == nil {
 			// Fail-open: Nếu Redis chưa được cấu hình, bỏ qua rate limit
@@ -19,7 +19,7 @@ func RateLimiter(rdb *redis.Client, limit int, window time.Duration) gin.Handler
 		}
 
 		ip := ctx.ClientIP()
-		key := fmt.Sprintf("rate_limit:login:%s", ip)
+		key := fmt.Sprintf("rate_limit:%s:%s", prefix, ip)
 		redisCtx := ctx.Request.Context()
 
 		// Thực hiện tăng bộ đếm lên 1

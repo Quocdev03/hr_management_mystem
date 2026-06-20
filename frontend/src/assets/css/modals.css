@@ -1,0 +1,119 @@
+/* ==========================================================================
+   Global Modals Styles (Extracted from Detail & Form Modals)
+   ========================================================================== */
+
+/* Shared Modal Footer */
+.modal-footer {
+	padding: 20px 24px;
+	background: #ffffff;
+	border-top: 1px solid var(--border-color);
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* Detail Modals Common Styles */
+.detail-body {
+	padding: 0 24px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+
+.detail-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid var(--border-color);
+	margin-top: -10px; /* pull up slightly closer to modal title */
+}
+
+.detail-icon {
+	width: 56px;
+	height: 56px;
+	background: linear-gradient(135deg, rgba(66, 97, 237, 0.1), rgba(0, 192, 250, 0.1));
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: inset 0 0 0 1px rgba(66, 97, 237, 0.1);
+	flex-shrink: 0;
+}
+
+.detail-icon-svg {
+	width: 28px;
+	height: 28px;
+	color: var(--primary-color);
+}
+
+.detail-title-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.detail-name {
+	font-family: var(--font-title);
+	font-size: var(--fs-xl);
+	font-weight: 700;
+	color: var(--text-main);
+	margin: 0;
+}
+
+.detail-code {
+	font-size: var(--fs-sm);
+	color: var(--text-muted);
+	background: var(--bg-light);
+	padding: 2px 8px;
+	border-radius: var(--radius-sm);
+	display: inline-flex;
+	align-items: center;
+	align-self: flex-start;
+	font-weight: 500;
+}
+
+.detail-section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.section-title {
+	font-size: var(--fs-base);
+	font-weight: 600;
+	color: var(--text-main);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.detail-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+	background: #f8faf9;
+	padding: 16px;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--border-color);
+}
+
+.detail-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.detail-label {
+	font-size: 13px;
+	color: var(--text-muted);
+	font-weight: 500;
+}
+
+.detail-value {
+	font-size: var(--fs-sm);
+	color: var(--text-main);
+	font-weight: 600;
+}

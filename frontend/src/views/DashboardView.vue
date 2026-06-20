@@ -1,18 +1,12 @@
 <script setup>
 import { Building, CheckCircle, Users } from "@lucide/vue";
-
-// ─── Icon SVG ────────────────────────────────────────────────────────────────
-
-// ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { useDashboardStore } from "@/store/dashboard";
-import { onMounted, computed } from "vue";
+import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
 import Skeleton from "@/components/Skeleton.vue";
 
-// ─── Khởi tạo ────────────────────────────────────────────────────────────────
+// ─── Khởi tạo
 const dashboardStore = useDashboardStore();
-const authStore = useAuthStore();
 const { stats, loading } = storeToRefs(dashboardStore);
 
 // Lấy thông tin user
@@ -23,11 +17,6 @@ try {
 } catch (err) {
 	userFromStorage = null;
 }
-
-const userName = computed(
-	() =>
-		userFromStorage?.user_name ?? authStore.user?.user_name ?? "Thành viên",
-);
 
 // ─── Tải dữ liệu dashboard ───────────────────────────────────────────────────
 async function loadDashboard() {
@@ -63,7 +52,9 @@ onMounted(loadDashboard);
 							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
-							<div class="stat-value">{{ stats.total_employees }}</div>
+							<div class="stat-value">
+								{{ stats.total_employees }}
+							</div>
 						</template>
 					</div>
 					<div class="stat-icon-wrapper text-teal">
@@ -84,7 +75,9 @@ onMounted(loadDashboard);
 							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
-							<div class="stat-value">{{ stats.total_employees_active }}</div>
+							<div class="stat-value">
+								{{ stats.total_employees_active }}
+							</div>
 						</template>
 					</div>
 					<div class="stat-icon-wrapper text-emerald">
@@ -93,7 +86,15 @@ onMounted(loadDashboard);
 				</div>
 				<div class="stat-footer">
 					<span class="trend-badge trend-badge--success">
-						{{ stats.total_employees ? Math.round((stats.total_employees_active / stats.total_employees) * 100) : 0 }}% hoạt động
+						{{
+							stats.total_employees
+								? Math.round(
+										(stats.total_employees_active /
+											stats.total_employees) *
+											100,
+									)
+								: 0
+						}}% hoạt động
 					</span>
 				</div>
 			</div>
@@ -107,7 +108,9 @@ onMounted(loadDashboard);
 							<Skeleton type="text" width="60px" height="32px" />
 						</template>
 						<template v-else>
-							<div class="stat-value">{{ stats.total_departments }}</div>
+							<div class="stat-value">
+								{{ stats.total_departments }}
+							</div>
 						</template>
 					</div>
 					<div class="stat-icon-wrapper text-amber">
@@ -222,13 +225,17 @@ onMounted(loadDashboard);
 	padding: 1.5rem;
 	display: flex;
 	flex-direction: column;
-	gap: .8rem;
-	transition: box-shadow 0.2s ease, transform 0.2s ease;
+	gap: 0.8rem;
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.2s ease;
 }
 
 .stat-card:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.05),
+		0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .stat-main {
@@ -273,9 +280,18 @@ onMounted(loadDashboard);
 	height: 24px;
 }
 
-.text-teal { color: #00C0FA; background: rgba(0, 192, 250, 0.1); }
-.text-emerald { color: #10B981; background: rgba(16, 185, 129, 0.1); }
-.text-amber { color: #F59E0B; background: rgba(245, 158, 11, 0.1); }
+.text-teal {
+	color: #00c0fa;
+	background: rgba(0, 192, 250, 0.1);
+}
+.text-emerald {
+	color: #10b981;
+	background: rgba(16, 185, 129, 0.1);
+}
+.text-amber {
+	color: #f59e0b;
+	background: rgba(245, 158, 11, 0.1);
+}
 
 .stat-footer {
 	border-top: 1px solid var(--border-color);
@@ -326,12 +342,16 @@ onMounted(loadDashboard);
 	border-radius: var(--radius-lg);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	padding: 1.5rem;
-	transition: box-shadow 0.2s ease, transform 0.2s ease;
+	transition:
+		box-shadow 0.2s ease,
+		transform 0.2s ease;
 }
 
 .dept-card:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.05),
+		0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .dept-header {

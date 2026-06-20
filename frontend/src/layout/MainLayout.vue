@@ -52,17 +52,16 @@ const closeSidebar = () => {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
-	overflow: hidden;
+	overflow-y: auto;
 	height: 100%;
+	background: var(--bg-main);
+	-webkit-overflow-scrolling: touch;
+	will-change: scroll-position;
 }
 
 .content {
 	flex: 1;
 	padding: var(--container-padding);
-	overflow-y: auto;
-	background: var(--bg-main);
-	-webkit-overflow-scrolling: touch;
-	will-change: scroll-position;
 }
 
 .sidebar-backdrop {

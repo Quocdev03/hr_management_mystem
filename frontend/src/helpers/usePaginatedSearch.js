@@ -1,11 +1,12 @@
 import { ref, watch } from "vue";
+import axios from "axios";
 
 /**
  * Composable xử lý search + phân trang + load dữ liệu.
  * Dùng chung cho EmployeeView, DepartmentView, v.v.
  *
- * @param {(params: { page: number; limit: number; search: string }) => Promise<{ success: boolean; message?: string }>} fetchFn
- *   Hàm fetch từ store, nhận params và trả về response chuẩn { success, message }.
+ * @param {(params: { page: number; limit: number; search: string; signal?: AbortSignal }) => Promise<{ success: boolean; message?: string }>} fetchFn
+ *   Hàm fetch từ store, nhận params (bao gồm AbortSignal) và trả về response chuẩn { success, message }.
  * @param {import('vue').Ref<{ page: number; limit: number; totalPages: number }>} paginationRef
  *   Ref pagination từ store (storeToRefs).
  * @param {{ debounce?: number }} [options]
@@ -30,18 +31,44 @@ export function usePaginatedSearch(fetchFn, paginationRef, options) {
 	const errorMessage = ref(null); // Lỗi từ lần fetch gần nhất (null = không có lỗi)
 	let _debounceTimer = null; // Timer debounce — giữ ref để clearTimeout khi cần
 
+	/**
+	 * AbortController cho request đang bay.
+	 * Mỗi lần load() được gọi, controller cũ bị abort() trước khi tạo controller mới.
+	 * Điều này đảm bảo chỉ có response của request MỚI NHẤT được xử lý,
+	 * loại bỏ hoàn toàn race condition khi người dùng gõ nhanh.
+	 */
+	let _abortController = null;
+
 	// ─── Load dữ liệu ────────────────────────────────────────────────────────
 
 	async function load(page = 1) {
+		// Huỷ request cũ đang bay (nếu có) trước khi gửi request mới
+		if (_abortController) {
+			_abortController.abort();
+		}
+		_abortController = new AbortController();
+
 		errorMessage.value = null;
 
 		const params = {
 			page,
 			limit: paginationRef.value.limit,
 			search: searchQuery.value,
+			signal: _abortController.signal,
 		};
 
-		const res = await fetchFn(params);
+		let res;
+		try {
+			res = await fetchFn(params);
+		} catch (err) {
+			// Bỏ qua lỗi do request bị huỷ chủ động (AbortController.abort())
+			// — không phải lỗi thực sự, tránh hiện thông báo lỗi nhầm cho user.
+			if (axios.isCancel(err) || err?.name === "CanceledError" || err?.name === "AbortError") {
+				return;
+			}
+			errorMessage.value = err?.message || "Lỗi tải dữ liệu";
+			return;
+		}
 
 		/**
 		 * Đồng bộ page về paginationRef sau khi fetch thành công.

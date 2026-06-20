@@ -73,13 +73,13 @@ func (h *AuthHandler) GetProfile(ctx *gin.Context) {
 
 	emp, err := h.authSvc.GetProfile(userID)
 	if err != nil {
-		utils.BadRequest(ctx, err.Error())
+		utils.NotFound(ctx, err.Error())
 		return
 	}
 
 	permissions, err := h.authSvc.GetPermissions(userID)
 	if err != nil {
-		utils.BadRequest(ctx, err.Error())
+		utils.InternalServerError(ctx, err.Error())
 		return
 	}
 

@@ -194,6 +194,7 @@ func (es *employeeService) GetEmployeeByID(id uint) (*model.Employee, error) {
 		}
 		return nil, err
 	}
+
 	return emp, nil
 }
 
@@ -222,7 +223,7 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		}
 
 		deptChanged := oldDeptID != newDeptID
-		isOldManager := empTx.Department.ManagerID != nil && *empTx.Department.ManagerID == empTx.ID
+		isOldManager := empTx.Department != nil && empTx.Department.ManagerID != nil && *empTx.Department.ManagerID == empTx.ID
 
 		updateData := map[string]interface{}{}
 
@@ -265,10 +266,14 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 				updateData["salary"] = *req.Salary
 			}
 		}
+		statusChangedToInactive := false
 		if req.Status != nil {
 			value := strings.TrimSpace(*req.Status)
 			if value != empTx.Status {
 				updateData["status"] = value
+				if value == "inactive" {
+					statusChangedToInactive = true
+				}
 			}
 		}
 		if req.Gender != nil {
@@ -290,54 +295,46 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		if req.UserID != nil {
 			oldUserID := empTx.UserID
 			newUserID := *req.UserID
+
+			// Helper closure để validate user
+			validateUser := func(uID uint) error {
+				if uID == 0 {
+					return nil
+				}
+				user, err := txUserRepo.FindByID(uID)
+				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						return errors.New("không tìm thấy tài khoản người dùng này")
+					}
+					return err
+				}
+				if !user.IsActive {
+					return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
+				}
+				existingEmp, err := txEmpRepo.FindByUserID(user.ID)
+				if err == nil && existingEmp.ID != id {
+					return errors.New("user đã gắn cho nhân viên khác")
+				}
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+				return nil
+			}
+
 			if oldUserID == nil {
 				if newUserID != 0 {
-					user, err := txUserRepo.FindByID(newUserID)
-					if err != nil {
-						if errors.Is(err, gorm.ErrRecordNotFound) {
-							return errors.New("không tìm thấy tài khoản người dùng này")
-						}
+					if err := validateUser(newUserID); err != nil {
 						return err
 					}
-
-					if !user.IsActive {
-						return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
-					}
-
-					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
-					if err == nil && existingEmp.ID != id {
-						return errors.New("user đã gắn cho nhân viên khác")
-					}
-					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-						return err
-					}
-
 					updateData["user_id"] = newUserID
 				}
 			} else if *oldUserID != newUserID {
 				if newUserID == 0 {
 					updateData["user_id"] = nil
 				} else {
-					user, err := txUserRepo.FindByID(newUserID)
-					if err != nil {
-						if errors.Is(err, gorm.ErrRecordNotFound) {
-							return errors.New("không tìm thấy tài khoản người dùng này")
-						}
+					if err := validateUser(newUserID); err != nil {
 						return err
 					}
-
-					if !user.IsActive {
-						return errors.New("không thể gắn tài khoản đang ngưng hoạt động")
-					}
-
-					existingEmp, err := txEmpRepo.FindByUserID(user.ID)
-					if err == nil && existingEmp.ID != id {
-						return errors.New("user đã gắn cho nhân viên khác")
-					}
-					if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-						return err
-					}
-
 					updateData["user_id"] = newUserID
 				}
 			}
@@ -369,6 +366,10 @@ func (es *employeeService) UpdateEmployee(id uint, req model.UpdateEmployeeReque
 		if deptChanged && isOldManager {
 			if err := txDeptRepo.UpdateManager(oldDeptID, nil); err != nil {
 				return fmt.Errorf("lỗi khi gỡ trưởng phòng ở phòng cũ: %w", err)
+			}
+		} else if statusChangedToInactive && isOldManager {
+			if err := txDeptRepo.UpdateManager(oldDeptID, nil); err != nil {
+				return fmt.Errorf("lỗi khi gỡ trưởng phòng do nhân viên nghỉ việc: %w", err)
 			}
 		}
 

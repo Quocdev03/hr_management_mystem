@@ -15,7 +15,6 @@ func InvalidateDashboardStats(ctx context.Context, rdb *redis.Client) error {
 	}
 
 	if err := rdb.Del(ctx, "dashboard:stats").Err(); err != nil {
-		Error("Không thể xóa dashboard stats cache: %v", err)
 		return err
 	}
 

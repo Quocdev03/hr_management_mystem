@@ -21,7 +21,7 @@ import { useAuthStore } from "@/store/auth";
 import { useToast } from "vue-toastification";
 import { storeToRefs } from "pinia";
 import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
-import { buildPatchPayload } from "@/helpers/buildPatchPayload";
+import { useModalState } from "@/helpers/useModalState";
 import { usePermissions } from "@/helpers/usePermissions";
 import { onMounted, ref } from "vue";
 
@@ -53,8 +53,7 @@ const originalUser = ref(null);
 
 // ─── Trạng thái modal form thêm/sửa ──────────────────────────────────────────
 
-const isModalVisible = ref(false);
-const isEditing = ref(false);
+const { isModalVisible, isEditMode: isEditing, openAddModal, openEditModal, closeModal } = useModalState();
 const isRoleDisabled = ref(false);
 const isActiveDisabled = ref(false);
 const submitLoading = ref(false);
@@ -66,25 +65,25 @@ const editingUser = ref(null);
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
 
 function handleAdd() {
-	isEditing.value = false;
+	openAddModal();
 	isRoleDisabled.value = false;
 	isActiveDisabled.value = false;
 	currentUserId.value = null;
 	originalUser.value = null;
 	editingUser.value = null;
-	isModalVisible.value = true;
 }
 
 // ─── Mở modal sửa ────────────────────────────────────────────────────────────
 
 function handleUpdate(user) {
-	isEditing.value = true;
-	isRoleDisabled.value = user.role_id === 1 || currentUser?.id === user.id;
+	openEditModal();
+	// So sánh theo role.name thay vì role_id để không bị ảnh hưởng khi DB migrate lệch ID
+	const isAdminUser = user.role?.name?.toLowerCase() === 'admin';
+	isRoleDisabled.value = isAdminUser || currentUser?.id === user.id;
 	isActiveDisabled.value = currentUser?.id === user.id;
 	currentUserId.value = user.id;
 	originalUser.value = { ...user };
 	editingUser.value = user;
-	isModalVisible.value = true;
 }
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
@@ -95,52 +94,14 @@ async function handleFormSubmit(submittedData) {
 		return;
 	}
 
-	let payload = {};
-
-	if (!isEditing.value) {
-		payload = {
-			user_name: submittedData.user_name.trim(),
-			email: submittedData.email.trim(),
-			password: submittedData.password,
-			role_id: Number(submittedData.role_id),
-			is_active: Boolean(submittedData.is_active),
-		};
-	} else {
-		payload = buildPatchPayload(
-			{
-				user_name: originalUser.value?.user_name ?? "",
-				email: originalUser.value?.email ?? "",
-				password: "",
-				role_id: originalUser.value?.role_id ?? null,
-				is_active: originalUser.value?.is_active ?? true,
-			},
-			{
-				user_name: submittedData.user_name.trim(),
-				email: submittedData.email.trim(),
-				password: submittedData.password,
-				role_id: Number(submittedData.role_id),
-				is_active: Boolean(submittedData.is_active),
-			},
-			{
-				fields: [
-					"user_name",
-					"email",
-					"password",
-					"role_id",
-					"is_active",
-				],
-				transformValue: (key, value) => {
-					if (key === "role_id") return Number(value);
-					if (key === "is_active") return Boolean(value);
-					return value;
-				},
-			},
-		);
-	}
-
-	if (Object.keys(payload).length === 0) {
-		toast.info("Không có thay đổi nào được thực hiện.");
-		return;
+	const payload = {
+		user_name: submittedData.user_name.trim(),
+		email: submittedData.email.trim(),
+		role_id: Number(submittedData.role_id),
+		is_active: Boolean(submittedData.is_active),
+	};
+	if (submittedData.password) {
+		payload.password = submittedData.password;
 	}
 
 	submitLoading.value = true;
@@ -211,7 +172,7 @@ onMounted(async () => {
 			</div>
 			<button
 				v-if="canManageUsers"
-				class="btn btn--primary"
+				class="btn btn-primary"
 				@click="handleAdd"
 			>
 				<Plus class="btn__icon" />
@@ -297,17 +258,17 @@ onMounted(async () => {
 												user.user_name
 											}}</span>
 											<span
-												class="user-role-badge"
-												:class="`role-${user.role_id}`"
-											>
-												{{
-													user.role_id === 1
-														? "Quản trị"
-														: user.role_id === 2
-															? "Quản lý"
-															: "Nhân viên"
-												}}
-											</span>
+									class="user-role-badge"
+									:class="`role-${user.role_id}`"
+								>
+									{{
+										user.role?.name?.toLowerCase() === 'admin'
+											? "Quản trị"
+											: user.role?.name?.toLowerCase() === 'hr'
+												? "Quản lý"
+												: "Nhân viên"
+									}}
+								</span>
 										</div>
 									</div>
 								</td>
@@ -450,17 +411,14 @@ onMounted(async () => {
 .user-name-txt {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
-	color: var(--text-main);
 }
 
 .user-role-badge {
 	font-size: var(--fs-xs);
-	font-weight: var(--fw-bold);
+	font-weight: var(--fw-semibold);
 	padding: 0.15rem 0.5rem;
 	border-radius: var(--radius-sm);
 	width: max-content;
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
 }
 
 .user-role-badge.role-1 {

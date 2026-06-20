@@ -8,8 +8,8 @@ type Employee struct {
 	ID           uint       `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID       *uint      `gorm:"index" json:"user_id"`
 	User         *User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	DepartmentID uint       `gorm:"not null" json:"department_id"`
-	Department   Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
+	DepartmentID uint        `gorm:"not null" json:"department_id"`
+	Department   *Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
 	PositionID   uint       `gorm:"not null;index" json:"position_id"`
 	Position     *Position  `gorm:"foreignKey:PositionID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"position,omitempty"`
 	FirstName    string     `gorm:"size:100;not null" json:"first_name"`

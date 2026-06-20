@@ -6,6 +6,7 @@ import (
 	"chiquoc_hocgolang/internal/model"
 	"chiquoc_hocgolang/internal/service"
 	"chiquoc_hocgolang/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +29,6 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 		return
 	}
 
-	common.NormalizePagination(&query)
 
 	result, err := h.userSvc.GetUsers(query)
 	if err != nil {
@@ -104,7 +104,11 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 	}
 
 	if err := h.userSvc.DeleteUser(id); err != nil {
-		utils.BadRequest(ctx, err.Error())
+		if strings.Contains(err.Error(), "không tìm thấy") {
+			utils.NotFound(ctx, err.Error())
+		} else {
+			utils.InternalServerError(ctx, err.Error())
+		}
 		return
 	}
 

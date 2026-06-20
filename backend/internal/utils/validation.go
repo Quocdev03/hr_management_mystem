@@ -5,7 +5,6 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 )
 
 // --- Constants for Field Names ---
@@ -78,9 +77,7 @@ func normalize(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func length(s string) int {
-	return utf8.RuneCountInString(s)
-}
+
 
 // --- Reusable Validation Checkers ---
 

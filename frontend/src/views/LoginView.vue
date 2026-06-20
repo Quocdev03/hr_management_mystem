@@ -1,8 +1,6 @@
 <script setup>
 import { Eye, EyeOff, Lock, Mail, Users } from "@lucide/vue";
 
-// ─── Icon SVG ────────────────────────────────────────────────────────────────
-
 // ─── Store & tiện ích ────────────────────────────────────────────────────────
 import { reactive, ref } from "vue";
 import { useAuthStore } from "@/store/auth";
@@ -102,7 +100,11 @@ function togglePasswordVisibility() {
 					<a href="#" class="forgot-password">Quên mật khẩu?</a>
 				</div>
 
-				<button type="submit" class="submit-btn" :disabled="loading">
+				<button
+					type="submit"
+					class="btn btn-primary"
+					:disabled="loading"
+				>
 					<span v-if="!loading">Đăng Nhập</span>
 					<span v-else class="loader"></span>
 				</button>
@@ -184,7 +186,9 @@ function togglePasswordVisibility() {
 .login-card {
 	width: 100%;
 	max-width: 500px;
-	background: rgba(255, 255, 255, 0.7);
+	background: rgba(255, 255, 255, 0.65);
+	backdrop-filter: saturate(180%) blur(16px);
+	-webkit-backdrop-filter: saturate(180%) blur(16px);
 	border: 1px solid rgba(255, 255, 255, 0.6);
 	border-radius: var(--radius-xl);
 	padding: var(--space-5);
@@ -347,43 +351,6 @@ function togglePasswordVisibility() {
 	text-decoration: underline;
 }
 
-.submit-btn {
-	background: var(--primary-gradient);
-	color: white;
-	border: none;
-	border-radius: var(--radius-md);
-	padding: var(--space-2) var(--space-3);
-	font-size: var(--fs-base);
-	font-weight: var(--fw-semibold);
-	cursor: pointer;
-	transition:
-		background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-		box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 48px;
-	margin-top: var(--space-1);
-	box-shadow: 0 4px 14px rgba(66, 97, 237, 0.25);
-}
-
-.submit-btn:hover:not(:disabled) {
-	background: var(--primary-gradient-hover);
-	transform: translateY(-1px);
-	box-shadow: 0 6px 20px rgba(66, 97, 237, 0.35);
-}
-
-.submit-btn:active:not(:disabled) {
-	transform: translateY(0);
-}
-
-.submit-btn:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
 .loader {
 	width: 20px;
 	height: 20px;
@@ -396,13 +363,6 @@ function togglePasswordVisibility() {
 @keyframes spin {
 	to {
 		transform: rotate(360deg);
-	}
-}
-
-@media (max-width: 768px) {
-	.login-card {
-		padding: var(--space-4) var(--space-4);
-		max-width: 400px;
 	}
 }
 

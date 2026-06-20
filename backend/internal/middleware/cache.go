@@ -17,9 +17,6 @@ type bodyLogWriter struct {
 }
 
 func (w *bodyLogWriter) Write(b []byte) (int, error) {
-	if w.body == nil {
-		w.body = bytes.NewBuffer(nil)
-	}
 	_, _ = w.body.Write(b)
 	return w.ResponseWriter.Write(b)
 }
@@ -48,7 +45,7 @@ func CacheResponse(rdb *redis.Client, expiration time.Duration) gin.HandlerFunc 
 		}
 
 		// 2. Cache Miss: Cho phép request đi tiếp và chặn kết quả trả về
-		blw := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: ctx.Writer}
+		blw := &bodyLogWriter{body: &bytes.Buffer{}, ResponseWriter: ctx.Writer}
 		ctx.Writer = blw
 
 		ctx.Next()
@@ -65,44 +62,7 @@ func CacheResponse(rdb *redis.Client, expiration time.Duration) gin.HandlerFunc 
 	}
 }
 
-// ClearCache là middleware dùng cho POST/PUT/PATCH/DELETE để xoá cache cũ
-func ClearCache(rdb *redis.Client, pattern string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		// Cho phép request POST/PUT/PATCH/DELETE chạy xuống DB trước
-		ctx.Next()
 
-		// Nếu xử lý thành công (status 2xx) thì tiến hành xoá cache
-		status := ctx.Writer.Status()
-		if status >= http.StatusOK && status < http.StatusMultipleChoices {
-			redisCtx := ctx.Request.Context()
-			
-			// Dùng SCAN để tìm tất cả các key match với pattern (thay vì KEYS để tránh block server)
-			var cursor uint64
-			for {
-				var keys []string
-				var err error
-				keys, cursor, err = rdb.Scan(redisCtx, cursor, pattern, 100).Result()
-				if err != nil {
-					utils.Error("Lỗi khi tìm key cache pattern %s: %v", pattern, err)
-					break
-				}
-
-				if len(keys) > 0 {
-					err = rdb.Del(redisCtx, keys...).Err()
-					if err != nil {
-						utils.Error("Lỗi khi xoá các key cache %v: %v", keys, err)
-					} else {
-						utils.Info("Đã xoá %d key cache cũ cho pattern: %s", len(keys), pattern)
-					}
-				}
-
-				if cursor == 0 {
-					break
-				}
-			}
-		}
-	}
-}
 
 // ClearMultipleCaches là middleware gộp nhiều cache pattern invalidation thành 1 call.
 // Thay thế cho việc chồng nhiều ClearCache() middleware trong router.

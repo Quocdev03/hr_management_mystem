@@ -66,7 +66,6 @@ func (r *employeeRepository) FindAll(query model.PaginationQuery) ([]model.Emplo
 	err := db.
 		Preload("Department").
 		Preload("User").
-		Preload("User.Role").
 		Preload("Position").
 		Offset(offset).
 		Limit(query.Limit).

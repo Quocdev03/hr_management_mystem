@@ -1,25 +1,25 @@
 /* bento.css - Global Styles for Bento Grid Layout */
 
 .bento-container {
-	margin-top: var(--space-4);
+	margin-top: var(--space-3);
 	width: 100%;
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-4);
+	gap: var(--space-3);
 }
 
 .bento-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-	gap: var(--space-3);
+	gap: var(--space-2);
 }
 
 .bento-card {
 	background: var(--bg-card);
 	border: var(--glass-border);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--glass-shadow);
-	padding: var(--space-4);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+	padding: 20px;
 	position: relative;
 	overflow: hidden;
 	transition:
@@ -31,12 +31,13 @@
 		box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	display: flex;
 	flex-direction: column;
+	cursor: pointer;
 }
 
 .bento-card:hover {
-	transform: translateY(-4px);
-	box-shadow: var(--glass-shadow-hover);
-	border-color: rgba(66, 97, 237, 0.2);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-md);
+	border-color: rgba(66, 97, 237, 0.18);
 }
 
 .bento-accent-bar {
@@ -56,7 +57,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: var(--space-3);
+	margin-bottom: var(--space-2);
 }
 
 .bento-name {
@@ -69,13 +70,13 @@
 
 .bento-body {
 	flex: 1;
-	margin-bottom: var(--space-3);
+	margin-bottom: var(--space-2);
 }
 
 .bento-desc {
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
-	line-height: 1.5;
+	line-height: 1.4;
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
 	line-clamp: 3;
@@ -87,8 +88,8 @@
 .bento-actions {
 	display: flex;
 	justify-content: flex-end;
-	gap: var(--space-2);
+	gap: 0.35rem;
 	border-top: 1px solid var(--border-color);
-	padding-top: var(--space-3);
+	padding-top: var(--space-2);
 	margin-top: auto;
 }

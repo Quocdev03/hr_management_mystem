@@ -4,7 +4,7 @@
 
 .btn {
 	padding: 10px 18px;
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-sm);
 	font-weight: 600;
 	font-size: var(--fs-sm);
 	cursor: pointer;
@@ -12,7 +12,6 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid transparent;
 }
 
 .btn:disabled {

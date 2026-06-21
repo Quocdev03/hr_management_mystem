@@ -5,19 +5,19 @@
 .form-wrapper {
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-4);
+	gap: var(--space-3);
 }
 
 .form-grid {
 	display: grid;
 	grid-template-columns: repeat(2, 1fr);
-	gap: 20px;
+	gap: 12px 16px;
 }
 
 .form-group {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 5px;
 }
 
 .form-group--full {
@@ -26,28 +26,31 @@
 
 .form-label {
 	font-weight: 600;
-	font-size: var(--fs-sm);
-	color: var(--text-main);
+	font-size: var(--fs-xs);
+	color: var(--text-muted);
 	display: flex;
 	align-items: center;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
 }
 
 .required {
 	color: var(--danger-color);
-	margin-left: 4px;
+	margin-left: 2px;
 	font-weight: bold;
 }
 
 .form-control {
 	width: 100%;
-	padding: 10px 14px;
+	padding: 8px 12px;
 	border: 1px solid var(--border-color);
-	border-radius: var(--radius-md);
+	border-radius: var(--radius-sm);
 	font-size: var(--fs-sm);
 	color: var(--text-main);
 	background: var(--bg-card);
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 	font-family: inherit;
+	height: 36px;
 }
 
 .form-control::placeholder {
@@ -70,6 +73,7 @@
 textarea.form-control {
 	resize: vertical;
 	min-height: 80px;
+	height: auto;
 }
 
 select.form-control {

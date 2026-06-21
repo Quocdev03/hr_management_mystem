@@ -98,7 +98,11 @@ onMounted(() => {
 					<div class="avatar-section">
 						<!-- Premium custom CSS initials avatar synchronized with sidebar -->
 						<div class="profile-avatar-circle-large">
-							{{ displayName ? displayName.charAt(0).toUpperCase() : 'U' }}
+							{{
+								displayName
+									? displayName.charAt(0).toUpperCase()
+									: "U"
+							}}
 						</div>
 						<h2 class="user-name">
 							{{ displayName }}
@@ -131,7 +135,9 @@ onMounted(() => {
 
 					<div class="quick-stats" v-if="hasEmployee">
 						<div class="profile-stat-item">
-							<span class="profile-stat-label">Ngày tham gia:</span>
+							<span class="profile-stat-label"
+								>Ngày tham gia:</span
+							>
 							<span class="profile-stat-value">{{
 								formatDate(
 									authStore?.userProfile?.employee?.join_date,
@@ -354,9 +360,9 @@ onMounted(() => {
 <style scoped>
 .profile-grid {
 	display: grid;
-	grid-template-columns: 400px 1fr;
-	gap: var(--space-3);
-	margin-top: var(--space-4);
+	grid-template-columns: 300px 1fr;
+	gap: var(--space-2);
+	margin-top: var(--space-3);
 }
 
 .profile-card {
@@ -365,7 +371,10 @@ onMounted(() => {
 	border-radius: var(--radius-lg);
 	border: 1px solid var(--border-color);
 	box-shadow: var(--glass-shadow);
-	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+	transition:
+		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s ease,
+		border-color 0.2s ease;
 	overflow: hidden;
 }
 
@@ -388,7 +397,7 @@ onMounted(() => {
 }
 
 .sidebar-card {
-	padding: var(--space-4) var(--space-3);
+	padding: var(--space-2-5) var(--space-2);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -404,12 +413,12 @@ onMounted(() => {
 .avatar-container {
 	width: 130px;
 	height: 130px;
-	margin: var(--space-3) auto;
+	margin: var(--space-2) auto;
 }
 
 .profile-avatar-circle-large {
-	width: 130px;
-	height: 130px;
+	width: 110px;
+	height: 110px;
 	border-radius: var(--radius-xl);
 	background: var(--primary-gradient);
 	color: white;
@@ -418,15 +427,21 @@ onMounted(() => {
 	justify-content: center;
 	font-weight: var(--fw-bold);
 	font-size: 4.25rem;
-	box-shadow: 0 8px 24px rgba(66, 97, 237, 0.2), inset 0 4px 10px rgba(255, 255, 255, 0.25);
-	margin: var(--space-3) auto;
-	transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+	box-shadow:
+		0 8px 24px rgba(66, 97, 237, 0.2),
+		inset 0 4px 10px rgba(255, 255, 255, 0.25);
+	margin: var(--space-2) auto;
+	transition:
+		transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+		box-shadow 0.25s ease;
 	border: 4px solid rgba(255, 255, 255, 0.95);
 }
 
 .sidebar-card:hover .profile-avatar-circle-large {
 	transform: scale(1.05) rotate(-3deg);
-	box-shadow: 0 15px 35px rgba(66, 97, 237, 0.35), inset 0 4px 10px rgba(255, 255, 255, 0.3);
+	box-shadow:
+		0 15px 35px rgba(66, 97, 237, 0.35),
+		inset 0 4px 10px rgba(255, 255, 255, 0.3);
 }
 
 .user-name {
@@ -441,7 +456,11 @@ onMounted(() => {
 .user-role-tag {
 	display: inline-block;
 	padding: 4px 12px;
-	background: linear-gradient(135deg, rgba(66, 97, 237, 0.08) 0%, rgba(0, 192, 250, 0.03) 100%);
+	background: linear-gradient(
+		135deg,
+		rgba(66, 97, 237, 0.08) 0%,
+		rgba(0, 192, 250, 0.03) 100%
+	);
 	color: var(--primary-color);
 	border: 1px solid rgba(66, 97, 237, 0.12);
 	border-radius: var(--radius-full);
@@ -498,12 +517,9 @@ onMounted(() => {
 	border-radius: var(--radius-md);
 	background: rgba(66, 97, 237, 0.02);
 	border: 1px solid transparent;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.profile-stat-item:hover {
-	background: rgba(66, 97, 237, 0.05);
-	border-color: rgba(66, 97, 237, 0.08);
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .profile-stat-label {
@@ -520,7 +536,7 @@ onMounted(() => {
 }
 
 .main-card {
-	padding: var(--space-4) var(--space-4);
+	padding: var(--space-2-5);
 }
 
 .card-header {
@@ -572,32 +588,31 @@ onMounted(() => {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
 	color: var(--text-main);
-	padding: 10px 16px;
-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(244, 246, 255, 0.45) 100%);
+	padding: 8px 12px;
+	background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.85) 0%,
+		rgba(244, 246, 255, 0.45) 100%
+	);
 	border-radius: var(--radius-md);
 	border: 1px solid rgba(66, 97, 237, 0.06);
 	box-shadow: inset 0 1px 2px rgba(66, 97, 237, 0.01);
-	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.info-group:hover .value {
-	border-color: rgba(66, 97, 237, 0.2);
-	background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(244, 246, 255, 0.65) 100%);
-	box-shadow: 0 4px 12px rgba(66, 97, 237, 0.04);
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease,
+		box-shadow 0.15s ease;
 }
 
 .info-group .value.salary {
 	color: var(--success-color);
 	font-family: var(--font-widget);
 	font-weight: var(--fw-bold);
-	background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(16, 185, 129, 0.03) 100%);
+	background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.85) 0%,
+		rgba(16, 185, 129, 0.03) 100%
+	);
 	border-color: rgba(16, 185, 129, 0.12);
-}
-
-.info-group:hover .value.salary {
-	border-color: rgba(16, 185, 129, 0.35);
-	background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(16, 185, 129, 0.06) 100%);
-	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.06);
 }
 
 .mt-6 {

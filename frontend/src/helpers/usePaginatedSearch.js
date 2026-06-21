@@ -19,7 +19,7 @@ import axios from "axios";
  *   errorMessage: import('vue').Ref<string | null>,
  * }}
  */
-export function usePaginatedSearch(fetchFn, paginationRef, options) {
+export const usePaginatedSearch = (fetchFn, paginationRef, options) => {
 	// ─── Cấu hình ────────────────────────────────────────────────────────────
 
 	// Lấy debounce từ options, mặc định 400ms nếu không truyền
@@ -41,7 +41,7 @@ export function usePaginatedSearch(fetchFn, paginationRef, options) {
 
 	// ─── Load dữ liệu ────────────────────────────────────────────────────────
 
-	async function load(page = 1) {
+	const load = async (page = 1) => {
 		// Huỷ request cũ đang bay (nếu có) trước khi gửi request mới
 		if (_abortController) {
 			_abortController.abort();
@@ -104,7 +104,7 @@ export function usePaginatedSearch(fetchFn, paginationRef, options) {
 	 * - Phải là số hợp lệ, >= 1, và không vượt quá totalPages
 	 * - Tránh gọi API thừa khi người dùng spam nút prev/next ở biên
 	 */
-	function handlePageChange(page) {
+	const handlePageChange = (page) => {
 		const p = Number(page);
 		if (Number.isNaN(p) || p < 1) return;
 		if (p > paginationRef.value.totalPages) return;

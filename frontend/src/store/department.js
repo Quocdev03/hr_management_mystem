@@ -14,7 +14,7 @@ export const useDepartmentStore = defineStore("department", () => {
 	const loading = ref(false);
 
 	// Actions
-	async function fetchDepartments(params = {}) {
+	const fetchDepartments = async (params = {}) => {
 		loading.value = true;
 
 		try {
@@ -45,7 +45,7 @@ export const useDepartmentStore = defineStore("department", () => {
 		}
 	}
 
-	async function fetchDepartmentByID(id) {
+	const fetchDepartmentByID = async (id) => {
 		try {
 			const res = await api.get(`/departments/${id}`);
 			return res;
@@ -58,7 +58,7 @@ export const useDepartmentStore = defineStore("department", () => {
 		}
 	}
 
-	async function createDepartment(data) {
+	const createDepartment = async (data) => {
 		try {
 			const res = await api.post("/departments", data);
 			return res;
@@ -71,7 +71,7 @@ export const useDepartmentStore = defineStore("department", () => {
 		}
 	}
 
-	async function updateDepartment(id, data) {
+	const updateDepartment = async (id, data) => {
 		try {
 			const res = await api.patch(`/departments/${id}`, data);
 			return res;
@@ -84,7 +84,7 @@ export const useDepartmentStore = defineStore("department", () => {
 		}
 	}
 
-	async function deleteDepartment(id) {
+	const deleteDepartment = async (id) => {
 		try {
 			const res = await api.delete(`/departments/${id}`);
 			return res;

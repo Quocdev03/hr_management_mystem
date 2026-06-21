@@ -13,15 +13,7 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "submit"]);
 
-const formData = ref(buildInitialFormData());
-
-const roles = [
-	{ id: 1, label: "Admin (Quản trị viên)" },
-	{ id: 2, label: "HR (Nhân sự)" },
-	{ id: 3, label: "Employee (Nhân viên)" },
-];
-
-function buildInitialFormData(data = null) {
+const buildInitialFormData = (data = null) => {
 	const d = data ?? {};
 	return {
 		user_name: d.user_name ?? "",
@@ -31,7 +23,15 @@ function buildInitialFormData(data = null) {
 		role_id: d.role_id ?? 3,
 		is_active: d.is_active ?? true,
 	};
-}
+};
+
+const formData = ref(buildInitialFormData());
+
+const roles = [
+	{ id: 1, label: "Admin (Quản trị viên)" },
+	{ id: 2, label: "HR (Nhân sự)" },
+	{ id: 3, label: "Employee (Nhân viên)" },
+];
 
 watch(
 	() => props.visible,
@@ -51,13 +51,13 @@ watch(
 	}
 );
 
-function handleSubmit() {
+const handleSubmit = () => {
 	emit("submit", { ...formData.value });
-}
+};
 
-function handleClose() {
+const handleClose = () => {
 	emit("close");
-}
+};
 </script>
 
 <template>
@@ -69,7 +69,7 @@ function handleClose() {
 				? 'Cập nhật thông tin người dùng'
 				: 'Nhập thông tin người dùng mới'
 		"
-		size="lg"
+		size="md"
 		@close="handleClose"
 	>
 		<form @submit.prevent="handleSubmit" class="form-wrapper">
@@ -157,17 +157,15 @@ function handleClose() {
 					>
 				</div>
 				<div class="form-group">
-					<div class="form-group form-group--full">
-						<label class="form-label">Trạng thái</label>
-						<select
-							v-model="formData.is_active"
-							class="form-control"
-							:disabled="isActiveDisabled"
-						>
-							<option :value="true">Hoạt động</option>
-							<option :value="false">Ngưng</option>
-						</select>
-					</div>
+					<label class="form-label">Trạng thái</label>
+					<select
+						v-model="formData.is_active"
+						class="form-control"
+						:disabled="isActiveDisabled"
+					>
+						<option :value="true">Hoạt động</option>
+						<option :value="false">Ngưng</option>
+					</select>
 				</div>
 			</div>
 

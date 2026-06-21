@@ -12,9 +12,7 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "submit"]);
 
-const formData = ref(buildInitialFormData());
-
-function buildInitialFormData(data = null) {
+const buildInitialFormData = (data = null) => {
 	const d = data ?? {};
 	return {
 		name: d.name ?? "",
@@ -22,7 +20,9 @@ function buildInitialFormData(data = null) {
 		description: d.description ?? "",
 		manager_id: d.manager_id ?? d.manager?.id ?? null,
 	};
-}
+};
+
+const formData = ref(buildInitialFormData());
 
 watch(
 	() => props.visible,
@@ -42,13 +42,13 @@ watch(
 	}
 );
 
-function handleSubmit() {
+const handleSubmit = () => {
 	emit("submit", { ...formData.value });
-}
+};
 
-function handleClose() {
+const handleClose = () => {
 	emit("close");
-}
+};
 </script>
 
 <template>
@@ -60,7 +60,7 @@ function handleClose() {
 				? 'Cập nhật phòng ban hiện tại'
 				: 'Nhập thông tin phòng ban mới'
 		"
-		size="lg"
+		size="md"
 		@close="handleClose"
 	>
 		<form @submit.prevent="handleSubmit" class="form-wrapper">

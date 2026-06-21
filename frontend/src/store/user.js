@@ -10,7 +10,7 @@ export const useUserStore = defineStore("user", () => {
 	const loading = ref(false);
 
 	// Fetch User
-	async function fetchUser(params = {}) {
+	const fetchUser = async (params = {}) => {
 		loading.value = true;
 
 		try {
@@ -40,7 +40,7 @@ export const useUserStore = defineStore("user", () => {
 	}
 
 	// UsersWithoutEmployee
-	async function fetchUsersWithoutEmployee() {
+	const fetchUsersWithoutEmployee = async () => {
 		try {
 			const res = await api.get("/users/available");
 
@@ -58,7 +58,7 @@ export const useUserStore = defineStore("user", () => {
 	}
 
 	// Create Users
-	async function createUser(data) {
+	const createUser = async (data) => {
 		try {
 			const res = await api.post("/users", data);
 			return res;
@@ -72,7 +72,7 @@ export const useUserStore = defineStore("user", () => {
 	}
 
 	// Update Users
-	async function updateUser(id, data) {
+	const updateUser = async (id, data) => {
 		try {
 			const res = await api.patch(`/users/${id}`, data);
 			return res;
@@ -86,7 +86,7 @@ export const useUserStore = defineStore("user", () => {
 	}
 
 	// Delete Users
-	async function deleteUser(id) {
+	const deleteUser = async (id) => {
 		try {
 			const res = await api.delete(`/users/${id}`);
 			return res;

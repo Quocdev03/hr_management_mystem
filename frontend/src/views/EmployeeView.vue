@@ -84,14 +84,14 @@ const selectedEmployee = ref(null);
 
 // ─── Xem chi tiết ────────────────────────────────────────────────────────────
 
-function handleViewDetails(emp) {
+const handleViewDetails = (emp) => {
 	selectedEmployee.value = emp;
 	isDetailModalVisible.value = true;
-}
+};
 
 // ─── Tải dữ liệu liên quan ───────────────────────────────────────────────────
 
-async function loadFormRelations(force = false) {
+const loadFormRelations = async (force = false) => {
 	if (!force && relationsLoaded.value) return;
 
 	try {
@@ -103,29 +103,29 @@ async function loadFormRelations(force = false) {
 	} catch (err) {
 		console.error("Lỗi khi tải dữ liệu liên quan:", err);
 	}
-}
+};
 
 // ─── Thao tác CRUD ───────────────────────────────────────────────────────────
 
-async function handleAdd() {
+const handleAdd = async () => {
 	editingEmployee.value = null;
 	openAddModal();
 	await loadFormRelations();
-}
+};
 
-async function handleEdit(emp) {
+const handleEdit = async (emp) => {
 	editingEmployee.value = { ...emp };
 	openEditModal();
 	await loadFormRelations();
-}
+};
 
-function handleDelete(emp) {
+const handleDelete = (emp) => {
 	deletingEmployee.value = emp;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá ${emp.first_name} ${emp.last_name}?`;
 	isDeleteModalVisible.value = true;
-}
+};
 
-async function confirmDelete() {
+const confirmDelete = async () => {
 	const emp = deletingEmployee.value;
 	if (!emp) return;
 
@@ -142,9 +142,9 @@ async function confirmDelete() {
 	isDeleteModalVisible.value = false;
 	deletingEmployee.value = null;
 	await loadEmployees(pagination.value.page);
-}
+};
 
-async function handleFormSubmit(submittedData) {
+const handleFormSubmit = async (submittedData) => {
 	formLoading.value = true;
 
 	// Chuẩn hoá chung một payload
@@ -188,7 +188,7 @@ async function handleFormSubmit(submittedData) {
 
 	closeModal();
 	await loadEmployees(pagination.value.page);
-}
+};
 
 onMounted(async () => {
 	await loadEmployees();
@@ -207,7 +207,7 @@ onMounted(async () => {
 			</div>
 			<button
 				v-if="canCreateEmployee"
-				class="btn btn-primary"
+				class="btn btn-primary add-employee-btn"
 				@click="handleAdd"
 			>
 				<Plus class="btn__icon" />
@@ -222,7 +222,7 @@ onMounted(async () => {
 					<input
 						v-model="searchQuery"
 						class="form-control search-box__input"
-						placeholder="Tìm tên nhân viên..."
+						placeholder="Tìm kiếm nhân viên..."
 					/>
 				</div>
 			</div>
@@ -236,7 +236,7 @@ onMounted(async () => {
 							<th>Phòng ban / Chức vụ</th>
 							<th>Ngày vào làm</th>
 							<th>Trạng thái</th>
-							<th v-if="hasAnyEmployeeAction" class="text-right">
+							<th v-if="hasAnyEmployeeAction" class="text-right header-actions-col">
 								Thao tác
 							</th>
 						</tr>
@@ -247,14 +247,14 @@ onMounted(async () => {
 							<tr v-for="i in 5" :key="'skeleton-' + i">
 								<td data-label="Nhân viên">
 									<div class="user-info">
-										<Skeleton type="avatar" />
+										<Skeleton type="avatar" style="width: 36px; height: 36px; border-radius: 8px;" />
 										<div
 											class="user-info__details"
 											style="
 												width: 150px;
 												display: flex;
 												flex-direction: column;
-												gap: var(--space-1);
+												gap: 4px;
 											"
 										>
 											<Skeleton type="text" width="80%" />
@@ -272,7 +272,7 @@ onMounted(async () => {
 											width: 120px;
 											display: flex;
 											flex-direction: column;
-											gap: var(--space-1);
+											gap: 4px;
 										"
 									>
 										<Skeleton type="text" width="70%" />
@@ -291,8 +291,8 @@ onMounted(async () => {
 									data-label="Thao tác"
 								>
 									<div class="action-group">
-										<Skeleton type="btn" />
-										<Skeleton type="btn" />
+										<Skeleton type="btn" style="width: 30px; height: 30px; border-radius: 6px;" />
+										<Skeleton type="btn" style="width: 30px; height: 30px; border-radius: 6px;" />
 									</div>
 								</td>
 							</tr>
@@ -303,7 +303,7 @@ onMounted(async () => {
 							<tr v-for="emp in employees" :key="emp.id">
 								<td data-label="Nhân viên">
 									<div class="user-info">
-										<div class="avatar-gradient" style="width: 40px; height: 40px;">
+										<div class="avatar-gradient">
 											{{
 												getInitials(
 													emp.first_name,
@@ -324,7 +324,7 @@ onMounted(async () => {
 											</span>
 											<span
 												v-else
-												class="user-info__email"
+												class="user-info__email text-unlinked"
 											>
 												Chưa liên kết tài khoản
 											</span>
@@ -333,7 +333,7 @@ onMounted(async () => {
 								</td>
 
 								<td data-label="Liên hệ">
-									<span class="text-main fw-500">
+									<span class="text-main contact-text">
 										{{ emp.phone || "—" }}
 									</span>
 								</td>
@@ -354,7 +354,7 @@ onMounted(async () => {
 
 								<td
 									data-label="Ngày vào làm"
-									class="text-muted"
+									class="text-date"
 								>
 									{{ formatDate(emp.join_date) }}
 								</td>
@@ -475,22 +475,149 @@ onMounted(async () => {
 
 <style scoped>
 .employee-view {
-	padding-bottom: var(--space-4);
+	padding-bottom: var(--space-3);
 }
 
+
+
+.page-subtitle {
+	font-size: 0.8rem;
+	color: #64748b;
+	margin-top: 0.15rem;
+}
+
+.add-employee-btn {
+	font-size: 0.825rem;
+	font-weight: 600;
+	height: 36px;
+	padding: 0 1rem;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	box-shadow: 0 2px 4px rgba(66, 97, 237, 0.15);
+}
+
+.content-card {
+	background: #ffffff;
+	border-radius: 12px;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+	margin-top: 1.5rem;
+	overflow: hidden;
+}
+
+.toolbar {
+	padding: 10px 16px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.search-box__input {
+	height: 34px;
+	font-size: 0.825rem;
+	padding: 8px 12px 8px 2.25rem !important;
+	border-radius: 6px;
+}
+
+.search-box__icon {
+	width: 14px;
+	height: 14px;
+	left: 0.85rem;
+}
+
+/* Avatar details */
 .user-info {
 	display: flex;
 	align-items: center;
-	gap: var(--space-2);
+	gap: 0.75rem;
+}
+
+.avatar-gradient {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	font-size: 0.775rem;
+	font-weight: 700;
+	color: #4f46e5;
+	background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+	border: 1px solid rgba(79, 70, 229, 0.08);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.05);
 }
 
 .user-info__details {
 	display: flex;
 	flex-direction: column;
+	gap: 0.1rem;
+}
+
+.text-unlinked {
+	color: #94a3b8;
+	font-style: italic;
+}
+
+.contact-text {
+	font-size: 0.825rem;
+	font-weight: 500;
+	color: #334155;
 }
 
 .job-info {
 	display: flex;
 	flex-direction: column;
+	gap: 0.1rem;
+}
+
+.text-date {
+	font-size: 0.8rem;
+	color: #64748b;
+}
+
+/* Pagination container */
+.pagination {
+	padding: 12px 16px;
+	background: #ffffff;
+	border-top: 1px solid rgba(0, 0, 0, 0.05);
+	gap: 1rem;
+}
+
+.pagination__btn {
+	width: 30px;
+	height: 30px;
+	border-radius: 6px;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pagination__btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+.pagination__info {
+	font-size: 0.775rem;
+	color: #64748b;
+}
+
+.header-actions-col {
+	width: 120px;
+}
+
+@media (max-width: 768px) {
+	.responsive-table-to-cards .data-table tr {
+		border-bottom: 6px solid #f1f5f9;
+		padding: 12px 16px;
+		border-radius: 8px;
+		margin-bottom: 8px;
+		border-top: 1px solid rgba(0, 0, 0, 0.05);
+		border-left: 1px solid rgba(0, 0, 0, 0.05);
+		border-right: 1px solid rgba(0, 0, 0, 0.05);
+	}
+	
+	.responsive-table-to-cards .data-table td {
+		padding: 6px 0;
+	}
 }
 </style>

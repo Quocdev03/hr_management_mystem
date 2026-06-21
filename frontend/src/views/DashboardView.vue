@@ -10,13 +10,13 @@ const dashboardStore = useDashboardStore();
 const { stats, loading } = storeToRefs(dashboardStore);
 
 // ─── Tải dữ liệu dashboard ───────────────────────────────────────────────────
-async function loadDashboard() {
+const loadDashboard = async () => {
 	try {
 		await dashboardStore.fetchDashboard();
 	} catch (err) {
 		console.error("Lỗi khi tải dashboard:", err);
 	}
-}
+};
 onMounted(loadDashboard);
 </script>
 
@@ -124,14 +124,8 @@ onMounted(loadDashboard);
 							<Skeleton type="text" width="120px" height="18px" />
 							<Skeleton type="badge" width="40px" height="22px" />
 						</div>
-						<div
-							class="progress-container"
-							style="margin-top: 1rem"
-						>
-							<div
-								class="skeleton"
-								style="width: 100%; height: 100%"
-							></div>
+						<div class="progress-container dept-skeleton-progress">
+							<div class="skeleton dept-skeleton-fill"></div>
 						</div>
 					</div>
 				</template>
@@ -367,6 +361,15 @@ onMounted(loadDashboard);
 	padding: var(--space-4) 0;
 	color: var(--text-muted);
 	font-size: var(--fs-sm);
+}
+
+.dept-skeleton-progress {
+	margin-top: 1rem;
+}
+
+.dept-skeleton-fill {
+	width: 100%;
+	height: 100%;
 }
 
 @media (max-width: 640px) {

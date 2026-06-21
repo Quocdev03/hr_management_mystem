@@ -68,25 +68,25 @@ const editingUser = ref(null);
 const isDetailModalVisible = ref(false);
 const userToView = ref(null);
 
-function handleViewDetail(user) {
+const handleViewDetail = (user) => {
 	userToView.value = user;
 	isDetailModalVisible.value = true;
-}
+};
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
 
-function handleAdd() {
+const handleAdd = () => {
 	openAddModal();
 	isRoleDisabled.value = false;
 	isActiveDisabled.value = false;
 	currentUserId.value = null;
 	originalUser.value = null;
 	editingUser.value = null;
-}
+};
 
 // ─── Mở modal sửa ────────────────────────────────────────────────────────────
 
-function handleUpdate(user) {
+const handleUpdate = (user) => {
 	openEditModal();
 	// So sánh theo role.name thay vì role_id để không bị ảnh hưởng khi DB migrate lệch ID
 	const isAdminUser = user.role?.name?.toLowerCase() === 'admin';
@@ -95,11 +95,11 @@ function handleUpdate(user) {
 	currentUserId.value = user.id;
 	originalUser.value = { ...user };
 	editingUser.value = user;
-}
+};
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
 
-async function handleFormSubmit(submittedData) {
+const handleFormSubmit = async (submittedData) => {
 	if (submittedData.password !== submittedData.password_confirm) {
 		toast.error("Mật khẩu xác nhận không khớp!");
 		return;
@@ -137,17 +137,17 @@ async function handleFormSubmit(submittedData) {
 
 	isModalVisible.value = false;
 	await loadUsers();
-}
+};
 
 // ─── Xử lý xoá user ──────────────────────────────────────────────────────────
 
-function handleDelete(user) {
+const handleDelete = (user) => {
 	deletingUser.value = user;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá người dùng ${user.user_name}?`;
 	isDeleteModalVisible.value = true;
-}
+};
 
-async function confirmDelete() {
+const confirmDelete = async () => {
 	const user = deletingUser.value;
 	if (!user) return;
 
@@ -164,7 +164,7 @@ async function confirmDelete() {
 	isDeleteModalVisible.value = false;
 	deletingUser.value = null;
 	await loadUsers();
-}
+};
 
 onMounted(async () => {
 	await loadUsers();
@@ -257,7 +257,7 @@ onMounted(async () => {
 							<tr v-for="user in users" :key="user.id" @click="handleViewDetail(user)" style="cursor: pointer;">
 								<td data-label="Tên người dùng">
 									<div class="user-cell">
-										<div class="avatar-gradient" style="width: 40px; height: 40px;">
+										<div class="avatar-gradient">
 											{{
 												user.user_name
 													.charAt(0)
@@ -415,5 +415,21 @@ onMounted(async () => {
 .user-name-txt {
 	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
+}
+
+.avatar-gradient {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px; /* Bo góc vuông mềm giống bên EmployeeView.vue */
+	background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+	color: #4f46e5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 13px;
+	border: 1px solid rgba(79, 70, 229, 0.08);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+	flex-shrink: 0;
 }
 </style>

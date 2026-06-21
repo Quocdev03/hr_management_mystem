@@ -18,10 +18,3 @@ type RolePermission struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-// UserPermission cho phép override quyền riêng cho user cụ thể.
-type UserPermission struct {
-	UserID       uint      `gorm:"primaryKey" json:"user_id"`
-	PermissionID uint      `gorm:"primaryKey" json:"permission_id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-}

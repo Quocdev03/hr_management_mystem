@@ -11,9 +11,9 @@ const props = defineProps({
 
 const emit = defineEmits(["close"]);
 
-function handleClose() {
+const handleClose = () => {
 	emit("close");
-}
+};
 
 const employees = computed(() => props.department?.employees || []);
 const managerName = computed(() => {
@@ -27,7 +27,7 @@ const managerName = computed(() => {
 	<ModalDialog
 		:visible="visible"
 		title="Chi tiết phòng ban"
-		size="lg"
+		size="md"
 		@close="handleClose"
 	>
 		<div class="detail-body" v-if="department">
@@ -58,7 +58,7 @@ const managerName = computed(() => {
 			<div class="detail-section manager-section">
 				<h4 class="section-title">Trưởng phòng ban</h4>
 				<div class="manager-card" v-if="department.manager">
-					<div class="avatar-gradient" style="width: 44px; height: 44px;">
+					<div class="avatar-gradient" style="width: 36px; height: 36px; font-size: 13px;">
 						{{
 							getInitials(
 								department.manager.first_name,
@@ -121,17 +121,12 @@ const managerName = computed(() => {
 								<td>
 									<span
 										:class="[
-											'status-dot',
-											emp.status === 'active'
-												? 'active'
-												: 'inactive',
+											'status-badge',
+											`status-badge--${emp.status}`,
 										]"
-									></span>
-									<span class="status-text">{{
-										emp.status === "active"
-											? "Đang làm việc"
-											: "Nghỉ việc"
-									}}</span>
+									>
+										{{ emp.status === "active" ? "Đang làm việc" : "Nghỉ việc" }}
+									</span>
 								</td>
 							</tr>
 						</tbody>
@@ -144,7 +139,7 @@ const managerName = computed(() => {
 		</div>
 
 		<template #footer>
-			<button class="btn btn-secondary" @click="handleClose">Đóng</button>
+			<button class="btn btn-secondary close-btn" @click="handleClose">Đóng</button>
 		</template>
 	</ModalDialog>
 </template>
@@ -154,7 +149,7 @@ const managerName = computed(() => {
 	font-size: var(--fs-sm);
 	color: var(--text-main);
 	background: var(--bg-lighter);
-	padding: var(--space-2) var(--space-3);
+	padding: 10px 14px;
 	border-radius: var(--radius-md);
 	border: 1px solid var(--border-color);
 	line-height: var(--lh-normal);
@@ -164,9 +159,9 @@ const managerName = computed(() => {
 .manager-card {
 	display: flex;
 	align-items: center;
-	gap: var(--space-2);
+	gap: 12px;
 	background: rgba(66, 97, 237, 0.03);
-	padding: var(--space-2) var(--space-3);
+	padding: 10px 14px;
 	border-radius: var(--radius-md);
 	border: 1px solid var(--border-color);
 }
@@ -179,25 +174,26 @@ const managerName = computed(() => {
 
 .manager-name-text {
 	font-size: var(--fs-sm);
-	font-weight: var(--fw-bold);
+	font-weight: 700;
 	color: var(--text-main);
 }
 
 .manager-subtext {
 	font-size: var(--fs-xs);
 	color: var(--text-muted);
+	font-weight: 500;
 }
 
 .manager-contact {
 	font-size: var(--fs-xs);
 	color: var(--primary-color);
-	font-weight: var(--fw-medium);
+	font-weight: 600;
 	margin-top: 2px;
 }
 
 .empty-manager,
 .empty-employees {
-	padding: var(--space-2) var(--space-3);
+	padding: 10px 14px;
 	font-size: var(--fs-sm);
 	color: var(--text-muted);
 	background: var(--bg-lighter);
@@ -228,10 +224,14 @@ const managerName = computed(() => {
 
 .emp-name {
 	font-weight: var(--fw-semibold);
+	font-size: var(--fs-sm);
 }
 
-.status-text {
-	font-size: var(--fs-xs);
-	font-weight: var(--fw-medium);
+.close-btn {
+	font-size: 0.825rem;
+	font-weight: 600;
+	height: 36px;
+	padding: 0 1rem;
+	border-radius: 8px;
 }
 </style>

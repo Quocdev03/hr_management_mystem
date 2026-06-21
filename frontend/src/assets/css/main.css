@@ -25,22 +25,14 @@
 	--font-body: "Open Sans", sans-serif;
 
 	/* ---------------- Typography (xs → 6xl) ---------------- */
-	--fs-xxs: 11px;
-	--fs-xs: clamp(0.75rem, calc(0.72rem + 0.2vw), 0.875rem); /* 12px → 14px */
-	--fs-sm: clamp(
-		0.875rem,
-		calc(0.86rem + 0.28vw),
-		0.9375rem
-	); /* 14px → 15px */
-	--fs-base: clamp(1rem, calc(0.98rem + 0.4vw), 1.0625rem); /* 16px → 17px */
-	--fs-lg: clamp(
-		1.125rem,
-		calc(1.08rem + 0.6vw),
-		1.1875rem
-	); /* 18px → 19px */
-	--fs-xl: clamp(1.25rem, calc(1.22rem + 0.8vw), 1.375rem); /* 20px → 22px */
-	--fs-2xl: clamp(1.5rem, calc(1.44rem + 1vw), 1.75rem); /* 24px → 28px */
-	--fs-4xl: clamp(2.25rem, calc(1.98rem + 1.6vw), 3rem); /* 36px → 48px */
+	--fs-xxs: 10px;
+	--fs-xs: 12px;
+	--fs-sm: 13px;
+	--fs-base: 14px;
+	--fs-lg: 16px;
+	--fs-xl: 18px;
+	--fs-2xl: 22px;
+	--fs-4xl: 30px;
 
 	/* ---------------- Spacing (8px scale & sub-units) ---------------- */
 	--space-0-5: 4px;
@@ -327,19 +319,21 @@ a:hover {
 }
 
 .data-table th {
-	padding: var(--space-2) var(--space-3);
-	background: #f3f6ff;
+	padding: 10px 16px;
+	background: #f8fafc;
 	font-size: var(--fs-xs);
 	text-transform: uppercase;
-	font-weight: var(--fw-bold);
+	font-weight: 600;
 	color: var(--text-muted);
 	border-bottom: var(--glass-border);
+	letter-spacing: 0.05em;
 }
 
 .data-table td {
-	padding: var(--space-2) var(--space-3);
+	padding: 10px 16px;
 	border-bottom: var(--glass-border);
 	font-size: var(--fs-sm);
+	vertical-align: middle;
 }
 
 .data-table tbody tr {
@@ -347,7 +341,7 @@ a:hover {
 }
 
 .data-table tbody tr:hover td {
-	background: #f5f8ff;
+	background: #f8fafc;
 }
 
 .dept-code {
@@ -363,52 +357,50 @@ a:hover {
 
 .action-group {
 	display: inline-flex;
-	gap: 0.5rem;
+	gap: 0.35rem;
 }
 
 .btn-icon {
-	width: 34px;
-	height: 34px;
+	width: 30px;
+	height: 30px;
 	border-radius: var(--radius-sm);
-	background: rgba(255, 255, 255, 0.5);
+	background: #ffffff;
 	border: 1px solid var(--border-color);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	transition:
-		background-color 0.2s ease,
-		border-color 0.2s ease,
-		color 0.2s ease,
-		opacity 0.2s ease,
-		transform 0.2s ease,
-		box-shadow 0.2s ease;
+	color: var(--text-muted);
+	transition: all 0.15s ease;
 }
 
 .btn-icon svg {
-	width: 16px;
-	height: 16px;
-	color: var(--text-muted);
-	transition: color 0.2s ease;
+	width: 14px;
+	height: 14px;
+	color: currentColor;
 }
 
 .btn-icon:hover {
-	border-color: var(--primary-color);
-	background: rgba(255, 255, 255, 0.9);
 	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.btn-icon:hover svg {
-	color: var(--primary-color);
+.btn-icon--detail:hover {
+	border-color: #3b82f6;
+	background: #eff6ff;
+	color: #2563eb;
+}
+
+.btn-icon--edit:hover {
+	border-color: var(--success-color);
+	background: var(--success-light);
+	color: var(--success-hover);
 }
 
 .btn-icon--delete:hover {
 	border-color: var(--danger-color);
-	background: #fff1f2;
-}
-
-.btn-icon--delete:hover svg {
-	color: var(--danger-color);
+	background: var(--danger-light);
+	color: var(--danger-hover);
 }
 
 .pagination {
@@ -495,23 +487,43 @@ a:hover {
 
 /* Status Badges */
 .status-badge {
-	padding: 0.35rem 1rem;
-	border-radius: var(--radius-sm);
+	padding: 0.25rem 0.6rem;
+	border-radius: 6px;
 	font-size: var(--fs-xs);
 	font-weight: var(--fw-semibold);
-	display: inline-block;
-	text-align: center;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid transparent;
 	font-family: var(--font-body);
 }
 
+.status-badge::before {
+	content: "";
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	display: inline-block;
+}
+
 .status-badge--active {
-	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	background: #ecfdf5;
+	color: #047857;
+	border-color: rgba(16, 185, 129, 0.15);
+}
+
+.status-badge--active::before {
+	background-color: #10b981;
 }
 
 .status-badge--inactive {
-	background: rgba(225, 29, 72, 0.12);
-	color: #e11d48;
+	background: #fdf2f2;
+	color: #b91c1c;
+	border-color: rgba(239, 68, 68, 0.15);
+}
+
+.status-badge--inactive::before {
+	background-color: #ef4444;
 }
 
 /* Spinner */
@@ -593,9 +605,7 @@ a:hover {
 }
 
 /* ===== Global Typography & Component Standardization ===== */
-.section-title {
-	margin-bottom: var(--space-2);
-}
+
 
 .section-subtitle {
 	font-size: var(--fs-sm);
@@ -605,7 +615,7 @@ a:hover {
 
 /* Common User Info */
 .user-info__name {
-	font-size: var(--fs-base);
+	font-size: var(--fs-sm);
 	font-weight: var(--fw-semibold);
 	margin: 0;
 	color: var(--text-main);

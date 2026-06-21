@@ -15,7 +15,6 @@ type PermissionRepository interface {
 	HasPermission(userID uint, permissionCode string) (bool, error)
 	GetPermissionCodes(userID uint) ([]string, error)
 	GetAllPermissions() ([]model.Permission, error)
-	SetUserPermissions(userID uint, permissionCodes []string) error
 }
 
 type permissionRepository struct {
@@ -42,25 +41,7 @@ func (r *permissionRepository) GetPermissionCodes(userID uint) ([]string, error)
 		return nil, err
 	}
 
-	var userCodes []string
-	if err := r.db.Table("permissions").
-		Distinct().
-		Joins("JOIN user_permissions up ON up.permission_id = permissions.id").
-		Where("up.user_id = ? AND permissions.deleted_at IS NULL", userID).
-		Pluck("permissions.code", &userCodes).Error; err != nil {
-		return nil, err
-	}
-
-	seen := map[string]struct{}{}
-	merged := make([]string, 0, len(codes)+len(userCodes))
-	for _, code := range append(codes, userCodes...) {
-		if _, ok := seen[code]; ok {
-			continue
-		}
-		seen[code] = struct{}{}
-		merged = append(merged, code)
-	}
-	return merged, nil
+	return codes, nil
 }
 
 func (r *permissionRepository) GetAllPermissions() ([]model.Permission, error) {
@@ -71,39 +52,6 @@ func (r *permissionRepository) GetAllPermissions() ([]model.Permission, error) {
 	return perms, nil
 }
 
-func (r *permissionRepository) SetUserPermissions(userID uint, permissionCodes []string) error {
-	if userID == 0 {
-		return nil
-	}
-
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ?", userID).Delete(&model.UserPermission{}).Error; err != nil {
-			return err
-		}
-
-		if len(permissionCodes) > 0 {
-			var perms []model.Permission
-			if err := tx.Where("code IN ?", permissionCodes).Find(&perms).Error; err != nil {
-				return err
-			}
-
-			for _, perm := range perms {
-				if err := tx.Create(&model.UserPermission{UserID: userID, PermissionID: perm.ID}).Error; err != nil {
-					return err
-				}
-			}
-		}
-
-		// Invalidate cache
-		if r.rdb != nil {
-			ctx := context.Background()
-			cacheKey := fmt.Sprintf("permissions:user:%d", userID)
-			r.rdb.Del(ctx, cacheKey)
-		}
-
-		return nil
-	})
-}
 
 func (r *permissionRepository) HasPermission(userID uint, permissionCode string) (bool, error) {
 	if userID == 0 || permissionCode == "" {

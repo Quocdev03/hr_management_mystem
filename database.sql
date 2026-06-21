@@ -87,17 +87,6 @@ CREATE TABLE role_permissions (
     CONSTRAINT FK_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
 
-CREATE TABLE user_permissions (
-    user_id       INT NOT NULL,
-    permission_id INT NOT NULL,
-    created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at    DATETIME NULL,
-    PRIMARY KEY (user_id, permission_id),
-    CONSTRAINT FK_user_permissions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT FK_user_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
-);
-
 -- ============================================================
 -- 5.5 BẢNG positions
 -- Thông tin các chức vụ trong phòng ban

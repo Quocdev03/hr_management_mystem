@@ -15,7 +15,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false);
 
   // Actions
-  async function fetchDashboard() {
+  const fetchDashboard = async () => {
     loading.value = true;
 
     try {

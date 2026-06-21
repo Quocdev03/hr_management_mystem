@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!accessToken.value);
 
   // Login
-  async function login(email, password) {
+  const login = async (email, password) => {
     loading.value = true;
 
     try {
@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Profile
-  async function profile() {
+  const profile = async () => {
     loading.value = true;
     try {
       const res = await api.get('/auth/me');
@@ -74,7 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Logout
-  async function logout() {
+  const logout = async () => {
     if (accessToken.value) {
       try {
         await api.post('/auth/logout', {
@@ -97,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Refresh Token
-  async function refresh() {
+  const refresh = async () => {
     if (!refreshToken.value) {
       return { success: false, message: 'Không tìm thấy refresh token' };
     }

@@ -1,8 +1,7 @@
 <script setup>
 import {
 	Building2,
-	ChevronLeft,
-	ChevronRight,
+	Eye,
 	Pencil,
 	Plus,
 	Trash2,
@@ -23,7 +22,6 @@ import { ref, onMounted, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useToast } from "vue-toastification";
 import { useModalState } from "@/helpers/useModalState";
-import { usePaginatedSearch } from "@/helpers/usePaginatedSearch";
 import { usePermissions } from "@/helpers/usePermissions";
 import { getInitials } from "@/helpers/formatters";
 
@@ -45,11 +43,15 @@ const detailLoading = ref(false);
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
 
-// ───phân trang ───────────────────────────────────────────────────
-const { load: loadDepartments, handlePageChange } = usePaginatedSearch(
-	(params) => departmentStore.fetchDepartments(params),
-	pagination,
-);
+// ─── Tải danh sách phòng ban ─────────────────────────────────────────────────
+const loadDepartments = async () => {
+	try {
+		await departmentStore.fetchDepartments({ limit: 100 });
+	} catch (err) {
+		toast.error("Không thể tải danh sách phòng ban");
+		console.error("loadDepartments error:", err);
+	}
+};
 
 // ─── Trạng thái local ────────────────────────────────────────────────────────
 const editingDepartment = ref(null);
@@ -62,7 +64,7 @@ const deleteMessage = ref("");
 const deleteLoading = ref(false);
 
 // ─── Tải danh sách nhân viên ─────────────────────────────────────────────────
-async function loadEmployees() {
+const loadEmployees = async () => {
 	try {
 		const res = await employeeStore.fetchEmployeesForSelect({
 			page: 1,
@@ -74,7 +76,7 @@ async function loadEmployees() {
 	} catch (err) {
 		console.error("Lỗi khi tải danh sách nhân viên:", err);
 	}
-}
+};
 
 const departmentEmployees = computed(() => {
 	if (!editingDepartment.value) {
@@ -88,27 +90,27 @@ const departmentEmployees = computed(() => {
 });
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
-function handleAdd() {
+const handleAdd = () => {
 	editingDepartment.value = null;
 	openAddModal();
-}
+};
 
 // ─── Mở modal sửa ────────────────────────────────────────────────────────────
-async function handleEdit(department) {
+const handleEdit = async (department) => {
 	editingDepartment.value = { ...department };
 	openEditModal();
 	await loadEmployees();
-}
+};
 
 // ─── Mở modal xoá ────────────────────────────────────────────────────────────
-function handleDelete(department) {
+const handleDelete = (department) => {
 	deletingDepartment.value = department;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá phòng ban ${department.name}?`;
 	isDeleteModalVisible.value = true;
-}
+};
 
 // ─── Xem chi tiết phòng ban ──────────────────────────────────────────────────
-async function handleViewDetail(departmentId) {
+const handleViewDetail = async (departmentId) => {
 	detailLoading.value = true;
 	try {
 		const res = await departmentStore.fetchDepartmentByID(departmentId);
@@ -124,10 +126,10 @@ async function handleViewDetail(departmentId) {
 	} finally {
 		detailLoading.value = false;
 	}
-}
+};
 
 // ─── Xác nhận xoá ────────────────────────────────────────────────────────────
-async function confirmDelete() {
+const confirmDelete = async () => {
 	const department = deletingDepartment.value;
 	if (!department) return;
 
@@ -150,10 +152,10 @@ async function confirmDelete() {
 	} finally {
 		deleteLoading.value = false;
 	}
-}
+};
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
-async function handleFormSubmit(submittedData) {
+const handleFormSubmit = async (submittedData) => {
 	formLoading.value = true;
 	try {
 		let res;
@@ -197,7 +199,7 @@ async function handleFormSubmit(submittedData) {
 	} finally {
 		formLoading.value = false;
 	}
-}
+};
 
 // ─── Khởi tạo trang ──────────────────────────────────────────────────────────
 onMounted(async () => {
@@ -250,26 +252,15 @@ onMounted(async () => {
 					</div>
 					<div class="dept-bento-manager">
 						<Skeleton type="avatar" />
-						<div
-							style="
-								flex: 1;
-								display: flex;
-								flex-direction: column;
-								gap: var(--space-1);
-								margin-left: 8px;
-							"
-						>
+						<div class="dept-skeleton-info">
 							<Skeleton type="text" width="40%" />
 							<Skeleton type="text" width="70%" />
 						</div>
 					</div>
-					<div
-						v-if="canCrudDepartment"
-						class="bento-actions"
-						style="margin-top: var(--space-3)"
-					>
+					<div class="bento-actions dept-bento-actions">
 						<Skeleton type="btn" />
-						<Skeleton type="btn" />
+						<Skeleton type="btn" v-if="canCrudDepartment" />
+						<Skeleton type="btn" v-if="canCrudDepartment" />
 					</div>
 				</div>
 			</div>
@@ -280,7 +271,6 @@ onMounted(async () => {
 					v-for="dept in departments"
 					:key="dept.id"
 					class="bento-card"
-					@click="handleViewDetail(dept.id)"
 				>
 					<!-- Accent light border at top -->
 					<div class="bento-accent-bar"></div>
@@ -300,7 +290,7 @@ onMounted(async () => {
 					</div>
 
 					<div class="dept-bento-manager">
-						<div class="avatar-gradient" style="width: 36px; height: 36px; font-size: var(--fs-xs);">
+						<div class="avatar-gradient dept-avatar">
 							{{
 								dept.manager
 									? getInitials(
@@ -324,22 +314,27 @@ onMounted(async () => {
 						</div>
 					</div>
 
-					<div
-						v-if="canCrudDepartment"
-						class="bento-actions"
-						style="margin-top: var(--space-3)"
-					>
+					<div class="bento-actions dept-bento-actions">
 						<button
+							class="btn-icon btn-icon--detail"
+							title="Xem chi tiết"
+							@click="handleViewDetail(dept.id)"
+						>
+							<Eye />
+						</button>
+						<button
+							v-if="canCrudDepartment"
 							class="btn-icon btn-icon--edit"
 							title="Chỉnh sửa"
-							@click.stop="handleEdit(dept)"
+							@click="handleEdit(dept)"
 						>
 							<Pencil />
 						</button>
 						<button
+							v-if="canCrudDepartment"
 							class="btn-icon btn-icon--delete"
 							title="Xoá"
-							@click.stop="handleDelete(dept)"
+							@click="handleDelete(dept)"
 						>
 							<Trash2 />
 						</button>
@@ -357,30 +352,6 @@ onMounted(async () => {
 							Không tìm thấy phòng ban nào phù hợp.
 						</p>
 					</div>
-				</div>
-			</div>
-
-			<!-- Pagination controls (Glass styled) -->
-			<div class="pagination-container" v-if="pagination.totalPages > 0">
-				<div class="pagination">
-					<button
-						class="pagination__btn"
-						:disabled="pagination.page === 1"
-						@click="handlePageChange(pagination.page - 1)"
-					>
-						<ChevronLeft />
-					</button>
-					<div class="pagination__info">
-						Trang <span>{{ pagination.page }}</span> /
-						{{ pagination.totalPages }}
-					</div>
-					<button
-						class="pagination__btn"
-						:disabled="pagination.page === pagination.totalPages"
-						@click="handlePageChange(pagination.page + 1)"
-					>
-						<ChevronRight />
-					</button>
 				</div>
 			</div>
 		</main>
@@ -422,6 +393,24 @@ onMounted(async () => {
 	flex-direction: column;
 }
 
+.dept-avatar {
+	width: 36px;
+	height: 36px;
+	font-size: var(--fs-xs);
+}
+
+.dept-skeleton-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	margin-left: 8px;
+}
+
+.dept-bento-actions {
+	margin-top: var(--space-3);
+}
+
 .dept-bento-manager {
 	display: flex;
 	align-items: center;
@@ -458,12 +447,6 @@ onMounted(async () => {
 .empty-state-container {
 	grid-column: 1 / -1;
 	padding: var(--space-8) 0;
-}
-
-.pagination-container {
-	display: flex;
-	justify-content: center;
-	margin-top: var(--space-2);
 }
 
 .empty-state__icon-svg {

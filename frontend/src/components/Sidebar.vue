@@ -140,8 +140,8 @@ const handleLogout = () => {
 <style scoped>
 .sidebar {
 	width: var(--sidebar-width);
-	background: var(--bg-card);
-	border-right: 1px solid var(--border-color);
+	background: #ffffff;
+	border-right: 1px solid rgba(0, 0, 0, 0.05);
 	display: flex;
 	flex-direction: column;
 	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,12 +151,12 @@ const handleLogout = () => {
 }
 
 .sidebar-brand {
-	height: var(--header-height);
+	height: 64px;
 	display: flex;
 	align-items: center;
-	gap: var(--space-2);
-	padding: 0 var(--space-3);
-	border-bottom: 1px solid var(--border-color);
+	gap: 10px;
+	padding: 0 16px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 	flex-shrink: 0;
 }
 
@@ -164,157 +164,158 @@ const handleLogout = () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 40px;
-	height: 40px;
-	background-color: var(--primary-glow);
-	border-radius: var(--radius-md);
+	width: 32px;
+	height: 32px;
+	background: var(--primary-gradient);
+	color: #ffffff;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+	transition: transform 0.3s ease;
+}
+
+.sidebar-brand:hover .logo-icon {
+	transform: rotate(5deg) scale(1.05);
 }
 
 .logo-svg {
-	width: 20px;
-	height: 20px;
-	color: var(--primary-color);
+	width: 16px;
+	height: 16px;
+	color: #ffffff;
 }
 
 .brand-name {
 	font-family: var(--font-title);
-	font-size: var(--fs-lg);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
-	letter-spacing: var(--tracking-tight);
+	font-size: 15px;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.02em;
 	margin: 0;
 }
 
 .sidebar-nav {
-	padding: var(--space-4) var(--space-3);
+	padding: 16px 12px;
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-2);
+	gap: 4px;
 	overflow-y: auto;
 	flex: 1;
 	-webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for sidebar nav */
+.sidebar-nav::-webkit-scrollbar {
+	width: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+	background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.1);
+	border-radius: 99px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 0, 0, 0.2);
 }
 
 .nav-item {
 	position: relative;
 	display: flex;
 	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-2) var(--space-3);
-	color: var(--text-muted);
-	border-radius: var(--radius-md);
-	font-weight: var(--fw-medium);
-	transition:
-		background-color 0.2s ease,
-		border-color 0.2s ease,
-		color 0.2s ease,
-		opacity 0.2s ease,
-		transform 0.2s ease,
-		box-shadow 0.2s ease;
+	gap: 10px;
+	padding: 15px 16px;
+	color: #64748b;
+	border-radius: 6px;
+	font-weight: 500;
+	transition: all 0.15s ease;
 	text-decoration: none;
 	overflow: hidden;
 }
 
 .nav-icon {
-	width: 20px;
-	height: 20px;
+	width: 18px;
+	height: 18px;
 	color: currentColor;
-	transition:
-		background-color 0.2s ease,
-		border-color 0.2s ease,
-		color 0.2s ease,
-		opacity 0.2s ease,
-		transform 0.2s ease,
-		box-shadow 0.2s ease;
 	z-index: 1;
+	transition: transform 0.15s ease;
 }
 
 .nav-item span {
 	z-index: 1;
-	font-size: var(--fs-base);
+	font-size: 13.5px;
 }
 
 .nav-item:hover {
-	background: var(--bg-light);
-	color: var(--text-main);
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.nav-item:hover .nav-icon {
+	transform: translateX(1px);
 }
 
 .nav-item.active {
-	background: linear-gradient(
-		90deg,
-		rgba(66, 97, 237, 0.12) 0%,
-		rgba(0, 192, 250, 0.04) 100%
-	);
-	color: var(--primary-color);
-	font-weight: var(--fw-semibold);
+	background: #eff6ff;
+	color: #2563eb;
+	font-weight: 600;
 }
 
 .nav-item.active .nav-icon {
-	color: var(--primary-color);
-	filter: drop-shadow(0 2px 8px rgba(66, 97, 237, 0.4));
-	transform: scale(1.1);
+	color: #2563eb;
 }
 
+/* Active indicator line */
 .nav-item.active::before {
-	content: "";
+	content: '';
 	position: absolute;
 	left: 0;
-	top: 15%;
-	bottom: 15%;
-	width: 4px;
-	background: var(--primary-gradient);
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3px;
+	height: 16px;
+	background: #2563eb;
 	border-radius: 0 4px 4px 0;
-	box-shadow: 2px 0 8px rgba(66, 97, 237, 0.3);
 }
 
 /* ── Sidebar Footer ────────────────────────────────── */
 .sidebar-footer {
 	margin-top: auto;
-	border-top: 1px solid var(--border-color);
-	background: var(--bg-lighter);
+	border-top: 1px solid rgba(0, 0, 0, 0.04);
+	background: #ffffff;
 	flex-shrink: 0;
-	padding: var(--space-2) var(--space-3);
+	padding: 16px 14px;
 	display: flex;
 	flex-direction: column;
-	gap: var(--space-2);
+	gap: 12px;
 }
 
 .sidebar-profile {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 6px 8px;
-	border-radius: var(--radius-md);
-	transition: background-color 0.2s ease;
+	padding: 6px;
+	border-radius: 8px;
+	transition: background-color 0.15s ease;
 	cursor: default;
 }
 
 .sidebar-profile:hover {
-	background: rgba(66, 97, 237, 0.05);
+	background: #f8fafc;
 }
 
 .profile-avatar-circle {
-	width: 40px;
-	height: 40px;
-	border-radius: var(--radius-md);
-	background: var(--primary-gradient);
-	color: white;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+	color: #4f46e5;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-weight: var(--fw-bold);
-	font-size: var(--fs-base);
-	box-shadow:
-		0 0 0 2px var(--bg-lighter),
-		0 0 0 3px rgba(66, 97, 237, 0.25);
+	font-weight: 700;
+	font-size: 12px;
+	border: 1px solid rgba(79, 70, 229, 0.1);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 	flex-shrink: 0;
-	transition: box-shadow 0.2s ease;
-}
-
-.sidebar-profile:hover .profile-avatar-circle {
-	box-shadow:
-		0 0 0 2px var(--bg-lighter),
-		0 0 0 3px rgba(66, 97, 237, 0.5);
 }
 
 .profile-info {
@@ -326,9 +327,9 @@ const handleLogout = () => {
 }
 
 .profile-name {
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-semibold);
-	color: var(--text-main);
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
 	line-height: 1.2;
 	white-space: nowrap;
 	overflow: hidden;
@@ -336,12 +337,12 @@ const handleLogout = () => {
 }
 
 .profile-role {
-	font-size: 11px;
-	font-weight: var(--fw-medium);
-	color: var(--primary-color);
-	background: rgba(66, 97, 237, 0.08);
+	font-size: 10px;
+	font-weight: 600;
+	color: #2563eb;
+	background: #eff6ff;
 	padding: 1px 6px;
-	border-radius: var(--radius-full);
+	border-radius: 9999px;
 	width: fit-content;
 	white-space: nowrap;
 	overflow: hidden;
@@ -350,8 +351,8 @@ const handleLogout = () => {
 }
 
 .profile-email {
-	font-size: 11px;
-	color: var(--text-muted);
+	font-size: 10px;
+	color: #64748b;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -361,24 +362,24 @@ const handleLogout = () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	width: 100%;
-	height: 38px;
-	border: 1px solid rgba(225, 29, 72, 0.2);
-	border-radius: var(--radius-md);
+	height: 32px;
+	border: 1px solid #fee2e2;
+	border-radius: 6px;
 	cursor: pointer;
-	background: rgba(225, 29, 72, 0.05);
-	color: var(--danger-color);
-	font-size: var(--fs-sm);
-	font-weight: var(--fw-medium);
-	transition: all 0.2s ease;
+	background: #fff5f5;
+	color: #ef4444;
+	font-size: 12px;
+	font-weight: 600;
+	transition: all 0.15s ease;
 }
 
 .logout-btn:hover {
-	background: rgba(225, 29, 72, 0.1);
-	border-color: rgba(225, 29, 72, 0.35);
+	background: #fee2e2;
+	border-color: #fca5a5;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 10px rgba(225, 29, 72, 0.12);
+	box-shadow: 0 2px 6px rgba(225, 29, 72, 0.08);
 }
 
 .logout-btn:active {
@@ -386,8 +387,8 @@ const handleLogout = () => {
 }
 
 .logout-icon-svg {
-	width: 15px;
-	height: 15px;
+	width: 13px;
+	height: 13px;
 	color: currentColor;
 	flex-shrink: 0;
 }
@@ -399,7 +400,7 @@ const handleLogout = () => {
 		bottom: 0;
 		left: 0;
 		transform: translateX(-100%);
-		background: var(--bg-card);
+		background: #ffffff;
 		box-shadow: var(--shadow-lg);
 	}
 

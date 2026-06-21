@@ -8,7 +8,7 @@ export const usePositionStore = defineStore("position", () => {
 	const loading = ref(false);
 
 	// Actions
-	async function fetchPositions(params = {}) {
+	const fetchPositions = async (params = {}) => {
 		loading.value = true;
 		try {
 			const res = await api.get("/positions", { params });
@@ -27,7 +27,23 @@ export const usePositionStore = defineStore("position", () => {
 		}
 	}
 
-	async function createPosition(data) {
+	const fetchPositionByID = async (id) => {
+		loading.value = true;
+		try {
+			const res = await api.get(`/positions/${id}`);
+			return res;
+		} catch (error) {
+			console.error("Fetch position by ID error:", error);
+			return {
+				success: false,
+				message: error?.message || "Lỗi tải chi tiết chức vụ",
+			};
+		} finally {
+			loading.value = false;
+		}
+	}
+
+	const createPosition = async (data) => {
 		try {
 			const res = await api.post("/positions", data);
 			return res;
@@ -40,7 +56,7 @@ export const usePositionStore = defineStore("position", () => {
 		}
 	}
 
-	async function updatePosition(id, data) {
+	const updatePosition = async (id, data) => {
 		try {
 			const res = await api.patch(`/positions/${id}`, data);
 			return res;
@@ -53,7 +69,7 @@ export const usePositionStore = defineStore("position", () => {
 		}
 	}
 
-	async function deletePosition(id) {
+	const deletePosition = async (id) => {
 		try {
 			const res = await api.delete(`/positions/${id}`);
 			return res;
@@ -70,6 +86,7 @@ export const usePositionStore = defineStore("position", () => {
 		positions,
 		loading,
 		fetchPositions,
+		fetchPositionByID,
 		createPosition,
 		updatePosition,
 		deletePosition,

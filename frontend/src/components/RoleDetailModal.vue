@@ -11,9 +11,9 @@ const props = defineProps({
 
 const emit = defineEmits(["close"]);
 
-function handleClose() {
+const handleClose = () => {
     emit("close");
-}
+};
 
 const translateModule = (moduleName) => {
     const map = {
@@ -56,7 +56,7 @@ const isSystemRole = (name) => {
     <ModalDialog
         :visible="visible"
         title="Chi tiết vai trò"
-        size="lg"
+        size="md"
         @close="handleClose"
     >
         <div class="detail-body" v-if="role">
@@ -131,10 +131,9 @@ const isSystemRole = (name) => {
 
 .description-box {
     background: var(--bg-main);
-    padding: var(--space-3);
+    padding: var(--space-2);
     border-radius: var(--radius-md);
     color: var(--text-main);
-    line-height: 1.6;
     font-size: var(--fs-sm);
 }
 
@@ -149,7 +148,7 @@ const isSystemRole = (name) => {
 
 .permission-group {
     background: var(--bg-lighter);
-    padding: var(--space-3);
+    padding: 12px 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
 }
@@ -173,9 +172,9 @@ const isSystemRole = (name) => {
 .permission-item {
     background: #ffffff;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    padding: 6px 12px;
-    font-size: 12px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
     font-weight: var(--fw-medium);
     color: var(--text-main);
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -197,8 +196,8 @@ const isSystemRole = (name) => {
 }
 
 .empty-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     color: var(--border-hover);
     margin-bottom: var(--space-2);
 }

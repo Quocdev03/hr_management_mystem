@@ -92,7 +92,7 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-body {
-	padding: 32px 24px 24px;
+	padding: 24px 20px 20px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -100,13 +100,13 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-icon {
-	width: 64px;
-	height: 64px;
+	width: 48px;
+	height: 48px;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-bottom: 20px;
+	margin-bottom: 14px;
 	transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -121,8 +121,8 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-icon--danger svg {
-	width: 32px;
-	height: 32px;
+	width: 24px;
+	height: 24px;
 	color: var(--danger-color);
 }
 
@@ -133,8 +133,8 @@ const emit = defineEmits(["confirm", "cancel"]);
 }
 
 .confirm-icon--primary svg {
-	width: 32px;
-	height: 32px;
+	width: 24px;
+	height: 24px;
 	color: var(--primary-color);
 }
 
@@ -155,12 +155,19 @@ const emit = defineEmits(["confirm", "cancel"]);
 
 .confirm-footer {
 	background: var(--bg-card);
-	padding: 16px 24px;
+	padding: 12px 20px;
 	display: flex;
 	justify-content: space-between;
-	gap: 12px;
+	gap: 10px;
 	border-top: 1px solid var(--border-color);
 	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.confirm-footer .btn {
+	height: 36px;
+	padding: 0 16px;
+	font-size: var(--fs-sm);
+	border-radius: 8px;
 }
 
 /* Animations overlay */

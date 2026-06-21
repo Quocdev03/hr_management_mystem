@@ -9,7 +9,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	const loading = ref(false);
 
 	// Fetch Employees
-	async function fetchEmployees(params = {}) {
+	const fetchEmployees = async (params = {}) => {
 		loading.value = true;
 
 		try {
@@ -39,7 +39,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 		}
 	}
 
-	async function fetchEmployeesForSelect(params = {}) {
+	const fetchEmployeesForSelect = async (params = {}) => {
 		try {
 			const res = await api.get("/employees", { params });
 
@@ -64,7 +64,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	}
 
 	// Create
-	async function createEmployee(data) {
+	const createEmployee = async (data) => {
 		try {
 			const res = await api.post("/employees", data);
 			return res;
@@ -78,7 +78,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	}
 
 	// Update
-	async function updateEmployee(id, data) {
+	const updateEmployee = async (id, data) => {
 		try {
 			const res = await api.patch(`/employees/${id}`, data);
 			return res;
@@ -92,7 +92,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	}
 
 	// Delete
-	async function deleteEmployee(id) {
+	const deleteEmployee = async (id) => {
 		try {
 			const res = await api.delete(`/employees/${id}`);
 			return res;

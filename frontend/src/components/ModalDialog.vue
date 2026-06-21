@@ -99,7 +99,7 @@ const customStyle = computed(() => {
 }
 
 .modal-header {
-	padding: var(--space-3) var(--space-4);
+	padding: 14px 20px;
 	border-bottom: 1px solid var(--border-color);
 	display: flex;
 	justify-content: space-between;
@@ -108,14 +108,14 @@ const customStyle = computed(() => {
 
 .modal-title {
 	font-family: var(--font-title);
-	font-size: var(--fs-xl); /* 20px-22px */
+	font-size: var(--fs-lg);
 	font-weight: var(--fw-bold);
 	color: var(--text-main);
 	margin: 0;
 }
 
 .modal-subtitle {
-	font-size: var(--fs-sm); /* 14px-15px */
+	font-size: var(--fs-xs);
 	color: var(--text-muted);
 	margin: 4px 0 0 0;
 }
@@ -125,8 +125,8 @@ const customStyle = computed(() => {
 	border: none;
 	color: var(--text-light);
 	cursor: pointer;
-	padding: 8px;
-	border-radius: var(--radius-md);
+	padding: 6px;
+	border-radius: var(--radius-sm);
 	transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s, transform 0.2s, box-shadow 0.2s;
 	display: flex;
 	align-items: center;
@@ -139,12 +139,12 @@ const customStyle = computed(() => {
 }
 
 .modal-body {
-	padding: var(--space-4);
+	padding: 20px 15px;
 	overflow-y: auto;
 	-webkit-overflow-scrolling: touch;
 	overscroll-behavior: contain;
 	touch-action: pan-y;
-	font-size: var(--fs-base); /* 16px-17px */
+	font-size: var(--fs-sm);
 }
 
 

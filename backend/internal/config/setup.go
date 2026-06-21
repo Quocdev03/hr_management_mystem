@@ -56,7 +56,7 @@ func RunMigrations(db *gorm.DB) {
 // RunMigrationsWithError chạy AutoMigrate, trả về error (dùng trong cmd/migrate).
 func RunMigrationsWithError(db *gorm.DB) error {
 	utils.Info("[MIGRATE] Migrating auth tables (roles, permissions, users)...")
-	if err := db.AutoMigrate(&model.Role{}, &model.Permission{}, &model.RolePermission{}, &model.UserPermission{}, &model.User{}); err != nil {
+	if err := db.AutoMigrate(&model.Role{}, &model.Permission{}, &model.RolePermission{}, &model.User{}); err != nil {
 		return fmt.Errorf("migrate auth tables: %w", err)
 	}
 

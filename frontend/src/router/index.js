@@ -9,6 +9,7 @@ const ProfileView = () => import("@/views/ProfileView.vue");
 const UserView = () => import("@/views/UserView.vue");
 const PositionView = () => import("@/views/PositionView.vue");
 const RoleView = () => import("@/views/RoleView.vue");
+const PerformanceView = () => import("@/views/PerformanceView.vue");
 
 const router = createRouter({
 	history: createWebHistory(),
@@ -18,6 +19,12 @@ const router = createRouter({
 			path: "/login",
 			name: "login",
 			component: LoginView,
+			meta: { public: true },
+		},
+		{
+			path: "/performance",
+			name: "performance",
+			component: PerformanceView,
 			meta: { public: true },
 		},
 		{

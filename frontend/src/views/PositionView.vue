@@ -1,8 +1,7 @@
 <script setup>
 import {
 	Briefcase,
-	ChevronLeft,
-	ChevronRight,
+	Eye,
 	Pencil,
 	Plus,
 	Trash2,
@@ -10,9 +9,11 @@ import {
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 import { usePositionStore } from "@/store/position";
+import { useEmployeeStore } from "@/store/employee";
 
 // ─── Component UI ────────────────────────────────────────────────────────────
 import PositionModal from "@/components/PositionModal.vue";
+import PositionDetailModal from "@/components/PositionDetailModal.vue";
 import ConfirmationDialog from "@/components/ConfirmationDialog.vue";
 import Skeleton from "@/components/Skeleton.vue";
 
@@ -36,9 +37,18 @@ const { positions, loading } = storeToRefs(positionStore);
 const { isModalVisible, isEditMode, openAddModal, openEditModal, closeModal } =
 	useModalState();
 
+// ─── Store Khác ──────────────────────────────────────────────────────────────
+const employeeStore = useEmployeeStore();
+
 // ─── Trạng thái local ────────────────────────────────────────────────────────
 const editingPosition = ref(null);
 const formLoading = ref(false);
+
+// ─── Trạng thái chi tiết chức vụ ──────────────────────────────────────────
+const isDetailModalVisible = ref(false);
+const selectedPosition = ref(null);
+const detailEmployees = ref([]);
+const detailLoading = ref(false);
 
 // ─── Trạng thái modal xoá ────────────────────────────────────────────────────
 const isDeleteModalVisible = ref(false);
@@ -47,36 +57,65 @@ const deleteMessage = ref("");
 const deleteLoading = ref(false);
 
 // ─── Tải danh sách chức vụ ─────────────────────────────────────────────────
-async function loadPositions() {
+const loadPositions = async () => {
 	try {
 		await positionStore.fetchPositions();
 	} catch (err) {
 		toast.error("Không thể tải danh sách chức vụ");
 		console.error("loadPositions error:", err);
 	}
-}
+};
 
 // ─── Mở modal thêm mới ───────────────────────────────────────────────────────
-function handleAdd() {
+const handleAdd = () => {
 	editingPosition.value = null;
 	openAddModal();
-}
+};
 
 // ─── Mở modal sửa ────────────────────────────────────────────────────────────
-function handleEdit(position) {
+const handleEdit = (position) => {
 	editingPosition.value = { ...position };
 	openEditModal();
-}
+};
 
 // ─── Mở modal xoá ────────────────────────────────────────────────────────────
-function handleDelete(position) {
+const handleDelete = (position) => {
 	deletingPosition.value = position;
 	deleteMessage.value = `Bạn có chắc chắn muốn xoá chức vụ "${position.name}"?`;
 	isDeleteModalVisible.value = true;
-}
+};
+
+// ─── Xem chi tiết chức vụ ──────────────────────────────────────────────────
+const handleViewDetail = async (position) => {
+	detailLoading.value = true;
+	try {
+		const res = await positionStore.fetchPositionByID(position.id);
+		if (res.success) {
+			selectedPosition.value = res.data;
+			
+			// Tải danh sách nhân viên để hiển thị trong detail
+			const empRes = await employeeStore.fetchEmployeesForSelect({ limit: 1000 });
+			if (empRes.success) {
+				detailEmployees.value = empRes.items.filter(
+					(emp) => emp.position_id === position.id,
+				);
+			} else {
+				detailEmployees.value = [];
+			}
+			isDetailModalVisible.value = true;
+		} else {
+			toast.error(res.message || "Không thể tải chi tiết chức vụ");
+		}
+	} catch (err) {
+		toast.error("Đã xảy ra lỗi khi tải chi tiết chức vụ");
+		console.error("handleViewDetail error:", err);
+	} finally {
+		detailLoading.value = false;
+	}
+};
 
 // ─── Xác nhận xoá ────────────────────────────────────────────────────────────
-async function confirmDelete() {
+const confirmDelete = async () => {
 	const position = deletingPosition.value;
 	if (!position) return;
 
@@ -99,10 +138,10 @@ async function confirmDelete() {
 	} finally {
 		deleteLoading.value = false;
 	}
-}
+};
 
 // ─── Submit form thêm/sửa ─────────────────────────────────────────────────────
-async function handleFormSubmit(submittedData) {
+const handleFormSubmit = async (submittedData) => {
 	formLoading.value = true;
 	try {
 		let res;
@@ -137,7 +176,7 @@ async function handleFormSubmit(submittedData) {
 	} finally {
 		formLoading.value = false;
 	}
-}
+};
 
 onMounted(async () => {
 	await loadPositions();
@@ -182,9 +221,10 @@ onMounted(async () => {
 						/>
 						<Skeleton type="text" width="80%" height="16px" />
 					</div>
-					<div class="bento-actions" v-if="canCrudPosition">
+					<div class="bento-actions">
 						<Skeleton type="btn" />
-						<Skeleton type="btn" />
+						<Skeleton type="btn" v-if="canCrudPosition" />
+						<Skeleton type="btn" v-if="canCrudPosition" />
 					</div>
 				</div>
 			</div>
@@ -195,7 +235,7 @@ onMounted(async () => {
 					<div class="bento-accent-bar"></div>
 
 					<div class="bento-header">
-						<div class="avatar-gradient" style="width: 36px; height: 36px;">
+						<div class="avatar-gradient pos-avatar">
 							<Briefcase class="pos-icon" />
 						</div>
 						<h3 class="bento-name">{{ pos.name }}</h3>
@@ -210,8 +250,16 @@ onMounted(async () => {
 						</p>
 					</div>
 
-					<div v-if="canCrudPosition" class="bento-actions">
+					<div class="bento-actions">
 						<button
+							class="btn-icon btn-icon--detail"
+							title="Xem chi tiết"
+							@click="handleViewDetail(pos)"
+						>
+							<Eye />
+						</button>
+						<button
+							v-if="canCrudPosition"
 							class="btn-icon btn-icon--edit"
 							title="Chỉnh sửa"
 							@click="handleEdit(pos)"
@@ -219,6 +267,7 @@ onMounted(async () => {
 							<Pencil />
 						</button>
 						<button
+							v-if="canCrudPosition"
 							class="btn-icon btn-icon--delete"
 							title="Xoá"
 							@click="handleDelete(pos)"
@@ -270,12 +319,25 @@ onMounted(async () => {
 			@close="closeModal"
 			@submit="handleFormSubmit"
 		/>
+
+		<!-- Modal chi tiết -->
+		<PositionDetailModal
+			:visible="isDetailModalVisible"
+			:position="selectedPosition"
+			:employees="detailEmployees"
+			@close="isDetailModalVisible = false"
+		/>
 	</div>
 </template>
 
 <style scoped>
 .position-view {
 	padding-bottom: var(--space-4);
+}
+
+.pos-avatar {
+	width: 36px;
+	height: 36px;
 }
 
 .pos-icon {
@@ -291,8 +353,8 @@ onMounted(async () => {
 }
 
 .empty-state__icon-svg {
-	width: 64px;
-	height: 64px;
+	width: 48px;
+	height: 48px;
 	color: var(--border-hover);
 	margin-bottom: var(--space-3);
 }

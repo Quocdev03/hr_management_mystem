@@ -25,6 +25,7 @@ func SetupRouter(
 	posHandler *handler.PositionHandler,
 	roleHandler *handler.RoleHandler,
 	permRepo repository.PermissionRepository,
+	perfHandler *handler.PerformanceHandler,
 ) *gin.Engine {
 
 	// Tắt debug log trong production
@@ -50,6 +51,13 @@ func SetupRouter(
 
 	// ── API v1 Group ────────────────────────────────────────────────────
 	v1 := r.Group("/api/v1")
+
+	// ── Performance Playground (Public) ─────────────────────────────────
+	performance := v1.Group("/performance")
+	{
+		performance.GET("/test", perfHandler.TestPerformance)
+		performance.DELETE("/clear", perfHandler.ClearCache)
+	}
 
 	// ── Auth Routes (/auth) ─────────────────────────────────────────────
 	// Các endpoint xác thực: login, refresh, profile, logout
@@ -161,12 +169,6 @@ func SetupRouter(
 		users.GET("/permissions",
 			middleware.RequirePermission(permRepo, "user.update"),
 			userHandler.GetAvailablePermissions,
-		)
-
-		// PATCH /users/:id/permissions — Cập nhật quyền cho user
-		users.PATCH("/:id/permissions",
-			middleware.RequirePermission(permRepo, "user.update"),
-			userHandler.UpdatePermissions,
 		)
 
 		// DELETE /users/:id — Xóa tài khoản (permission-based)

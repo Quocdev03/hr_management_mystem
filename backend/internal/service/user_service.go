@@ -26,7 +26,6 @@ type UserService interface {
 	DeleteUser(id uint) error
 	GetUsersWithoutEmployee() ([]model.User, error)
 	GetAvailablePermissions() ([]model.Permission, error)
-	UpdateUserPermissions(id uint, permissionCodes []string, requesterID uint) ([]string, error)
 }
 
 // --- User Service Implementation ---
@@ -247,36 +246,3 @@ func (us *userService) GetAvailablePermissions() ([]model.Permission, error) {
 	return us.permRepo.GetAllPermissions()
 }
 
-func (us *userService) UpdateUserPermissions(id uint, permissionCodes []string, requesterID uint) ([]string, error) {
-	if id == 0 {
-		return nil, errors.New("id user phải lớn hơn 0")
-	}
-
-	// 1. Ngăn tự cập nhật hoặc override quyền hạn của chính mình
-	if id == requesterID {
-		return nil, errors.New("không thể tự thay đổi hoặc override quyền hạn của chính mình")
-	}
-
-	targetUser, err := us.userRepo.FindByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("không tìm thấy user")
-		}
-		return nil, err
-	}
-
-	// 2. Ngăn chỉnh sửa quyền hạn của Admin quản trị hệ thống
-	if targetUser.Role != nil && strings.EqualFold(targetUser.Role.Name, "admin") {
-		return nil, errors.New("không thể sửa đổi quyền hạn của quản trị viên hệ thống")
-	}
-
-	if err := us.permRepo.SetUserPermissions(id, permissionCodes); err != nil {
-		return nil, fmt.Errorf("cập nhật quyền user bị lỗi: %w", err)
-	}
-
-	codes, err := us.permRepo.GetPermissionCodes(id)
-	if err != nil {
-		return nil, fmt.Errorf("không thể lấy quyền sau khi cập nhật: %w", err)
-	}
-	return codes, nil
-}

@@ -122,7 +122,7 @@ const handleSubmit = async () => {
 		:visible="modelValue"
 		@close="$emit('update:modelValue', false)"
 		:title="mode === 'create' ? 'Thêm vai trò mới' : 'Chỉnh sửa vai trò'"
-		width="max-w-2xl"
+		size="md"
 	>
 		<form @submit.prevent="handleSubmit" class="form-wrapper">
 			<!-- Tên & Mô tả -->
@@ -249,7 +249,7 @@ const handleSubmit = async () => {
 
 .permission-group {
 	background: var(--bg-lighter);
-	padding: var(--space-2);
+	padding: 12px 16px;
 	border-radius: var(--radius-md);
 	border: 1px solid var(--border-color);
 }
@@ -275,7 +275,7 @@ const handleSubmit = async () => {
 	align-items: flex-start;
 	gap: 8px;
 	cursor: pointer;
-	padding: 6px;
+	padding: 8px 10px;
 	border-radius: var(--radius-sm);
 	transition: background-color 0.2s ease;
 }
@@ -297,7 +297,7 @@ const handleSubmit = async () => {
 }
 
 .permission-code {
-	font-size: var(--fs-sm);
+	font-size: 12px;
 	font-weight: var(--fw-medium);
 	color: var(--text-main);
 }

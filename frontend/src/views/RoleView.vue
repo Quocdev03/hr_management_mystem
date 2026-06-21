@@ -124,27 +124,6 @@ const getRoleInitial = (name) => {
 			</button>
 		</header>
 
-		<!-- Stats summary strip -->
-		<div v-if="!loading && roles.length > 0" class="role-stats-strip">
-			<div class="role-stat-item">
-				<span class="role-stat-value">{{ roles.length }}</span>
-				<span class="role-stat-label">Vai trò</span>
-			</div>
-			<div class="role-stat-divider"></div>
-			<div class="role-stat-item">
-				<span class="role-stat-value">{{
-					roles.filter((r) => isSystemRole(r.name)).length
-				}}</span>
-				<span class="role-stat-label">Hệ thống</span>
-			</div>
-			<div class="role-stat-divider"></div>
-			<div class="role-stat-item">
-				<span class="role-stat-value">{{
-					roles.filter((r) => !isSystemRole(r.name)).length
-				}}</span>
-				<span class="role-stat-label">Tùy chỉnh</span>
-			</div>
-		</div>
 
 		<!-- Bento Grid của Vai trò -->
 		<main class="bento-container">
@@ -311,7 +290,7 @@ const getRoleInitial = (name) => {
 					<!-- Actions -->
 					<div class="bento-actions">
 						<button
-							class="btn-icon btn-icon--view"
+							class="btn-icon btn-icon--detail"
 							title="Xem chi tiết"
 							@click.stop="handleViewDetail(role)"
 						>
@@ -391,45 +370,6 @@ const getRoleInitial = (name) => {
 	padding-bottom: var(--space-4);
 }
 
-/* ── Stats strip ─────────────────────────────────────────── */
-.role-stats-strip {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	margin-top: var(--space-3);
-	background: var(--bg-card);
-	border: var(--glass-border);
-	border-radius: var(--radius-lg);
-	padding: var(--space-2) var(--space-3);
-	box-shadow: var(--glass-shadow);
-	width: fit-content;
-}
-
-.role-stat-item {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 2px;
-}
-
-.role-stat-value {
-	font-size: var(--fs-xl);
-	font-weight: var(--fw-bold);
-	color: var(--primary-color);
-	line-height: 1;
-}
-
-.role-stat-label {
-	font-size: var(--fs-xs);
-	color: var(--text-muted);
-	font-weight: var(--fw-medium);
-}
-
-.role-stat-divider {
-	width: 1px;
-	height: 28px;
-	background: var(--border-color);
-}
 
 /* ── Bento accent bar variants ───────────────────────────── */
 .bento-accent-bar--admin {
@@ -471,12 +411,12 @@ const getRoleInitial = (name) => {
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
-	margin-bottom: var(--space-3);
+	margin-bottom: var(--space-2);
 }
 
 .role-avatar {
-	width: 52px;
-	height: 52px;
+	width: 40px;
+	height: 40px;
 	border-radius: var(--radius-md);
 	display: flex;
 	align-items: center;
@@ -503,12 +443,12 @@ const getRoleInitial = (name) => {
 }
 
 .role-avatar-icon {
-	width: 24px;
-	height: 24px;
+	width: 20px;
+	height: 20px;
 }
 
 .role-avatar-initials {
-	font-size: 15px;
+	font-size: 13px;
 	font-weight: var(--fw-bold);
 	letter-spacing: 0.03em;
 }
@@ -519,10 +459,6 @@ const getRoleInitial = (name) => {
 }
 
 .bento-name {
-	font-family: var(--font-title);
-	font-size: var(--fs-lg);
-	font-weight: var(--fw-bold);
-	color: var(--text-main);
 	margin: 0 0 6px 0;
 	white-space: nowrap;
 	overflow: hidden;
@@ -642,14 +578,6 @@ const getRoleInitial = (name) => {
 	font-size: 11px;
 }
 
-/* ── Action buttons ──────────────────────────────────────── */
-.btn-icon--view:hover {
-	border-color: var(--primary-color);
-	background: rgba(66, 97, 237, 0.06);
-}
-.btn-icon--view:hover svg {
-	color: var(--primary-color);
-}
 
 /* ── Empty state ─────────────────────────────────────────── */
 .empty-state-container {
@@ -684,11 +612,4 @@ const getRoleInitial = (name) => {
 	margin: 0 0 8px 0;
 }
 
-/* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 768px) {
-	.role-stats-strip {
-		width: 100%;
-		justify-content: space-around;
-	}
-}
 </style>

@@ -19,7 +19,7 @@ const isPasswordVisible = ref(false);
 const credentials = reactive({ email: "", password: "" });
 
 // ─── Xử lý đăng nhập ─────────────────────────────────────────────────────────
-async function loginHandler() {
+const loginHandler = async () => {
 	const res = await authStore.login(credentials.email, credentials.password);
 
 	if (!res.success) {
@@ -29,11 +29,11 @@ async function loginHandler() {
 
 	toast.success("Đăng nhập thành công!");
 	router.push("/");
-}
+};
 
-function togglePasswordVisibility() {
+const togglePasswordVisibility = () => {
 	isPasswordVisible.value = !isPasswordVisible.value;
-}
+};
 </script>
 
 <template>

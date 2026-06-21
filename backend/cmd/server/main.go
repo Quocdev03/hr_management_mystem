@@ -63,9 +63,10 @@ func main() {
 	dashHandler := handler.NewDashboardHandler(dashScv)
 	posHandler := handler.NewPositionHandler(posScv)
 	roleHandler := handler.NewRoleHandler(roleScv)
+	perfHandler := handler.NewPerformanceHandler(db, rdb)
 
 	// Thiết lập router
-	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, posHandler, roleHandler, permRepo)
+	r := router.SetupRouter(cfg, rdb, authHandler, empHandler, deptHandler, dashHandler, userHandler, posHandler, roleHandler, permRepo, perfHandler)
 
 	// Chạy server với Graceful Shutdown
 	// Khi nhận SIGINT/SIGTERM, chờ các request đang xử lý hoàn thành trước khi tắt server
